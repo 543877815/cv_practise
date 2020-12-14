@@ -23,6 +23,7 @@ if __name__ == "__main__":
     parser.add_argument('--epoch', default=200, type=int, help='epoch')
     parser.add_argument('--resume', '-r', action='store_true', help='resume from checkpoint')
     parser.add_argument('--use_cuda', action='store_true', help='whether to use cuda')
+
     args = parser.parse_args()
 
     # detect device
@@ -66,10 +67,10 @@ if __name__ == "__main__":
     ])
 
     trainset = torchvision.datasets.CIFAR10(root=dataDir, train=True, download=True, transform=transform_train)
-    trainloader = torch.utils.data.DataLoader(trainset, batch_size=64, shuffle=True, num_workers=2)
+    trainloader = torch.utils.data.DataLoader(trainset, batch_size=128, shuffle=True, num_workers=2)
 
     testset = torchvision.datasets.CIFAR10(root=dataDir, train=False, download=True, transform=transform_test)
-    testloader = torch.utils.data.DataLoader(testset, batch_size=25, shuffle=False, num_workers=2)
+    testloader = torch.utils.data.DataLoader(testset, batch_size=64, shuffle=False, num_workers=2)
 
     classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
 
@@ -110,13 +111,11 @@ if __name__ == "__main__":
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=0.9, weight_decay=5e-4)
 
-
     # progressbar
     def pbar_desc(progressbar, loader_length, loss, batch_idx, correct, total):
         bar = "=" * round((batch_idx / loader_length) * 40) + ">"
         progressbar.set_description('[%-40s] Loss: %.3f | Acc: %.3f%% (%d/%d)'
                                     % (bar, loss / (batch_idx + 1), 100. * correct / total, correct, total))
-
 
     # Training
     def train(epoch):
@@ -140,7 +139,6 @@ if __name__ == "__main__":
             total += targets.size(0)
             correct += predicted.eq(targets).sum().item()
             pbar_desc(progressbar, len(trainloader), train_loss, batch_idx, correct, total)
-
 
     # Testing
     def test(epoch):
