@@ -35,7 +35,7 @@ if __name__ == "__main__":
     device = torch.device("cuda" if (args.use_cuda and torch.cuda.is_available()) else "cpu")
 
     # data/model/checkpoint in different platform
-    dataDir, modelDir, checkpointDir = get_platform_path()
+    data_dir, model_dir, checkpoint_dir = get_platform_path()
 
     # data augmentation
     print("==> Preparing data..")
@@ -52,11 +52,11 @@ if __name__ == "__main__":
         transforms.Normalize((0.5089, 0.4874, 0.4419), (0.2683, 0.2574, 0.2771)),
     ])
 
-    trainset = torchvision.datasets.CIFAR100(root=dataDir, train=True, download=True, transform=transform_train)
-    trainloader = torch.utils.data.DataLoader(trainset, batch_size=128, shuffle=True, num_workers=4)
+    trainset = torchvision.datasets.CIFAR100(root=data_dir, train=True, download=True, transform=transform_train)
+    trainloader = torch.utils.data.DataLoader(trainset, batch_size=64, shuffle=True, num_workers=4)
 
-    testset = torchvision.datasets.CIFAR100(root=dataDir, train=False, download=True, transform=transform_test)
-    testloader = torch.utils.data.DataLoader(testset, batch_size=128, shuffle=False, num_workers=4)
+    testset = torchvision.datasets.CIFAR100(root=data_dir, train=False, download=True, transform=transform_test)
+    testloader = torch.utils.data.DataLoader(testset, batch_size=64, shuffle=False, num_workers=4)
 
     # model
     net = get_network(args)
@@ -72,8 +72,8 @@ if __name__ == "__main__":
     # Load checkpoint.
     if args.resume:
         print("==> Resuming from checkpoint..")
-        assert os.path.isdir(checkpointDir), 'Error: no checkpoint directory found!'
-        checkpoint = torch.load('{}/{}_cifar100_model.pth'.format(checkpointDir, args.net))
+        assert os.path.isdir(checkpoint_dir), 'Error: no checkpoint directory found!'
+        checkpoint = torch.load('{}/{}_cifar100_model.pth'.format(checkpoint_dir, args.net))
         net.load_state_dict(checkpoint['net'])
         acc_top1 = checkpoint['acc_top1']
         acc_top5 = checkpoint['acc_top5']
@@ -85,7 +85,6 @@ if __name__ == "__main__":
     optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=0.9, weight_decay=5e-4)
     train_scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=[60, 120, 160], gamma=0.2)
 
-
     # progressbar
     def pbar_desc(progressbar, loader_length, loss, batch_idx, correct, total):
         correct_top1 = correct[0]
@@ -95,7 +94,6 @@ if __name__ == "__main__":
                                     % (bar, loss / (batch_idx + 1),
                                        100. * correct_top1 / total, correct_top1, total,
                                        100. * correct_top5 / total, correct_top5, total))
-
 
     # Training
     def train(epoch):
@@ -114,6 +112,7 @@ if __name__ == "__main__":
             loss = criterion(outputs, targets)
             loss.backward()
             optimizer.step()
+            train_scheduler.step()
 
             train_loss += loss.item()
             _, predicted = outputs.topk(5, 1, largest=True, sorted=True)
@@ -166,7 +165,7 @@ if __name__ == "__main__":
                 'acc_top5': acc_top5,
                 'epoch': epoch,
             }
-            torch.save(state, "{}/{}_cifar100_model.pth".format(checkpointDir, args.net))
+            torch.save(state, "{}/{}_cifar100_model.pth".format(checkpoint_dir, args.net))
             best_acc = acc_top5
 
 
