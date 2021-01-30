@@ -98,7 +98,7 @@ class WideResNet(nn.Module):
         return nn.Sequential(*layers)
 
 
-# Table 9: Best WRN performance over various datasets, single run results.
+# Table 9: Best WRN performance over various dataset, single run results.
 def wideresnet(depth=40, widen_factor=10):
     net = WideResNet(100, WideBasic, depth=depth, widen_factor=widen_factor)
     return net

@@ -34,7 +34,7 @@ if __name__ == "__main__":
     print("CUDA Available:", torch.cuda.is_available())
     device = torch.device("cuda" if (args.use_cuda and torch.cuda.is_available()) else "cpu")
 
-    # data/model/checkpoint in different platform
+    # data/models/checkpoint in different platform
     data_dir, model_dir, checkpoint_dir = get_platform_path()
 
     # data augmentation
@@ -58,7 +58,7 @@ if __name__ == "__main__":
     testset = torchvision.datasets.CIFAR100(root=data_dir, train=False, download=True, transform=transform_test)
     testloader = torch.utils.data.DataLoader(testset, batch_size=64, shuffle=False, num_workers=4)
 
-    # model
+    # models
     net = get_network(args)
     net = net.to(device)
     if device == 'cuda':

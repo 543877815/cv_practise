@@ -60,10 +60,10 @@ if __name__ == '__main__':
     print("CUDA Available:", torch.cuda.is_available())
     device = torch.device("cuda" if (args.use_cuda and torch.cuda.is_available()) else "cpu")
 
-    # data/model/checkpoint in different platform
+    # data/models/checkpoint in different platform
     data_dir, model_dir, checkpoint_dir = get_platform_path()
 
-    # datasets VOC2011 and others are subset of VOC2012
+    # dataset VOC2011 and others are subset of VOC2012
     transform_train = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
@@ -83,7 +83,7 @@ if __name__ == '__main__':
     valloader = torch.utils.data.DataLoader(valset, batch_size=16, shuffle=False, num_workers=4)
 
     # Model
-    print('==> Building model..')
+    print('==> Building models..')
     net = FCN32s(n_class=21)
     net = net.to(device)
 
