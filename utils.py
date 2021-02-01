@@ -16,9 +16,9 @@ def get_platform_path():
     data_dir, model_dir, checkpoint_dir, dirs = '', '', '', []
     if system == 'Windows':
         drive, common_dir = 'F', 'cache'
-        data_dir = '{}:\\{}\\data'.format(drive, common_dir)
-        model_dir = '{}:\\{}\\models'.format(drive, common_dir)
-        checkpoint_dir = '{}:\\{}\\checkpoint'.format(drive, common_dir)
+        data_dir = '{}:/{}/data'.format(drive, common_dir)
+        model_dir = '{}:/{}/models'.format(drive, common_dir)
+        checkpoint_dir = '{}:/{}/checkpoint'.format(drive, common_dir)
         dirs = [data_dir, model_dir, checkpoint_dir]
 
     elif system == 'Linux':

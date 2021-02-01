@@ -5,12 +5,15 @@ from utils import *
 from six.moves import urllib
 import torch.utils.data as data
 from PIL import Image
+import numpy as np
 
 
 class DatasetFromFolder(data.Dataset):
-    def __init__(self, image_dir, transform=None, target_transform=None):
+    def __init__(self, image_dir, config=None, transform=None, target_transform=None):
         super(DatasetFromFolder, self).__init__()
         self.image_filenames = [os.path.join(image_dir, x) for x in os.listdir(image_dir) if self.is_image_file(x)]
+        self.config = config
+        assert self.config.channel in [0, 1, 2], 'channel illegal'
 
         self.transform = transform
         self.target_transform = target_transform
@@ -27,11 +30,21 @@ class DatasetFromFolder(data.Dataset):
     def __len__(self):
         return len(self.image_filenames)
 
-    @staticmethod
-    def load_img(filepath):
-        img = Image.open(filepath).convert('YCbCr')
-        y, _, _ = img.split()
-        return y
+    def load_img(self, filepath):
+        if self.config.color == 'YCbCr':
+            img = Image.open(filepath).convert('YCbCr')
+            img_split = img.split()  # Y, Cb, Cr
+
+        elif self.config.color == 'RGB':
+            img = Image.open(filepath).convert('RGB')
+            img_split = img.split()  # R, G, B
+        else:
+            raise Exception("the color space does not exist")
+
+        if self.config.single_channel:
+            return img_split[self.config.channel]
+        else:
+            return img
 
     @staticmethod
     def is_image_file(filename):

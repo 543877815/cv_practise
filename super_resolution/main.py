@@ -5,26 +5,31 @@ from torch.utils.data import DataLoader
 from utils import *
 from dataset.dataset import *
 import torch
+from super_resolution.models.SRCNN.solver import SRCNNTrainer
 
 if __name__ == '__main__':
+
     parser = argparse.ArgumentParser(description='Pytorch super resolution example')
     # cuda-configuration
     parser.add_argument('--use_cuda', type=bool, default=True, help='whether to use cuda')
+    parser.add_argument('--resume', '-r', action='store_true', help='resume from checkpoint')
 
     # hyper-parameters
-    parser.add_argument('--training_batch_size', type=int, default=1, help='training batch size')
-    parser.add_argument('--test_batch_size', type=int, default=1, help='testing batch size')
+    parser.add_argument('--training_batch_size', type=int, default=5, help='training batch size')
+    parser.add_argument('--test_batch_size', type=int, default=5, help='testing batch size')
     parser.add_argument('--epochs', type=int, default=20, help='number of epochs to train for')
     parser.add_argument('--lr', type=float, default=0.01, help='learning rate')
     parser.add_argument('--seed', type=int, default=123, help='random seed to use')
 
     # models configuration
     parser.add_argument('--upscaleFactor', '-uf', type=int, default=4, help='super resolution upscale factor')
-    parser.add_argument('--models', '-m', type=str, default='srcnn', help='models that going to use')
+    parser.add_argument('--model', '-m', type=str, default='srcnn', help='models that going to use')
 
     # data configuration
     parser.add_argument('--dataset', type=str, default='bsd300', help='data that going to use')
-
+    parser.add_argument('--color', type=str, default='YCbCr', help='color space to use')
+    parser.add_argument('--single_channel', action='store_true', help='whether to use specific channel')
+    parser.add_argument('--channel', type=int, default=0, help='channel to use, only work when single_channel is True')
     args = parser.parse_args()
 
     # detect device
@@ -58,13 +63,17 @@ if __name__ == '__main__':
         transforms.ToTensor()
     ])
 
-    train_set = DatasetFromFolder(image_dir=data_train_dir, transform=img_transform, target_transform=target_transform)
-    test_set = DatasetFromFolder(image_dir=data_test_dir, transform=img_transform, target_transform=target_transform)
+    train_set = DatasetFromFolder(image_dir=data_train_dir, transform=img_transform, target_transform=target_transform,
+                                  config=args)
+    test_set = DatasetFromFolder(image_dir=data_test_dir, transform=img_transform, target_transform=target_transform,
+                                 config=args)
 
     train_loader = DataLoader(dataset=train_set, batch_size=args.training_batch_size, shuffle=True)
     test_loader = DataLoader(dataset=test_set, batch_size=args.test_batch_size, shuffle=False)
 
     if args.model == 'srcnn':
         model = SRCNNTrainer(args, train_loader, test_loader)
+    else:
+        raise Exception("the model does not exist")
 
-    model.run();
+    model.run()
