@@ -1,19 +1,17 @@
-__package__ = 'dataset.dataset'
-
 import tarfile
 from utils import *
 from six.moves import urllib
 import torch.utils.data as data
 from PIL import Image
 import numpy as np
+from torchvision.transforms import transforms, ToTensor
 
 
 class DatasetFromFolder(data.Dataset):
     def __init__(self, image_dir, config=None, transform=None, target_transform=None):
         super(DatasetFromFolder, self).__init__()
-        self.image_filenames = [os.path.join(image_dir, x) for x in os.listdir(image_dir) if self.is_image_file(x)]
+        self.image_filenames = [os.path.join(image_dir, x) for x in os.listdir(image_dir) if is_image_file(x)]
         self.config = config
-        assert self.config.channel in [0, 1, 2], 'channel illegal'
 
         self.transform = transform
         self.target_transform = target_transform
@@ -33,22 +31,26 @@ class DatasetFromFolder(data.Dataset):
     def load_img(self, filepath):
         if self.config.color == 'YCbCr':
             img = Image.open(filepath).convert('YCbCr')
-            img_split = img.split()  # Y, Cb, Cr
-
         elif self.config.color == 'RGB':
             img = Image.open(filepath).convert('RGB')
-            img_split = img.split()  # R, G, B
         else:
             raise Exception("the color space does not exist")
+        return img
 
-        if self.config.single_channel:
-            return img_split[self.config.channel]
-        else:
-            return img
 
-    @staticmethod
-    def is_image_file(filename):
-        return any(filename.endswith(extension) for extension in ['.png', 'jpeg', 'jpg'])
+class DataSuperResolutionFromFolder(DatasetFromFolder):
+    def __init__(self, image_dir, config, transform=None):
+        super(DataSuperResolutionFromFolder, self).__init__(image_dir, config)
+        self.image_filenames = [os.path.join(image_dir, x) for x in os.listdir(image_dir) if is_image_file(x)]
+        self.config = config
+        self.transform = transform
+
+    def __getitem__(self, item):
+        image_filename = self.image_filenames[item]
+        img = self.load_img(image_filename)
+        if self.transform:
+            img = self.transform(img)
+        return img, os.path.basename(image_filename)
 
 
 def BSD300():

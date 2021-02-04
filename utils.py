@@ -133,3 +133,6 @@ def format_time(seconds):
     if output == '':
         output = '0ms'
     return output
+
+def is_image_file(filename):
+    return any(filename.endswith(extension) for extension in ['.png', 'jpeg', 'jpg'])

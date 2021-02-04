@@ -12,7 +12,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Pytorch super resolution example')
     # cuda-configuration
     parser.add_argument('--use_cuda', type=bool, default=True, help='whether to use cuda')
-    parser.add_argument('--resume', '-r', action='store_true', help='resume from checkpoint')
 
     # hyper-parameters
     parser.add_argument('--training_batch_size', type=int, default=5, help='training batch size')
@@ -22,14 +21,14 @@ if __name__ == '__main__':
     parser.add_argument('--seed', type=int, default=123, help='random seed to use')
 
     # models configuration
-    parser.add_argument('--upscaleFactor', '-uf', type=int, default=4, help='super resolution upscale factor')
+    parser.add_argument('--upscaleFactor', '-uf', type=int, default=3, help='super resolution upscale factor')
     parser.add_argument('--model', '-m', type=str, default='srcnn', help='models that going to use')
+    parser.add_argument('--resume', '-r', action='store_true', help='resume from checkpoint')
 
     # data configuration
     parser.add_argument('--dataset', type=str, default='bsd300', help='data that going to use')
-    parser.add_argument('--color', type=str, default='YCbCr', help='color space to use')
+    parser.add_argument('--color', type=str, default='RGB', help='color space to use, RGB/YCbCr')
     parser.add_argument('--single_channel', action='store_true', help='whether to use specific channel')
-    parser.add_argument('--channel', type=int, default=0, help='channel to use, only work when single_channel is True')
     args = parser.parse_args()
 
     # detect device
@@ -54,7 +53,7 @@ if __name__ == '__main__':
 
     img_transform = transforms.Compose([
         transforms.CenterCrop(crop_size),
-        transforms.Resize(crop_size // upscale_factor),
+        transforms.Resize(crop_size // upscale_factor, interpolation=Image.BICUBIC),
         transforms.ToTensor(),
     ])
 

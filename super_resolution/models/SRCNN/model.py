@@ -11,9 +11,8 @@ class SRCNN(torch.nn.Module):
             nn.ReLU(inplace=True),
             nn.Conv2d(in_channels=filter, out_channels=filter // 2, kernel_size=1, bias=True),
             nn.ReLU(inplace=True),
-            nn.Conv2d(in_channels=filter // 2, out_channels=num_channels * (upscale_factor ** 2), kernel_size=5,
+            nn.Conv2d(in_channels=filter // 2, out_channels=num_channels, kernel_size=5,
                       stride=1, padding=2, bias=True),
-            nn.PixelShuffle(upscale_factor)
         )
 
     def forward(self, x):
