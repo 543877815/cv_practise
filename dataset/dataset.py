@@ -75,3 +75,102 @@ def BSD300():
         os.remove(file_path)
 
     return data_dir
+
+
+def BSDS500():
+    # data/models/checkpoint in different platform
+    data_dir, _, _ = get_platform_path()
+    data_dir = os.path.join(data_dir, "BSR_bsds500/BSR/BSDS500/data/images")
+    if not os.path.exists(data_dir):
+        url = "http://www.eecs.berkeley.edu/Research/Projects/CS/vision/grouping/BSR/BSR_bsds500.tgz"
+        print("===> Downloading url:", url)
+
+        data = urllib.request.urlopen(url)
+        file_path = os.path.join(data_dir, os.path.basename(url))
+        with open(file_path, 'wb') as f:
+            f.write(data.read())
+
+        print("===> Extracting data")
+        with tarfile.open(file_path) as tar:
+            for item in tar:
+                tar.extract(item, data_dir)
+
+        os.remove(file_path)
+
+
+def images91():
+    # data/models/checkpoint in different platform
+    data_dir, _, _ = get_platform_path()
+    data_dir = os.path.join(data_dir, "91-image")
+
+    if not os.path.exists(data_dir):
+        url = "https://github.com/502408764/91-images"
+        print("===> Downloading url:", url)
+        os.system('git clone {} {}'.format(url, data_dir))
+
+    return data_dir
+
+
+def Set5():
+    # data/models/checkpoint in different platform
+    data_dir, _, _ = get_platform_path()
+    data_dir = os.path.join(data_dir, "Set5")
+
+    if not os.path.exists(data_dir):
+        url = "https://github.com/502408764/Set5"
+        print("===> Downloading url:", url)
+        os.system('git clone {} {}'.format(url, data_dir))
+
+    return data_dir
+
+
+def Set14():
+    # data/models/checkpoint in different platform
+    data_dir, _, _ = get_platform_path()
+    data_dir = os.path.join(data_dir, "Set14")
+
+    if not os.path.exists(data_dir):
+        url = "https://github.com/502408764/Set14"
+        print("===> Downloading url:", url)
+        os.system('git clone {} {}'.format(url, data_dir))
+
+    return data_dir
+
+
+def B100():
+    # data/models/checkpoint in different platform
+    data_dir, _, _ = get_platform_path()
+    data_dir = os.path.join(data_dir, "B100")
+
+    if not os.path.exists(data_dir):
+        url = "https://github.com/502408764/B100"
+        print("===> Downloading url:", url)
+        os.system('git clone {} {}'.format(url, data_dir))
+
+    return data_dir
+
+
+def Urban100():
+    # data/models/checkpoint in different platform
+    data_dir, _, _ = get_platform_path()
+    data_dir = os.path.join(data_dir, "Urban100")
+
+    if not os.path.exists(data_dir):
+        url = "https://github.com/502408764/Urban100"
+        print("===> Downloading url:", url)
+        os.system('git clone {} {}'.format(url, data_dir))
+
+    return data_dir
+
+
+def Manga109():
+    # data/models/checkpoint in different platform
+    data_dir, _, _ = get_platform_path()
+    data_dir = os.path.join(data_dir, "Manga109")
+
+    if not os.path.exists(data_dir):
+        url = "https://github.com/502408764/Manga109"
+        print("===> Downloading url:", url)
+        os.system('git clone {} {}'.format(url, data_dir))
+
+    return data_dir

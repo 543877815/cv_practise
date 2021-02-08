@@ -21,6 +21,11 @@ if __name__ == '__main__':
     parser.add_argument('--upscaleFactor', '-uf', type=int, default=3, help='super resolution upscale factor')
     parser.add_argument('--ground_true', type=str, default='ground_true.jpg', help='name of ground true image input')
     parser.add_argument('--output', type=str, default='output.jpg', help='output directory for high resolution image')
+
+    # data configuration
+    parser.add_argument('--color', type=str, default='RGB', help='color space to use, RGB/YCbCr')
+    parser.add_argument('--single_channel', action='store_true', help='whether to use specific channel')
+
     args = parser.parse_args()
 
     # data/models/checkpoint in different platform
@@ -38,10 +43,12 @@ if __name__ == '__main__':
     for output_filename in output_filenames:
         filename = os.path.basename(output_filename)
         ground_true_filename = ground_true_dir + filename
-        output_img = Image.open(output_filename).convert('RGB')
+
+        output_img = Image.open(output_filename).convert(args.color)
         output_img = transform(output_img)
-        ground_true_img = Image.open(ground_true_filename).convert('RGB')
+        ground_true_img = Image.open(ground_true_filename).convert(args.color)
         ground_true_img = transform(ground_true_img)
+
         x, y = ground_true_img.shape[1:]
         BICUBIC_transform = transforms.Compose([
             transforms.ToPILImage(),
@@ -50,12 +57,19 @@ if __name__ == '__main__':
             transforms.ToTensor()
         ])
         BICUBIC_img = BICUBIC_transform(ground_true_img)
+
         output_img, ground_true_img, BICUBIC_img, criterion = output_img.to(device), ground_true_img.to(
             device), BICUBIC_img.to(device), criterion.to(device)
-        BICUBIC_mse = criterion(BICUBIC_img, ground_true_img)
-        mse = criterion(output_img, ground_true_img)
 
-        BICUBIC_psnr = 10 * log10(1 / BICUBIC_mse.item())
-        psnr = 10 * log10(1 / mse.item())
+        if args.single_channel:
+            BICUBIC_mse = criterion(BICUBIC_img[0], ground_true_img[0])
+            mse = criterion(output_img[0], ground_true_img[0])
+            BICUBIC_psnr = 10 * log10(1 / BICUBIC_mse.item())
+            psnr = 10 * log10(1 / mse.item())
+        else:
+            BICUBIC_mse = criterion(BICUBIC_img, ground_true_img)
+            mse = criterion(output_img, ground_true_img)
+            BICUBIC_psnr = 10 * log10(1 / BICUBIC_mse.item())
+            psnr = 10 * log10(1 / mse.item())
         print("{}, BICUBIC_psnr:{}".format(output_filename, BICUBIC_psnr))
         print("{}, psnr:{}".format(output_filename, psnr))

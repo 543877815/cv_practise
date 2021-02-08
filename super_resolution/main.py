@@ -6,6 +6,7 @@ from utils import *
 from dataset.dataset import *
 import torch
 from super_resolution.models.SRCNN.solver import SRCNNTrainer
+from super_resolution.models.FSRCNN.solver import FSRCNNTrainer
 
 if __name__ == '__main__':
 
@@ -14,8 +15,8 @@ if __name__ == '__main__':
     parser.add_argument('--use_cuda', type=bool, default=True, help='whether to use cuda')
 
     # hyper-parameters
-    parser.add_argument('--training_batch_size', type=int, default=5, help='training batch size')
-    parser.add_argument('--test_batch_size', type=int, default=5, help='testing batch size')
+    parser.add_argument('--training_batch_size', type=int, default=1, help='training batch size')
+    parser.add_argument('--test_batch_size', type=int, default=1, help='testing batch size')
     parser.add_argument('--epochs', type=int, default=20, help='number of epochs to train for')
     parser.add_argument('--lr', type=float, default=0.01, help='learning rate')
     parser.add_argument('--seed', type=int, default=123, help='random seed to use')
@@ -37,20 +38,50 @@ if __name__ == '__main__':
 
     # data/models/checkpoint in different platform
     data_dir, model_dir, checkpoint_dir = get_platform_path()
-    data_train_dir, data_test_dir = data_dir, data_dir
+    data_train_dir, data_test_dir, data_val_dir = data_dir, data_dir, data_dir
 
     # data preparing
     print("==> Preparing data..")
     dataset = args.dataset
-    if dataset == 'bsd300':
+    if dataset.lower() == 'bsd300' or dataset.lower() == 'bsds300':
         data_dir = BSD300()
         data_train_dir = data_dir + '/train'
         data_test_dir = data_dir + '/test'
+    elif dataset.lower() == 'bsd500' or dataset.lower() == 'bsds500':
+        data_dir = BSDS500()
+        data_train_dir = data_dir + '/train'
+        data_test_dir = data_dir + '/test'
+        data_val_dir = data_dir + '/val'
+    elif dataset.lower() == '91images':
+        data_dir = images91()
+        data_train_dir = data_dir
+        data_test_dir = data_dir + '/X2'
+    elif dataset.lower() == 'urban100':
+        data_dir = Urban100()
+        data_train_dir = data_dir + '/HR'
+        data_test_dir = data_dir
+    elif dataset.lower() == 'set5':
+        data_dir = Set5()
+        data_train_dir = data_dir + '/HR'
+        data_test_dir = data_dir
+    elif dataset.lower() == 'set14':
+        data_dir = Set14()
+        data_train_dir = data_dir + '/HR'
+        data_test_dir = data_dir
+    elif dataset.lower() == 'b100':
+        data_dir = B100()
+        data_train_dir = data_dir + '/HR'
+        data_test_dir = data_dir
+    elif dataset.lower() == 'manga109':
+        data_dir = Manga109() + '/HR'
+        data_train_dir = data_dir
+        data_test_dir = data_dir
+    else:
+        raise Exception("the dataset does not support")
 
     # data augmentation
     upscale_factor = args.upscaleFactor
     crop_size = 256 - (256 % upscale_factor)
-
     img_transform = transforms.Compose([
         transforms.CenterCrop(crop_size),
         transforms.Resize(crop_size // upscale_factor, interpolation=Image.BICUBIC),
@@ -70,8 +101,10 @@ if __name__ == '__main__':
     train_loader = DataLoader(dataset=train_set, batch_size=args.training_batch_size, shuffle=True)
     test_loader = DataLoader(dataset=test_set, batch_size=args.test_batch_size, shuffle=False)
 
-    if args.model == 'srcnn':
+    if args.model.lower() == 'srcnn':
         model = SRCNNTrainer(args, train_loader, test_loader)
+    elif args.model.lower() == 'fsrcnn':
+        model = FSRCNNTrainer(args, train_loader, test_loader)
     else:
         raise Exception("the model does not exist")
 

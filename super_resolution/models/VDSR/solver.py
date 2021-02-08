@@ -4,16 +4,16 @@ from math import log10
 import torch
 import torch.backends.cudnn as cudnn
 import os
-from .model import SRCNN
+from .model import VDSR
 from utils import progress_bar, get_platform_path
 from torchvision.transforms import transforms
 from PIL import Image
 from torchvision import utils as vutils
 
 
-class SRCNNBasic(object):
+class VSDRBasic(object):
     def __init__(self, config, device=None):
-        super(SRCNNBasic, self).__init__()
+        super(VSDRBasic, self).__init__()
         self.CUDA = torch.cuda.is_available()
         if device is None:
             self.device = torch.device("cuda" if (config.use_cuda and self.CUDA) else "cpu")
@@ -26,7 +26,7 @@ class SRCNNBasic(object):
 
         # checkpoint configuration
         self.resume = config.resume
-        self.checkpoint_name = "SRCNN-{}x.pth".format(self.upscale_factor)
+        self.checkpoint_name = "VDSR-{}x.pth".format(self.upscale_factor)
         self.best_quality = 0
         self.start_epoch = 1
 
@@ -57,9 +57,9 @@ class SRCNNBasic(object):
         return 10 * log10(1 / mse.item())
 
 
-class SRCNNTester(SRCNNBasic):
+class VDSRTester(VSDRBasic):
     def __init__(self, config, test_loader=None, device=None):
-        super(SRCNNTester, self).__init__(config)
+        super(VDSRTester, self).__init__(config)
         assert (config.resume is True)
 
         data_dir, _, _ = get_platform_path()
@@ -70,7 +70,7 @@ class SRCNNTester(SRCNNBasic):
 
     def build_model(self):
         num_channels = 1 if self.single_channel else 3
-        self.model = SRCNN(num_channels=num_channels, filter=64).to(self.device)
+        self.model = VDSR(num_channels=num_channels, base_channels=64, num_residuals=20).to(self.device)
         self.load_model()
         if self.CUDA:
             cudnn.benchmark = True
@@ -101,9 +101,9 @@ class SRCNNTester(SRCNNBasic):
                 print('==> {} is saved to {}'.format(output_name, self.output))
 
 
-class SRCNNTrainer(SRCNNBasic):
+class VDSRTrainer(VSDRBasic):
     def __init__(self, config, train_loader=None, test_loader=None, device=None):
-        super(SRCNNTrainer, self).__init__(config, device)
+        super(VDSRTrainer, self).__init__(config, device)
 
         # model configuration
         self.lr = config.lr
@@ -122,11 +122,11 @@ class SRCNNTrainer(SRCNNBasic):
 
     def build_model(self):
         num_channels = 1 if self.single_channel else 3
-        self.model = SRCNN(num_channels=num_channels, filter=64).to(self.device)
+        self.model = VDSR(num_channels=num_channels, base_channels=64, num_residuals=20).to(self.device)
         if self.resume:
             self.load_model()
         else:
-            self.model.weight_init(mean=0.0, std=0.01)
+            self.model.weight_init()
         self.criterion = torch.nn.MSELoss()
         torch.manual_seed(self.seed)
 

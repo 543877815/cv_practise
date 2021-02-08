@@ -7,9 +7,11 @@ from PIL import Image
 from torch.utils.data import DataLoader
 from torchvision.transforms import ToTensor
 from torchvision.transforms import transforms
+
+from super_resolution.models.FSRCNN.solver import FSRCNNTester
 from utils import *
 from dataset.dataset import BSD300, DatasetFromFolder, DataSuperResolutionFromFolder
-from super_resolution.models.SRCNN.solver import SRCNNTrainer, SRCNNTester
+from super_resolution.models.SRCNN.solver import SRCNNTester
 import numpy as np
 
 if __name__ == '__main__':
@@ -53,8 +55,10 @@ if __name__ == '__main__':
     # ===========================================================
     # model import & setting
     # ===========================================================
-    if args.model == 'srcnn':
+    if args.model.lower() == 'srcnn':
         Tester = SRCNNTester(config=args, test_loader=test_loader)
+    elif args.model.lower() == 'fsrcnn':
+        Tester = FSRCNNTester(config=args, test_loader=test_loader)
     else:
         raise Exception("the model does not exist")
 
@@ -62,6 +66,3 @@ if __name__ == '__main__':
     # output and save image
     # ===========================================================
     Tester.run()
-
-
-

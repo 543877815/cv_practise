@@ -8,3 +8,6 @@ The SRCNN consists of the following operations:
 4. **Reconstruction**: Produces the HR image from HR patches.
 
 Operations 2–4 above can be cast as a convolutional layer in a CNN that accepts as input the preprocessed images from step 1 above, and outputs the HR image
+
+PSNR was calculated on the Y channel.
+

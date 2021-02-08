@@ -17,14 +17,14 @@ def get_platform_path():
     if system == 'Windows':
         drive, common_dir = 'F', 'cache'
         data_dir = '{}:/{}/data'.format(drive, common_dir)
-        model_dir = '{}:/{}/models'.format(drive, common_dir)
+        model_dir = '{}:/{}/model'.format(drive, common_dir)
         checkpoint_dir = '{}:/{}/checkpoint'.format(drive, common_dir)
         dirs = [data_dir, model_dir, checkpoint_dir]
 
     elif system == 'Linux':
         common_dir = '/data'
         data_dir = '{}/data'.format(common_dir)
-        model_dir = '{}/models'.format(common_dir)
+        model_dir = '{}/model'.format(common_dir)
         checkpoint_dir = '{}/checkpoint'.format(common_dir)
         dirs = [data_dir, model_dir, checkpoint_dir]
 
@@ -135,4 +135,4 @@ def format_time(seconds):
     return output
 
 def is_image_file(filename):
-    return any(filename.endswith(extension) for extension in ['.png', 'jpeg', 'jpg'])
+    return any(filename.endswith(extension) for extension in ['.png', '.jpeg', '.jpg', '.bmp'])

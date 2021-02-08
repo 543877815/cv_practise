@@ -4,16 +4,16 @@ from math import log10
 import torch
 import torch.backends.cudnn as cudnn
 import os
-from .model import SRCNN
+from .model import FSRCNN
 from utils import progress_bar, get_platform_path
 from torchvision.transforms import transforms
 from PIL import Image
 from torchvision import utils as vutils
 
 
-class SRCNNBasic(object):
+class FSRCNNBasic(object):
     def __init__(self, config, device=None):
-        super(SRCNNBasic, self).__init__()
+        super(FSRCNNBasic, self).__init__()
         self.CUDA = torch.cuda.is_available()
         if device is None:
             self.device = torch.device("cuda" if (config.use_cuda and self.CUDA) else "cpu")
@@ -26,7 +26,7 @@ class SRCNNBasic(object):
 
         # checkpoint configuration
         self.resume = config.resume
-        self.checkpoint_name = "SRCNN-{}x.pth".format(self.upscale_factor)
+        self.checkpoint_name = "FSRCNN-{}x.pth".format(self.upscale_factor)
         self.best_quality = 0
         self.start_epoch = 1
 
@@ -39,27 +39,14 @@ class SRCNNBasic(object):
         self.best_quality = checkpoint['psnr']
         self.start_epoch = checkpoint['epoch']
 
-    def convert_BICUBIC(self, img):
-        img_BICUBIC = torch.empty(img.shape[0], img.shape[1], img.shape[2] * self.upscale_factor,
-                                  img.shape[3] * self.upscale_factor)
-        for i in range(len(img)):
-            x, y = img[i].shape[1:]
-            transform = transforms.Compose([
-                transforms.ToPILImage(),
-                transforms.Resize((x * self.upscale_factor, y * self.upscale_factor), interpolation=Image.BICUBIC),
-                transforms.ToTensor(),
-            ])
-            img_BICUBIC[i] = transform(img[i])
-        return img_BICUBIC
-
     @staticmethod
     def psrn(mse):
         return 10 * log10(1 / mse.item())
 
 
-class SRCNNTester(SRCNNBasic):
+class FSRCNNTester(FSRCNNBasic):
     def __init__(self, config, test_loader=None, device=None):
-        super(SRCNNTester, self).__init__(config)
+        super(FSRCNNTester, self).__init__(config)
         assert (config.resume is True)
 
         data_dir, _, _ = get_platform_path()
@@ -70,7 +57,7 @@ class SRCNNTester(SRCNNBasic):
 
     def build_model(self):
         num_channels = 1 if self.single_channel else 3
-        self.model = SRCNN(num_channels=num_channels, filter=64).to(self.device)
+        self.model = FSRCNN(num_channels=num_channels, upscale_factor=self.upscale_factor).to(self.device)
         self.load_model()
         if self.CUDA:
             cudnn.benchmark = True
@@ -81,16 +68,15 @@ class SRCNNTester(SRCNNBasic):
         self.model.eval()
         with torch.no_grad():
             for index, (img, filename) in enumerate(self.test_loader):
-                img_BICUBIC = self.convert_BICUBIC(img)
-                img_BICUBIC = img_BICUBIC.to(self.device)
+                img = img.to(self.device)
                 # full RGB/YCrCb
                 if not self.single_channel:
-                    output = self.model(img_BICUBIC).clamp(0.0, 1.0).cpu()
+                    output = self.model(img).clamp(0.0, 1.0).cpu()
                 # y
                 else:
-                    output = self.model(img_BICUBIC[:, 0, :, :].unsqueeze(1))
-                    img_BICUBIC[:, 0, :, :].data = output
-                    output = img_BICUBIC.clamp(0.0, 1.0).cpu()
+                    output = self.model(img[:, 0, :, :].unsqueeze(1))
+                    img[:, 0, :, :].data = output
+                    output = img.clamp(0.0, 1.0).cpu()
                 assert (len(output.shape) == 4 and output.shape[0] == 1)
                 output_name = filename[0].replace('LR', 'HR')
                 if self.color_space == 'RGB':
@@ -101,9 +87,9 @@ class SRCNNTester(SRCNNBasic):
                 print('==> {} is saved to {}'.format(output_name, self.output))
 
 
-class SRCNNTrainer(SRCNNBasic):
+class FSRCNNTrainer(FSRCNNBasic):
     def __init__(self, config, train_loader=None, test_loader=None, device=None):
-        super(SRCNNTrainer, self).__init__(config, device)
+        super(FSRCNNTrainer, self).__init__(config, device)
 
         # model configuration
         self.lr = config.lr
@@ -122,7 +108,7 @@ class SRCNNTrainer(SRCNNBasic):
 
     def build_model(self):
         num_channels = 1 if self.single_channel else 3
-        self.model = SRCNN(num_channels=num_channels, filter=64).to(self.device)
+        self.model = FSRCNN(num_channels=num_channels, upscale_factor=self.upscale_factor).to(self.device)
         if self.resume:
             self.load_model()
         else:
@@ -153,16 +139,15 @@ class SRCNNTrainer(SRCNNBasic):
         self.model.train()
         train_loss = 0
         for index, (img, target) in enumerate(self.train_loader):
-            img_BICUBIC = self.convert_BICUBIC(img)
-            img_BICUBIC, target = img_BICUBIC.to(self.device), target.to(self.device)
+            img, target = img.to(self.device), target.to(self.device)
             self.optimizer.zero_grad()
             # full RGB/YCrCb
             if not self.single_channel:
-                output = self.model(img_BICUBIC)
+                output = self.model(img)
                 loss = self.criterion(output, target)
             # y
             else:
-                output = self.model(img_BICUBIC[:, 0, :, :].unsqueeze(1))
+                output = self.model(img[:, 0, :, :].unsqueeze(1))
                 loss = self.criterion(output, target[:, 0, :, :].unsqueeze(1))
             train_loss += loss.item()
             loss.backward()
@@ -177,17 +162,16 @@ class SRCNNTrainer(SRCNNBasic):
         psnr = 0
         with torch.no_grad():
             for index, (img, target) in enumerate(self.test_loader):
-                img_BICUBIC = self.convert_BICUBIC(img)
-                img_BICUBIC, target = img_BICUBIC.to(self.device), target.to(self.device)
+                img, target = img.to(self.device), target.to(self.device)
                 # full RGB/YCrCb
                 if not self.single_channel:
-                    output = self.model(img_BICUBIC)
+                    output = self.model(img)
                     mse = self.criterion(output, target)
                 # y
                 else:
-                    output = self.model(img_BICUBIC[:, 0, :, :].unsqueeze(1))
-                    img_BICUBIC[:, 0, :, :].data = output
-                    mse = self.criterion(img_BICUBIC, target)
+                    output = self.model(img[:, 0, :, :].unsqueeze(1))
+                    img[:, 0, :, :].data = output
+                    mse = self.criterion(img, target)
                 psnr += self.psrn(mse)
                 progress_bar(index, len(self.test_loader), 'PSNR: %.4f' % (psnr / (index + 1)))
 
