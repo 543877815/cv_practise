@@ -155,7 +155,6 @@ class VDSRTrainer(VSDRBasic):
         for index, (img, target) in enumerate(self.train_loader):
             img_BICUBIC = self.convert_BICUBIC(img)
             img_BICUBIC, target = img_BICUBIC.to(self.device), target.to(self.device)
-            self.optimizer.zero_grad()
             # full RGB/YCrCb
             if not self.single_channel:
                 output = self.model(img_BICUBIC)
@@ -165,6 +164,7 @@ class VDSRTrainer(VSDRBasic):
                 output = self.model(img_BICUBIC[:, 0, :, :].unsqueeze(1))
                 loss = self.criterion(output, target[:, 0, :, :].unsqueeze(1))
             train_loss += loss.item()
+            self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
             progress_bar(index, len(self.train_loader), 'Loss: %.4f' % (train_loss / (index + 1)))

@@ -122,7 +122,7 @@ class FSRCNNTrainer(FSRCNNBasic):
             self.criterion.cuda()
 
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr)
-        self.scheduler = torch.optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[500, 750, 1000], gamma=0.5)
+        self.scheduler = torch.optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[50, 75, 100], gamma=0.5)
 
     def save_model(self, epoch, avg_psnr):
         _, _, checkpoint_dir = get_platform_path()
@@ -140,7 +140,6 @@ class FSRCNNTrainer(FSRCNNBasic):
         train_loss = 0
         for index, (img, target) in enumerate(self.train_loader):
             img, target = img.to(self.device), target.to(self.device)
-            self.optimizer.zero_grad()
             # full RGB/YCrCb
             if not self.single_channel:
                 output = self.model(img)
@@ -150,6 +149,7 @@ class FSRCNNTrainer(FSRCNNBasic):
                 output = self.model(img[:, 0, :, :].unsqueeze(1))
                 loss = self.criterion(output, target[:, 0, :, :].unsqueeze(1))
             train_loss += loss.item()
+            self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
             progress_bar(index, len(self.train_loader), 'Loss: %.4f' % (train_loss / (index + 1)))
@@ -162,17 +162,20 @@ class FSRCNNTrainer(FSRCNNBasic):
         psnr = 0
         with torch.no_grad():
             for index, (img, target) in enumerate(self.test_loader):
-                img, target = img.to(self.device), target.to(self.device)
+                if img.shape != target.shape:
+                    img_BICUBIC = self.convert_BICUBIC(img)
+                else:
+                    img_BICUBIC = img
+                img_BICUBIC, target = img_BICUBIC.to(self.device), target.to(self.device)
                 # full RGB/YCrCb
                 if not self.single_channel:
-                    output = self.model(img)
-                    mse = self.criterion(output, target)
+                    output = self.model(img_BICUBIC)
+                    loss = self.criterion(output, target)
                 # y
                 else:
-                    output = self.model(img[:, 0, :, :].unsqueeze(1))
-                    img[:, 0, :, :].data = output
-                    mse = self.criterion(img, target)
-                psnr += self.psrn(mse)
+                    output = self.model(img_BICUBIC[:, 0, :, :].unsqueeze(1))
+                    loss = self.criterion(output, target[:, 0, :, :].unsqueeze(1))
+                psnr += self.psrn(loss)
                 progress_bar(index, len(self.test_loader), 'PSNR: %.4f' % (psnr / (index + 1)))
 
         avg_psnr = psnr / len(self.test_loader)

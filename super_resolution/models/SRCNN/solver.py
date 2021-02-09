@@ -101,6 +101,27 @@ class SRCNNTester(SRCNNBasic):
                 print('==> {} is saved to {}'.format(output_name, self.output))
 
 
+def calc_psnr(img1, img2):
+    return 10. * torch.log10(1. / torch.mean((img1 - img2) ** 2))
+
+
+class AverageMeter(object):
+    def __init__(self):
+        self.reset()
+
+    def reset(self):
+        self.val = 0
+        self.avg = 0
+        self.sum = 0
+        self.count = 0
+
+    def update(self, val, n=1):
+        self.val = val
+        self.sum += val * n
+        self.count += n
+        self.avg = self.sum / self.count
+
+
 class SRCNNTrainer(SRCNNBasic):
     def __init__(self, config, train_loader=None, test_loader=None, device=None):
         super(SRCNNTrainer, self).__init__(config, device)
@@ -126,7 +147,8 @@ class SRCNNTrainer(SRCNNBasic):
         if self.resume:
             self.load_model()
         else:
-            self.model.weight_init(mean=0.0, std=0.01)
+            # not good with high std
+            self.model.weight_init(mean=0.0, std=0.001)
         self.criterion = torch.nn.MSELoss()
         torch.manual_seed(self.seed)
 
@@ -135,7 +157,12 @@ class SRCNNTrainer(SRCNNBasic):
             cudnn.benchmark = True
             self.criterion.cuda()
 
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr)
+        self.optimizer = torch.optim.Adam([
+            {'params': self.model.conv1.parameters()},
+            {'params': self.model.conv2.parameters()},
+            {'params': self.model.conv3.parameters(), 'lr': self.lr * 0.1}
+        ], lr=self.lr)
+
         self.scheduler = torch.optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[500, 750, 1000], gamma=0.5)
 
     def save_model(self, epoch, avg_psnr):
@@ -152,10 +179,15 @@ class SRCNNTrainer(SRCNNBasic):
     def train(self):
         self.model.train()
         train_loss = 0
+
         for index, (img, target) in enumerate(self.train_loader):
-            img_BICUBIC = self.convert_BICUBIC(img)
+
+            if img.shape != target.shape:
+                img_BICUBIC = self.convert_BICUBIC(img)
+            else:
+                img_BICUBIC = img
             img_BICUBIC, target = img_BICUBIC.to(self.device), target.to(self.device)
-            self.optimizer.zero_grad()
+
             # full RGB/YCrCb
             if not self.single_channel:
                 output = self.model(img_BICUBIC)
@@ -164,7 +196,9 @@ class SRCNNTrainer(SRCNNBasic):
             else:
                 output = self.model(img_BICUBIC[:, 0, :, :].unsqueeze(1))
                 loss = self.criterion(output, target[:, 0, :, :].unsqueeze(1))
+
             train_loss += loss.item()
+            self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
             progress_bar(index, len(self.train_loader), 'Loss: %.4f' % (train_loss / (index + 1)))
@@ -177,18 +211,20 @@ class SRCNNTrainer(SRCNNBasic):
         psnr = 0
         with torch.no_grad():
             for index, (img, target) in enumerate(self.test_loader):
-                img_BICUBIC = self.convert_BICUBIC(img)
+                if img.shape != target.shape:
+                    img_BICUBIC = self.convert_BICUBIC(img)
+                else:
+                    img_BICUBIC = img
                 img_BICUBIC, target = img_BICUBIC.to(self.device), target.to(self.device)
                 # full RGB/YCrCb
                 if not self.single_channel:
-                    output = self.model(img_BICUBIC)
-                    mse = self.criterion(output, target)
+                    output = self.model(img_BICUBIC).clamp(0.0, 1.0)
+                    loss = self.criterion(output, target)
                 # y
                 else:
-                    output = self.model(img_BICUBIC[:, 0, :, :].unsqueeze(1))
-                    img_BICUBIC[:, 0, :, :].data = output
-                    mse = self.criterion(img_BICUBIC, target)
-                psnr += self.psrn(mse)
+                    output = self.model(img_BICUBIC[:, 0, :, :].unsqueeze(1)).clamp(0.0, 1.0)
+                    loss = self.criterion(output, target[:, 0, :, :].unsqueeze(1))
+                psnr += self.psrn(loss)
                 progress_bar(index, len(self.test_loader), 'PSNR: %.4f' % (psnr / (index + 1)))
 
         avg_psnr = psnr / len(self.test_loader)

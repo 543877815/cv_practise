@@ -10,7 +10,7 @@ from torchvision.transforms import transforms
 
 from super_resolution.models.FSRCNN.solver import FSRCNNTester
 from utils import *
-from dataset.dataset import BSD300, DatasetFromFolder, DataSuperResolutionFromFolder
+from dataset.dataset import BSD300, DatasetFromOneFolder, DataSuperResolutionFromFolder
 from super_resolution.models.SRCNN.solver import SRCNNTester
 import numpy as np
 

@@ -1,4 +1,7 @@
 import tarfile
+
+import h5py
+
 from utils import *
 from six.moves import urllib
 import torch.utils.data as data
@@ -7,9 +10,9 @@ import numpy as np
 from torchvision.transforms import transforms, ToTensor
 
 
-class DatasetFromFolder(data.Dataset):
+class DatasetFromOneFolder(data.Dataset):
     def __init__(self, image_dir, config=None, transform=None, target_transform=None):
-        super(DatasetFromFolder, self).__init__()
+        super(DatasetFromOneFolder, self).__init__()
         self.image_filenames = [os.path.join(image_dir, x) for x in os.listdir(image_dir) if is_image_file(x)]
         self.config = config
 
@@ -38,7 +41,39 @@ class DatasetFromFolder(data.Dataset):
         return img
 
 
-class DataSuperResolutionFromFolder(DatasetFromFolder):
+class DatasetFromTwoFolder(data.Dataset):
+    def __init__(self, LR_dir, HR_dir, config=None, transform=None, target_transform=None):
+        super(DatasetFromTwoFolder, self).__init__()
+        self.LR_image_filenames = [os.path.join(LR_dir, x) for x in os.listdir(LR_dir) if is_image_file(x)]
+        self.HR_image_filenames = [os.path.join(HR_dir, x) for x in os.listdir(HR_dir) if is_image_file(x)]
+        self.config = config
+
+        self.transform = transform
+        self.target_transform = target_transform
+
+    def __getitem__(self, item):
+        img = self.load_img(self.LR_image_filenames[item])
+        target = self.load_img(self.HR_image_filenames[item])
+        if self.transform:
+            img = self.transform(img)
+        if self.target_transform:
+            target = self.target_transform(target)
+        return img, target
+
+    def __len__(self):
+        return len(self.LR_image_filenames)
+
+    def load_img(self, filepath):
+        if self.config.color == 'YCbCr':
+            img = Image.open(filepath).convert('YCbCr')
+        elif self.config.color == 'RGB':
+            img = Image.open(filepath).convert('RGB')
+        else:
+            raise Exception("the color space does not exist")
+        return img
+
+
+class DataSuperResolutionFromFolder(DatasetFromOneFolder):
     def __init__(self, image_dir, config, transform=None):
         super(DataSuperResolutionFromFolder, self).__init__(image_dir, config)
         self.image_filenames = [os.path.join(image_dir, x) for x in os.listdir(image_dir) if is_image_file(x)]
@@ -51,6 +86,34 @@ class DataSuperResolutionFromFolder(DatasetFromFolder):
         if self.transform:
             img = self.transform(img)
         return img, os.path.basename(image_filename)
+
+
+class TrainDataset(data.Dataset):
+    def __init__(self, h5_file):
+        super(TrainDataset, self).__init__()
+        self.h5_file = h5_file
+
+    def __getitem__(self, idx):
+        with h5py.File(self.h5_file, 'r') as f:
+            return np.expand_dims(f['lr'][idx] / 255., 0), np.expand_dims(f['hr'][idx] / 255., 0)
+
+    def __len__(self):
+        with h5py.File(self.h5_file, 'r') as f:
+            return len(f['lr'])
+
+
+class EvalDataset(data.Dataset):
+    def __init__(self, h5_file):
+        super(EvalDataset, self).__init__()
+        self.h5_file = h5_file
+
+    def __getitem__(self, idx):
+        with h5py.File(self.h5_file, 'r') as f:
+            return np.expand_dims(f['lr'][str(idx)][:, :] / 255., 0), np.expand_dims(f['hr'][str(idx)][:, :] / 255., 0)
+
+    def __len__(self):
+        with h5py.File(self.h5_file, 'r') as f:
+            return len(f['lr'])
 
 
 def BSD300():
