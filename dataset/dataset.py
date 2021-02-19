@@ -38,7 +38,11 @@ class DatasetFromOneFolder(data.Dataset):
             img = Image.open(filepath).convert('RGB')
         else:
             raise Exception("the color space does not exist")
-        return img
+        y, Cb, Cr = img.split()
+        if self.config.single_channel:
+            return y
+        else:
+            return img
 
 
 class DatasetFromTwoFolder(data.Dataset):
@@ -64,18 +68,43 @@ class DatasetFromTwoFolder(data.Dataset):
         return len(self.LR_image_filenames)
 
     def load_img(self, filepath):
-        if self.config.color == 'YCbCr':
-            img = Image.open(filepath).convert('YCbCr')
-        elif self.config.color == 'RGB':
-            img = Image.open(filepath).convert('RGB')
+        img = Image.open(filepath)
+        if len(img.split()) == 1:
+            return img
+        else:
+            img.convert('RGB')
+
+        if self.config.color == 'RGB':
+            return img
+        elif self.config.color == 'YCbCr':
+            img_ycrcb = self.rgb2ycbcr(np.array(img, dtype=np.uint8))
+            if self.config.single_channel:
+                return img_ycrcb[:, :, 0]
+            else:
+                return img_ycrcb
         else:
             raise Exception("the color space does not exist")
-        return img
 
+    def rgb2ycbcr(self, rgb_img):
+        mat = np.array(
+            [[65.481, 128.553, 24.966],
+             [-37.797, -74.203, 112.0],
+             [112.0, -93.786, -18.214]])
+        scaleFactor = 1 / 255
+        mat = mat * scaleFactor
+        ycbcr_img = np.zeros(rgb_img.shape, dtype=float)
+        offset = np.array([16, 128, 128])
+        for p in range(rgb_img.shape[2]):
+            ycbcr_img[:, :, p] = mat[p, 0] * rgb_img[:, :, 0] + \
+                                 mat[p, 1] * rgb_img[:, :, 1] + \
+                                 mat[p, 2] * rgb_img[:, :, 2] + \
+                                 offset[p]
+        ycbcr_img = np.round(ycbcr_img)
+        return np.uint8(ycbcr_img)
 
-class DataSuperResolutionFromFolder(DatasetFromOneFolder):
+class DataSuperResolutionFromFolder(data.Dataset):
     def __init__(self, image_dir, config, transform=None):
-        super(DataSuperResolutionFromFolder, self).__init__(image_dir, config)
+        super(DataSuperResolutionFromFolder, self).__init__()
         self.image_filenames = [os.path.join(image_dir, x) for x in os.listdir(image_dir) if is_image_file(x)]
         self.config = config
         self.transform = transform
@@ -86,6 +115,41 @@ class DataSuperResolutionFromFolder(DatasetFromOneFolder):
         if self.transform:
             img = self.transform(img)
         return img, os.path.basename(image_filename)
+
+    def load_img(self, filepath):
+        img = Image.open(filepath)
+        if len(img.split()) == 1:
+            return img
+        else:
+            img.convert('RGB')
+
+        if self.config.color == 'RGB':
+            return img
+        elif self.config.color == 'YCbCr':
+            img_ycrcb = self.rgb2ycbcr(np.array(img, dtype=np.uint8))
+            if self.config.single_channel:
+                return img_ycrcb[:, :, 0]
+            else:
+                return img_ycrcb
+        else:
+            raise Exception("the color space does not exist")
+
+    def rgb2ycbcr(self, rgb_img):
+        mat = np.array(
+            [[65.481, 128.553, 24.966],
+             [-37.797, -74.203, 112.0],
+             [112.0, -93.786, -18.214]])
+        scaleFactor = 1 / 255
+        mat = mat * scaleFactor
+        ycbcr_img = np.zeros(rgb_img.shape, dtype=float)
+        offset = np.array([16, 128, 128])
+        for p in range(rgb_img.shape[2]):
+            ycbcr_img[:, :, p] = mat[p, 0] * rgb_img[:, :, 0] + \
+                                 mat[p, 1] * rgb_img[:, :, 1] + \
+                                 mat[p, 2] * rgb_img[:, :, 2] + \
+                                 offset[p]
+        ycbcr_img = np.round(ycbcr_img)
+        return np.uint8(ycbcr_img)
 
 
 class TrainDataset(data.Dataset):

@@ -1,14 +1,20 @@
+# reference:
 # https://github.com/icpm/super-resolution
+# https://github.com/twtygqyy/pytorch-vdsr
 from math import log10
 
 import torch
 import torch.backends.cudnn as cudnn
 import os
+
+from torch.autograd import Variable
+
 from .model import VDSR
 from utils import progress_bar, get_platform_path
 from torchvision.transforms import transforms
 from PIL import Image
 from torchvision import utils as vutils
+import torch.nn as nn
 
 
 class VSDRBasic(object):
@@ -52,9 +58,22 @@ class VSDRBasic(object):
             img_BICUBIC[i] = transform(img[i])
         return img_BICUBIC
 
+    def convert_same(self, img, target):
+        target_new = torch.empty((img.shape))
+
+        for i in range(len(img)):
+            x, y = img[i].shape[1:]
+            transform = transforms.Compose([
+                transforms.ToPILImage(),
+                transforms.Resize((x, y), interpolation=Image.BICUBIC),
+                transforms.ToTensor()
+            ])
+            target_new[i] = transform(target[i])
+        return target_new
+
     @staticmethod
     def psrn(mse):
-        return 10 * log10(1 / mse.item())
+        return 10 * log10(1 / mse)
 
 
 class VDSRTester(VSDRBasic):
@@ -66,11 +85,11 @@ class VDSRTester(VSDRBasic):
         # resolve configuration
         self.output = data_dir + config.output
         self.test_loader = test_loader
-        self.criterion = torch.nn.MSELoss()
+        self.criterion = torch.nn.MSELoss(reduction='sum')
 
     def build_model(self):
         num_channels = 1 if self.single_channel else 3
-        self.model = VDSR(num_channels=num_channels, base_channels=64, num_residuals=20).to(self.device)
+        self.model = VDSR(num_channels=num_channels, base_channels=64, num_residuals=18).to(self.device)
         self.load_model()
         if self.CUDA:
             cudnn.benchmark = True
@@ -102,7 +121,7 @@ class VDSRTester(VSDRBasic):
 
 
 class VDSRTrainer(VSDRBasic):
-    def __init__(self, config, train_loader=None, test_loader=None, device=None):
+    def __init__(self, config, train_loader=None, test_loader=None, device=None, clip=0.4):
         super(VDSRTrainer, self).__init__(config, device)
 
         # model configuration
@@ -120,14 +139,18 @@ class VDSRTrainer(VSDRBasic):
         self.train_loader = train_loader
         self.test_loader = test_loader
 
+        self.clip = clip
+
     def build_model(self):
         num_channels = 1 if self.single_channel else 3
-        self.model = VDSR(num_channels=num_channels, base_channels=64, num_residuals=20).to(self.device)
+        self.model = VDSR(num_channels=num_channels, base_channels=64, num_residuals=18).to(self.device)
+
         if self.resume:
             self.load_model()
-        else:
-            self.model.weight_init()
-        self.criterion = torch.nn.MSELoss()
+        # else:
+        #     self.model.weight_init()
+
+        self.criterion = torch.nn.MSELoss(reduction='sum')
         torch.manual_seed(self.seed)
 
         if self.CUDA:
@@ -135,8 +158,8 @@ class VDSRTrainer(VSDRBasic):
             cudnn.benchmark = True
             self.criterion.cuda()
 
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr)
-        self.scheduler = torch.optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[500, 750, 1000], gamma=0.5)
+        self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.lr, momentum=0.9, weight_decay=1e-4)
+        self.scheduler = torch.optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[10, 20, 30], gamma=0.1)
 
     def save_model(self, epoch, avg_psnr):
         _, _, checkpoint_dir = get_platform_path()
@@ -152,21 +175,24 @@ class VDSRTrainer(VSDRBasic):
     def train(self):
         self.model.train()
         train_loss = 0
+
         for index, (img, target) in enumerate(self.train_loader):
-            img_BICUBIC = self.convert_BICUBIC(img)
-            img_BICUBIC, target = img_BICUBIC.to(self.device), target.to(self.device)
-            # full RGB/YCrCb
-            if not self.single_channel:
-                output = self.model(img_BICUBIC)
-                loss = self.criterion(output, target)
-            # y
+            if img.shape != target.shape:
+                img_BICUBIC = self.convert_BICUBIC(img)
             else:
-                output = self.model(img_BICUBIC[:, 0, :, :].unsqueeze(1))
-                loss = self.criterion(output, target[:, 0, :, :].unsqueeze(1))
-            train_loss += loss.item()
+                img_BICUBIC = img
+
+            img_BICUBIC, target = img_BICUBIC.to(self.device), target.to(self.device)
+
+            output = self.model(img_BICUBIC)
+            loss = self.criterion(output, target)
+
             self.optimizer.zero_grad()
             loss.backward()
+            nn.utils.clip_grad_norm_(self.model.parameters(), self.clip)
             self.optimizer.step()
+
+            train_loss += loss.item()
             progress_bar(index, len(self.train_loader), 'Loss: %.4f' % (train_loss / (index + 1)))
 
         avg_train_loss = train_loss / len(self.train_loader)
@@ -177,18 +203,17 @@ class VDSRTrainer(VSDRBasic):
         psnr = 0
         with torch.no_grad():
             for index, (img, target) in enumerate(self.test_loader):
-                img_BICUBIC = self.convert_BICUBIC(img)
-                img_BICUBIC, target = img_BICUBIC.to(self.device), target.to(self.device)
-                # full RGB/YCrCb
-                if not self.single_channel:
-                    output = self.model(img_BICUBIC)
-                    mse = self.criterion(output, target)
-                # y
+                if img.shape != target.shape:
+                    img_BICUBIC = self.convert_BICUBIC(img)
+                    target = self.convert_same(img_BICUBIC, target)
                 else:
-                    output = self.model(img_BICUBIC[:, 0, :, :].unsqueeze(1))
-                    img_BICUBIC[:, 0, :, :].data = output
-                    mse = self.criterion(img_BICUBIC, target)
-                psnr += self.psrn(mse)
+                    img_BICUBIC = img
+                img_BICUBIC, target = img_BICUBIC.to(self.device), target.to(self.device)
+
+                output = self.model(img_BICUBIC).clamp(0.0, 1.0)
+                loss = self.criterion(output, target)
+
+                psnr += self.psrn(loss.item() / target.shape[2] / target.shape[3])
                 progress_bar(index, len(self.test_loader), 'PSNR: %.4f' % (psnr / (index + 1)))
 
         avg_psnr = psnr / len(self.test_loader)

@@ -1,45 +1,40 @@
-# https://github.com/icpm/super-resolution
-import torch
-import torch.nn as nn
+import math
+from torch import nn
 
 
-class FSRCNN(torch.nn.Module):
-    def __init__(self, num_channels, upscale_factor, d=56, s=12, m=4):
+class FSRCNN(nn.Module):
+    def __init__(self, upscale_factor, num_channels=1, d=56, s=12, m=4):
         super(FSRCNN, self).__init__()
-        self.upscale_factor = upscale_factor
         self.first_part = nn.Sequential(
-            nn.Conv2d(in_channels=num_channels, out_channels=d, kernel_size=5, stride=1, padding=2),
-            nn.PReLU())
-
-        self.layers = []
-        self.layers.append(nn.Sequential(nn.Conv2d(in_channels=d, out_channels=s, kernel_size=1, stride=1, padding=0),
-                                         nn.PReLU()))
+            nn.Conv2d(num_channels, d, kernel_size=5, padding=5 // 2),
+            nn.PReLU(d)
+        )
+        self.mid_part = [nn.Conv2d(d, s, kernel_size=1), nn.PReLU(s)]
         for _ in range(m):
-            self.layers.append(nn.Conv2d(in_channels=s, out_channels=s, kernel_size=3, stride=1, padding=1))
-        self.layers.append(nn.PReLU())
-        self.layers.append(nn.Sequential(nn.Conv2d(in_channels=s, out_channels=d, kernel_size=1, stride=1, padding=0),
-                                         nn.PReLU()))
+            self.mid_part.extend([nn.Conv2d(s, s, kernel_size=3, padding=3 // 2), nn.PReLU(s)])
+        self.mid_part.extend([nn.Conv2d(s, d, kernel_size=1), nn.PReLU(d)])
+        self.mid_part = nn.Sequential(*self.mid_part)
+        self.last_part = nn.ConvTranspose2d(d, num_channels, kernel_size=9, stride=upscale_factor, padding=9 // 2,
+                                            output_padding=upscale_factor - 1)
 
-        self.mid_part = torch.nn.Sequential(*self.layers)
+        self._initialize_weights()
 
-        # Deconvolution
-        # https://github.com/yjn870/FSRCNN-pytorch/blob/master/models.py
-        self.last_part = nn.ConvTranspose2d(in_channels=d, out_channels=num_channels, kernel_size=9, padding=9 // 2,
-                                            stride=upscale_factor, output_padding=upscale_factor - 1)
+    def _initialize_weights(self):
+        for m in self.first_part:
+            if isinstance(m, nn.Conv2d):
+                nn.init.normal_(m.weight.data, mean=0.0,
+                                std=math.sqrt(2 / (m.out_channels * m.weight.data[0][0].numel())))
+                nn.init.zeros_(m.bias.data)
+        for m in self.mid_part:
+            if isinstance(m, nn.Conv2d):
+                nn.init.normal_(m.weight.data, mean=0.0,
+                                std=math.sqrt(2 / (m.out_channels * m.weight.data[0][0].numel())))
+                nn.init.zeros_(m.bias.data)
+        nn.init.normal_(self.last_part.weight.data, mean=0.0, std=0.001)
+        nn.init.zeros_(self.last_part.bias.data)
 
     def forward(self, x):
-        out = self.first_part(x)
-        out = self.mid_part(out)
-        out = self.last_part(out)
-        return out
-
-    def weight_init(self, mean=0.0, std=0.02):
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d):
-                m.weight.data.normal_(mean, std)
-                if m.bias is not None:
-                    m.bias.data.zero_()
-            if isinstance(m, nn.ConvTranspose2d):
-                m.weight.data.normal_(0.0, 0.0001)
-                if m.bias is not None:
-                    m.bias.data.zero_()
+        x = self.first_part(x)
+        x = self.mid_part(x)
+        x = self.last_part(x)
+        return x

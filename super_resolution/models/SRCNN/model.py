@@ -11,11 +11,24 @@ class SRCNN(torch.nn.Module):
         self.conv3 = nn.Conv2d(filter // 2, num_channels, kernel_size=5, padding=5 // 2)
         self.relu = nn.ReLU(inplace=True)
 
+        self.weight_init(mean=0.0, std=0.001)
+
     def forward(self, x):
         x = self.relu(self.conv1(x))
         x = self.relu(self.conv2(x))
         x = self.conv3(x)
         return x
+
+    # not good
+    def weight_init(self, mean=0.0, std=0.001):
+        for m in self._modules:
+            self.normal_init(self._modules[m], mean, std)
+
+    @staticmethod
+    def normal_init(m, mean, std):
+        if isinstance(m, nn.ConvTranspose2d) or isinstance(m, nn.Conv2d):
+            m.weight.data.normal_(mean, std)
+            m.bias.data.zero_()
 
     # def __init__(self, num_channels, filter, params=None):
     #     super(SRCNN, self).__init__()
@@ -51,14 +64,3 @@ class SRCNN(torch.nn.Module):
     # def forward(self, x):
     #     out = self.layers(x)
     #     return out
-
-    # not good
-    def weight_init(self, mean, std):
-        for m in self._modules:
-            self.normal_init(self._modules[m], mean, std)
-
-    @staticmethod
-    def normal_init(m, mean, std):
-        if isinstance(m, nn.ConvTranspose2d) or isinstance(m, nn.Conv2d):
-            m.weight.data.normal_(mean, std)
-            m.bias.data.zero_()

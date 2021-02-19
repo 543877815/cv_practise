@@ -4,16 +4,16 @@ from math import log10
 import torch
 import torch.backends.cudnn as cudnn
 import os
-from .model import FSRCNN
+from .model import ESPCN
 from utils import progress_bar, get_platform_path
 from torchvision.transforms import transforms
 from PIL import Image
 from torchvision import utils as vutils
 
 
-class FSRCNNBasic(object):
+class ESPCNBasic(object):
     def __init__(self, config, device=None):
-        super(FSRCNNBasic, self).__init__()
+        super(ESPCNBasic, self).__init__()
         self.CUDA = torch.cuda.is_available()
         if device is None:
             self.device = torch.device("cuda" if (config.use_cuda and self.CUDA) else "cpu")
@@ -26,7 +26,7 @@ class FSRCNNBasic(object):
 
         # checkpoint configuration
         self.resume = config.resume
-        self.checkpoint_name = "FSRCNN-{}x.pth".format(self.upscale_factor)
+        self.checkpoint_name = "ESPCN-{}x.pth".format(self.upscale_factor)
         self.best_quality = 0
         self.start_epoch = 1
 
@@ -57,9 +57,9 @@ class FSRCNNBasic(object):
         return 10 * log10(1 / mse)
 
 
-class FSRCNNTester(FSRCNNBasic):
+class ESPCNTester(ESPCNBasic):
     def __init__(self, config, test_loader=None, device=None):
-        super(FSRCNNTester, self).__init__(config)
+        super(ESPCNTester, self).__init__(config)
         assert (config.resume is True)
 
         data_dir, _, _ = get_platform_path()
@@ -70,7 +70,7 @@ class FSRCNNTester(FSRCNNBasic):
 
     def build_model(self):
         num_channels = 1 if self.single_channel else 3
-        self.model = FSRCNN(num_channels=num_channels, upscale_factor=self.upscale_factor).to(self.device)
+        self.model = ESPCN(num_channels=num_channels, upscale_factor=self.upscale_factor).to(self.device)
         self.load_model()
         if self.CUDA:
             cudnn.benchmark = True
@@ -100,9 +100,9 @@ class FSRCNNTester(FSRCNNBasic):
                 print('==> {} is saved to {}'.format(output_name, self.output))
 
 
-class FSRCNNTrainer(FSRCNNBasic):
+class ESPCNTrainer(ESPCNBasic):
     def __init__(self, config, train_loader=None, test_loader=None, device=None):
-        super(FSRCNNTrainer, self).__init__(config, device)
+        super(ESPCNTrainer, self).__init__(config, device)
 
         # model configuration
         self.lr = config.lr
@@ -121,7 +121,7 @@ class FSRCNNTrainer(FSRCNNBasic):
 
     def build_model(self):
         num_channels = 1 if self.single_channel else 3
-        self.model = FSRCNN(num_channels=num_channels, upscale_factor=self.upscale_factor).to(self.device)
+        self.model = ESPCN(num_channels=num_channels, upscale_factor=self.upscale_factor).to(self.device)
         if self.resume:
             self.load_model()
         self.criterion = torch.nn.MSELoss()
@@ -134,11 +134,10 @@ class FSRCNNTrainer(FSRCNNBasic):
 
         self.optimizer = torch.optim.Adam([
             {'params': self.model.first_part.parameters()},
-            {'params': self.model.mid_part.parameters()},
             {'params': self.model.last_part.parameters(), 'lr': self.lr * 0.1}
         ], lr=self.lr)
 
-        self.scheduler = torch.optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[50, 75, 100], gamma=0.5)
+        self.scheduler = torch.optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[50, 75, 100], gamma=0.1)
 
     def save_model(self, epoch, avg_psnr):
         _, _, checkpoint_dir = get_platform_path()

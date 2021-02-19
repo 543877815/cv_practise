@@ -9,6 +9,7 @@ from utils import progress_bar, get_platform_path
 from torchvision.transforms import transforms
 from PIL import Image
 from torchvision import utils as vutils
+import matplotlib.pyplot as plt
 
 
 class SRCNNBasic(object):
@@ -52,9 +53,22 @@ class SRCNNBasic(object):
             img_BICUBIC[i] = transform(img[i])
         return img_BICUBIC
 
+    def convert_same(self, img, target):
+        target_new = torch.empty((img.shape))
+
+        for i in range(len(img)):
+            x, y = img[i].shape[1:]
+            transform = transforms.Compose([
+                transforms.ToPILImage(),
+                transforms.Resize((x, y), interpolation=Image.BICUBIC),
+                transforms.ToTensor()
+            ])
+            target_new[i] = transform(target[i])
+        return target_new
+
     @staticmethod
     def psrn(mse):
-        return 10 * log10(1 / mse.item())
+        return 10 * log10(1 / mse)
 
 
 class SRCNNTester(SRCNNBasic):
@@ -81,17 +95,15 @@ class SRCNNTester(SRCNNBasic):
         self.model.eval()
         with torch.no_grad():
             for index, (img, filename) in enumerate(self.test_loader):
-                img_BICUBIC = self.convert_BICUBIC(img)
+                img_BICUBIC = self.convert_BICUBIC(img[0])
                 img_BICUBIC = img_BICUBIC.to(self.device)
                 # full RGB/YCrCb
                 if not self.single_channel:
                     output = self.model(img_BICUBIC).clamp(0.0, 1.0).cpu()
                 # y
                 else:
-                    output = self.model(img_BICUBIC[:, 0, :, :].unsqueeze(1))
-                    img_BICUBIC[:, 0, :, :].data = output
-                    output = img_BICUBIC.clamp(0.0, 1.0).cpu()
-                assert (len(output.shape) == 4 and output.shape[0] == 1)
+                    output = self.model(img_BICUBIC).cpu()
+                    output = [output, img[1], img[2]]
                 output_name = filename[0].replace('LR', 'HR')
                 if self.color_space == 'RGB':
                     vutils.save_image(output, self.output + output_name)
@@ -99,27 +111,6 @@ class SRCNNTester(SRCNNBasic):
                     output = transforms.ToPILImage(mode='YCbCr')(output[0]).convert("RGB")
                     output.save(self.output + output_name)
                 print('==> {} is saved to {}'.format(output_name, self.output))
-
-
-def calc_psnr(img1, img2):
-    return 10. * torch.log10(1. / torch.mean((img1 - img2) ** 2))
-
-
-class AverageMeter(object):
-    def __init__(self):
-        self.reset()
-
-    def reset(self):
-        self.val = 0
-        self.avg = 0
-        self.sum = 0
-        self.count = 0
-
-    def update(self, val, n=1):
-        self.val = val
-        self.sum += val * n
-        self.count += n
-        self.avg = self.sum / self.count
 
 
 class SRCNNTrainer(SRCNNBasic):
@@ -147,8 +138,8 @@ class SRCNNTrainer(SRCNNBasic):
         if self.resume:
             self.load_model()
         else:
-            # not good with high std
-            self.model.weight_init(mean=0.0, std=0.001)
+            self.model.weight_init()
+
         self.criterion = torch.nn.MSELoss()
         torch.manual_seed(self.seed)
 
@@ -179,9 +170,7 @@ class SRCNNTrainer(SRCNNBasic):
     def train(self):
         self.model.train()
         train_loss = 0
-
         for index, (img, target) in enumerate(self.train_loader):
-
             if img.shape != target.shape:
                 img_BICUBIC = self.convert_BICUBIC(img)
             else:
@@ -213,6 +202,7 @@ class SRCNNTrainer(SRCNNBasic):
             for index, (img, target) in enumerate(self.test_loader):
                 if img.shape != target.shape:
                     img_BICUBIC = self.convert_BICUBIC(img)
+                    target = self.convert_same(img_BICUBIC, target)
                 else:
                     img_BICUBIC = img
                 img_BICUBIC, target = img_BICUBIC.to(self.device), target.to(self.device)
@@ -224,7 +214,7 @@ class SRCNNTrainer(SRCNNBasic):
                 else:
                     output = self.model(img_BICUBIC[:, 0, :, :].unsqueeze(1)).clamp(0.0, 1.0)
                     loss = self.criterion(output, target[:, 0, :, :].unsqueeze(1))
-                psnr += self.psrn(loss)
+                psnr += self.psrn(loss.item())
                 progress_bar(index, len(self.test_loader), 'PSNR: %.4f' % (psnr / (index + 1)))
 
         avg_psnr = psnr / len(self.test_loader)

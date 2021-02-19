@@ -1,47 +1,43 @@
 import torch
 import torch.nn as nn
+from math import sqrt
+
+
+class Conv_ReLU_Block(nn.Module):
+    def __init__(self):
+        super(Conv_ReLU_Block, self).__init__()
+        self.conv = nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, stride=1, padding=1, bias=False)
+        self.relu = nn.ReLU(inplace=True)
+
+    def forward(self, x):
+        return self.relu(self.conv(x))
 
 
 class VDSR(nn.Module):
-    def __init__(self, num_channels, num_residuals, base_channels=64):
+    def __init__(self, num_channels, num_residuals=18, base_channels=64):
         super(VDSR, self).__init__()
+        self.input = nn.Conv2d(in_channels=num_channels, out_channels=base_channels, kernel_size=3, stride=1, padding=1,
+                               bias=False)
+        self.residual_layer = self.make_layer(Conv_ReLU_Block, num_residuals)
+        self.output = nn.Conv2d(in_channels=base_channels, out_channels=1, kernel_size=3, stride=1, padding=1,
+                                bias=False)
+        self.relu = nn.ReLU(inplace=True)
 
-        self.input_conv = nn.Sequential(
-            nn.Conv2d(num_channels, base_channels, kernel_size=3, stride=1, padding=1, bias=False),
-            nn.ReLU(inplace=True))
-        self.residual_layers = nn.Sequential(*[
-            nn.Sequential(nn.Conv2d(base_channels, base_channels, kernel_size=3, stride=1, padding=1, bias=False),
-                          nn.ReLU(inplace=True)) for _ in range(num_residuals)])
-        self.output_conv = nn.Conv2d(base_channels, num_channels, kernel_size=3, stride=1, padding=1, bias=False)
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
+                m.weight.data.normal_(0, sqrt(2. / n))
 
-    def weight_init(self):
-        for m in self._modules:
-            weights_init_kaiming(m)
+    def make_layer(self, block, num_of_layer):
+        layers = []
+        for _ in range(num_of_layer):
+            layers.append(block())
+        return nn.Sequential(*layers)
 
     def forward(self, x):
         residual = x
-        x = self.input_conv(x)
-        x = self.residual_layers(x)
-        x = self.output_conv(x)
-        x = torch.add(x, residual)
-        return x
-
-
-def weights_init_kaiming(m):
-    class_name = m.__class__.__name__
-    if class_name.find('Linear') != -1:
-        nn.init.kaiming_normal_(m.weight)
-        if m.bias is not None:
-            m.bias.data.zero_()
-    elif class_name.find('Conv2d') != -1:
-        nn.init.kaiming_normal_(m.weight)
-        if m.bias is not None:
-            m.bias.data.zero_()
-    elif class_name.find('ConvTranspose2d') != -1:
-        nn.init.kaiming_normal_(m.weight)
-        if m.bias is not None:
-            m.bias.data.zero_()
-    elif class_name.find('Norm') != -1:
-        m.weight.data.normal_(1.0, 0.02)
-        if m.bias is not None:
-            m.bias.data.zero_()
+        out = self.relu(self.input(x))
+        out = self.residual_layer(out)
+        out = self.output(out)
+        out = torch.add(out, residual)
+        return out

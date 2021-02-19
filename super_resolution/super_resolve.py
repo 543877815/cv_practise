@@ -5,14 +5,14 @@ import torch
 import torch.backends.cudnn as cudnn
 from PIL import Image
 from torch.utils.data import DataLoader
-from torchvision.transforms import ToTensor
 from torchvision.transforms import transforms
 
-from super_resolution.models.FSRCNN.solver import FSRCNNTester
 from utils import *
 from dataset.dataset import BSD300, DatasetFromOneFolder, DataSuperResolutionFromFolder
 from super_resolution.models.SRCNN.solver import SRCNNTester
-import numpy as np
+from super_resolution.models.FSRCNN.solver import FSRCNNTester
+from super_resolution.models.VDSR.solver import VDSRTester
+from super_resolution.models.ESPCN.solver import ESPCNTester
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Pytorch super resolution')
@@ -29,7 +29,7 @@ if __name__ == '__main__':
     # model configuration
     parser.add_argument('--resume', '-r', type=bool, default=True, help='resume from checkpoint')
     parser.add_argument('--model', '-m', type=str, default='srcnn',
-                        help='model checkpoint file used for super ressolution')
+                        help='model checkpoint file used for super resolution')
     parser.add_argument('--upscaleFactor', '-uf', type=int, default=3, help='super resolution upscale factor')
     args = parser.parse_args()
 
@@ -49,6 +49,7 @@ if __name__ == '__main__':
     img_transform = transforms.Compose([
         transforms.ToTensor(),
     ])
+
     test_set = DataSuperResolutionFromFolder(image_dir=input_dir, config=args, transform=img_transform)
     test_loader = DataLoader(dataset=test_set, batch_size=1, shuffle=False)
 
@@ -59,6 +60,10 @@ if __name__ == '__main__':
         Tester = SRCNNTester(config=args, test_loader=test_loader)
     elif args.model.lower() == 'fsrcnn':
         Tester = FSRCNNTester(config=args, test_loader=test_loader)
+    elif args.model.lower() == 'vdsr':
+        model = VDSRTester(config=args, test_loader=test_loader)
+    elif args.model.lower() == 'espcn':
+        model = ESPCNTester(config=args, test_loader=test_loader)
     else:
         raise Exception("the model does not exist")
 
