@@ -2,23 +2,25 @@ import torch
 import torch.nn as nn
 
 
-class DRCN(torch.nn.Module):
-    def __init__(self, num_channels, filter, num_recursions, device):
-        super(DRCN, self).__init__()
+class Net(torch.nn.Module):
+    def __init__(self, num_channels, base_channel, num_recursions, device):
+        super(Net, self).__init__()
         self.num_recursions = num_recursions
         self.embedding_layer = nn.Sequential(
-            nn.Conv2d(num_channels, filter, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(num_channels, base_channel, kernel_size=3, stride=1, padding=1),
             nn.ReLU(inplace=True),
-            nn.Conv2d(filter, filter, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(base_channel, base_channel, kernel_size=3, stride=1, padding=1),
             nn.ReLU(inplace=True)
         )
 
-        self.conv_block = nn.Sequential(nn.Conv2d(filter, filter, kernel_size=3, stride=1, padding=1),
-                                        nn.ReLU(inplace=True))
+        self.inference_layer = nn.Sequential(
+            nn.Conv2d(base_channel, base_channel, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(inplace=True)
+        )
 
         self.reconstruction_layer = nn.Sequential(
-            nn.Conv2d(filter, filter, kernel_size=3, stride=1, padding=1),
-            nn.Conv2d(filter, num_channels, kernel_size=3, stride=1, padding=1)
+            nn.Conv2d(base_channel, base_channel, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(base_channel, num_channels, kernel_size=3, stride=1, padding=1)
         )
 
         self.w_init = torch.ones(self.num_recursions) / self.num_recursions
@@ -29,12 +31,12 @@ class DRCN(torch.nn.Module):
 
         h = [h0]
         for d in range(self.num_recursions):
-            h.append(self.conv_block(h[d]))
+            h.append(self.inference_layer(h[d]))
 
         y_d_ = list()
         out_sum = 0
         for d in range(self.num_recursions):
-            y_d_.append(self.reconstruction_layer(h[d+1]))
+            y_d_.append(self.reconstruction_layer(h[d + 1]))
             out_sum += torch.mul(y_d_[d], self.w[d])
         out_sum = torch.mul(out_sum, 1.0 / (torch.sum(self.w)))
 

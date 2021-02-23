@@ -37,7 +37,7 @@ class VSDRBasic(object):
         self.start_epoch = 1
 
     def load_model(self):
-        _, _, checkpoint_dir = get_platform_path()
+        _, _, checkpoint_dir, _ = get_platform_path()
         print('==> Resuming from checkpoint...')
         assert os.path.isdir(checkpoint_dir), 'Error: no checkpoint directory found!'
         checkpoint = torch.load('{}/{}'.format(checkpoint_dir, self.checkpoint_name))
@@ -81,7 +81,7 @@ class VDSRTester(VSDRBasic):
         super(VDSRTester, self).__init__(config)
         assert (config.resume is True)
 
-        data_dir, _, _ = get_platform_path()
+        data_dir, _, _, _ = get_platform_path()
         # resolve configuration
         self.output = data_dir + config.output
         self.test_loader = test_loader
@@ -162,7 +162,7 @@ class VDSRTrainer(VSDRBasic):
         self.scheduler = torch.optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[10, 20, 30], gamma=0.1)
 
     def save_model(self, epoch, avg_psnr):
-        _, _, checkpoint_dir = get_platform_path()
+        _, _, checkpoint_dir, _ = get_platform_path()
         model_out_path = '{}/{}'.format(checkpoint_dir, self.checkpoint_name)
         state = {
             'net': self.model.state_dict(),

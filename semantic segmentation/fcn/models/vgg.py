@@ -19,7 +19,7 @@ def VGG16(pretrained=False):
 
 
 def _get_vgg16_pretrained_model():
-    _, model_dir, _ = get_platform_path()
+    _, model_dir, _, _ = get_platform_path()
     return fcn.data.cached_download(
         url='http://drive.google.com/uc?id=0B9P1L--7Wd2vLTJZMXpIRkVVRFk',
         path=model_dir,

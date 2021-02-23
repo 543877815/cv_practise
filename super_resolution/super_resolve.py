@@ -38,7 +38,7 @@ if __name__ == '__main__':
     device = torch.device("cuda" if (args.use_cuda and torch.cuda.is_available()) else "cpu")
 
     # data/models/checkpoint in different platform
-    data_dir, model_dir, checkpoint_dir = get_platform_path()
+    data_dir, model_dir, checkpoint_dir, log_dir = get_platform_path()
     input_dir = data_dir + args.input
     output_dir = data_dir + args.output
 
@@ -61,9 +61,9 @@ if __name__ == '__main__':
     elif args.model.lower() == 'fsrcnn':
         Tester = FSRCNNTester(config=args, test_loader=test_loader)
     elif args.model.lower() == 'vdsr':
-        model = VDSRTester(config=args, test_loader=test_loader)
+        Tester = VDSRTester(config=args, test_loader=test_loader)
     elif args.model.lower() == 'espcn':
-        model = ESPCNTester(config=args, test_loader=test_loader)
+        Tester = ESPCNTester(config=args, test_loader=test_loader)
     else:
         raise Exception("the model does not exist")
 

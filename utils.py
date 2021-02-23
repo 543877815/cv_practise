@@ -1,7 +1,7 @@
 import hashlib
 import os
 import platform
-
+import numpy as np
 import gdown
 import sys
 import time
@@ -13,26 +13,28 @@ BEGIN_T = LAST_T
 
 def get_platform_path():
     system = platform.system()
-    data_dir, model_dir, checkpoint_dir, dirs = '', '', '', []
+    data_dir, model_dir, checkpoint_dir, log_dir, dirs = '', '', '', '', []
     if system == 'Windows':
         drive, common_dir = 'F', 'cache'
         data_dir = '{}:/{}/data'.format(drive, common_dir)
         model_dir = '{}:/{}/model'.format(drive, common_dir)
         checkpoint_dir = '{}:/{}/checkpoint'.format(drive, common_dir)
-        dirs = [data_dir, model_dir, checkpoint_dir]
+        log_dir = '{}:/{}/log'.format(drive, common_dir)
+        dirs = [data_dir, model_dir, checkpoint_dir, log_dir]
 
     elif system == 'Linux':
         common_dir = '/data'
         data_dir = '{}/data'.format(common_dir)
         model_dir = '{}/model'.format(common_dir)
         checkpoint_dir = '{}/checkpoint'.format(common_dir)
-        dirs = [data_dir, model_dir, checkpoint_dir]
+        log_dir = '{}/log'.format(common_dir)
+        dirs = [data_dir, model_dir, checkpoint_dir, log_dir]
 
     for dir in dirs:
         if not os.path.exists(dir):
             os.mkdir(dir)
 
-    return data_dir, model_dir, checkpoint_dir
+    return data_dir, model_dir, checkpoint_dir, log_dir
 
 
 def _md5sum(filename, blocksize=65536):
@@ -134,5 +136,65 @@ def format_time(seconds):
         output = '0ms'
     return output
 
+
 def is_image_file(filename):
-    return any(filename.endswith(extension) for extension in ['.png', '.jpeg', '.jpg', '.bmp'])
+    return any(filename.endswith(extension) for extension in ['.png', '.jpeg', '.jpg', '.bmp', '.JPEG'])
+
+
+OrigT = np.array(
+    [[65.481, 128.553, 24.966],
+     [-37.797, -74.203, 112.0],
+     [112.0, -93.786, -18.214]])
+
+OrigOffset = np.array([16, 128, 128])
+
+# OrigT_inv = [0.00456621  0.          0.00625893;...
+#           0.00456621 -0.00153632 -0.00318811;...
+#           0.00456621  0.00791071  0.]
+OrigT_inv = np.linalg.inv(OrigT)
+
+
+def rgb2ycbcr(rgb_img):
+    if rgb_img.shape[2] == 1:
+        return rgb_img
+    if rgb_img.dtype == np.float64:
+        T = 1 / 255
+        offset = 1 / 255
+    elif rgb_img.dtype == np.uint8:
+        T = 1 / 255
+        offset = 1
+    elif rgb_img.dtype == np.uint16:
+        T = 257 / 65535
+        offset = 257
+    else:
+        raise Exception('the dtype of image does not support')
+    T = T * OrigT
+    offset = offset * OrigOffset
+    ycbcr_img = np.zeros(rgb_img.shape, dtype=float)
+    for p in range(rgb_img.shape[2]):
+        ycbcr_img[:, :, p] = T[p, 0] * rgb_img[:, :, 0] + T[p, 1] * rgb_img[:, :, 1] + T[p, 2] * rgb_img[:, :, 2] + \
+                             offset[p]
+    ycbcr_img = ycbcr_img.round()
+    return np.array(ycbcr_img, dtype=rgb_img.dtype)
+
+
+def ycbcr2rgb(ycbcr_img):
+    if ycbcr_img.dtype == np.float64:
+        T = 255
+        offset = 1
+    elif ycbcr_img.dtype == np.uint8:
+        T = 255
+        offset = 255
+    elif ycbcr_img.dtype == np.uint16:
+        T = 65535 / 257
+        offset = 65535
+    else:
+        raise Exception('the dtype of image does not support')
+    T = T * OrigT_inv
+    offset = offset * np.matmul(OrigT_inv, OrigOffset)
+    rgb_img = np.zeros(ycbcr_img.shape, dtype=float)
+    for p in range(rgb_img.shape[2]):
+        rgb_img[:, :, p] = ycbcr_img[:, :, 0] * T[p, 0] + ycbcr_img[:, :, 1] * T[p, 1] + ycbcr_img[:, :, 2] * T[
+            p, 2] - offset[p]
+    rgb_img = np.round(rgb_img)
+    return np.array(rgb_img, dtype=ycbcr_img.dtype)

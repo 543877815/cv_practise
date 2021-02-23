@@ -31,7 +31,7 @@ class FSRCNNBasic(object):
         self.start_epoch = 1
 
     def load_model(self):
-        _, _, checkpoint_dir = get_platform_path()
+        _, _, checkpoint_dir, _ = get_platform_path()
         print('==> Resuming from checkpoint...')
         assert os.path.isdir(checkpoint_dir), 'Error: no checkpoint directory found!'
         checkpoint = torch.load('{}/{}'.format(checkpoint_dir, self.checkpoint_name))
@@ -62,7 +62,7 @@ class FSRCNNTester(FSRCNNBasic):
         super(FSRCNNTester, self).__init__(config)
         assert (config.resume is True)
 
-        data_dir, _, _ = get_platform_path()
+        data_dir, _, _, _ = get_platform_path()
         # resolve configuration
         self.output = data_dir + config.output
         self.test_loader = test_loader
@@ -138,10 +138,10 @@ class FSRCNNTrainer(FSRCNNBasic):
             {'params': self.model.last_part.parameters(), 'lr': self.lr * 0.1}
         ], lr=self.lr)
 
-        self.scheduler = torch.optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[50, 75, 100], gamma=0.5)
+        self.scheduler = torch.optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[100, 200, 300], gamma=0.5)
 
     def save_model(self, epoch, avg_psnr):
-        _, _, checkpoint_dir = get_platform_path()
+        _, _, checkpoint_dir, _ = get_platform_path()
         model_out_path = '{}/{}'.format(checkpoint_dir, self.checkpoint_name)
         state = {
             'net': self.model.state_dict(),
@@ -159,11 +159,11 @@ class FSRCNNTrainer(FSRCNNBasic):
 
             output = self.model(img)
             loss = self.criterion(output, target)
-            train_loss += loss.item()
-            self.optimizer.zero_grad()
 
+            self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
+            train_loss += loss.item()
             progress_bar(index, len(self.train_loader), 'Loss: %.4f' % (train_loss / (index + 1)))
 
         avg_train_loss = train_loss / len(self.train_loader)
@@ -176,10 +176,10 @@ class FSRCNNTrainer(FSRCNNBasic):
             for index, (img, target) in enumerate(self.test_loader):
                 img, target = img.to(self.device), target.to(self.device)
 
-                output = self.model(img)
+                output = self.model(img).clamp(0.0, 1.0)
                 if output.shape != target.shape:
                     target = self.convert_same(output, target).to(self.device)
-                loss = self.criterion(output, target).clamp(0.0, 1.0)
+                loss = self.criterion(output, target)
                 psnr += self.psrn(loss.item())
                 progress_bar(index, len(self.test_loader), 'PSNR: %.4f' % (psnr / (index + 1)))
 

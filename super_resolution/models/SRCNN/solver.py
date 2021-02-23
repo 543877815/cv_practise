@@ -32,7 +32,7 @@ class SRCNNBasic(object):
         self.start_epoch = 1
 
     def load_model(self):
-        _, _, checkpoint_dir = get_platform_path()
+        _, _, checkpoint_dir, _ = get_platform_path()
         print('==> Resuming from checkpoint...')
         assert os.path.isdir(checkpoint_dir), 'Error: no checkpoint directory found!'
         checkpoint = torch.load('{}/{}'.format(checkpoint_dir, self.checkpoint_name))
@@ -76,7 +76,7 @@ class SRCNNTester(SRCNNBasic):
         super(SRCNNTester, self).__init__(config)
         assert (config.resume is True)
 
-        data_dir, _, _ = get_platform_path()
+        data_dir, _, _, _ = get_platform_path()
         # resolve configuration
         self.output = data_dir + config.output
         self.test_loader = test_loader
@@ -154,10 +154,10 @@ class SRCNNTrainer(SRCNNBasic):
             {'params': self.model.conv3.parameters(), 'lr': self.lr * 0.1}
         ], lr=self.lr)
 
-        self.scheduler = torch.optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[500, 750, 1000], gamma=0.5)
+        self.scheduler = torch.optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[250, 500, 750], gamma=0.5)
 
     def save_model(self, epoch, avg_psnr):
-        _, _, checkpoint_dir = get_platform_path()
+        _, _, checkpoint_dir, _ = get_platform_path()
         model_out_path = '{}/{}'.format(checkpoint_dir, self.checkpoint_name)
         state = {
             'net': self.model.state_dict(),
@@ -175,16 +175,11 @@ class SRCNNTrainer(SRCNNBasic):
                 img_BICUBIC = self.convert_BICUBIC(img)
             else:
                 img_BICUBIC = img
+
             img_BICUBIC, target = img_BICUBIC.to(self.device), target.to(self.device)
 
-            # full RGB/YCrCb
-            if not self.single_channel:
-                output = self.model(img_BICUBIC)
-                loss = self.criterion(output, target)
-            # y
-            else:
-                output = self.model(img_BICUBIC[:, 0, :, :].unsqueeze(1))
-                loss = self.criterion(output, target[:, 0, :, :].unsqueeze(1))
+            output = self.model(img_BICUBIC)
+            loss = self.criterion(output, target)
 
             train_loss += loss.item()
             self.optimizer.zero_grad()
@@ -206,14 +201,10 @@ class SRCNNTrainer(SRCNNBasic):
                 else:
                     img_BICUBIC = img
                 img_BICUBIC, target = img_BICUBIC.to(self.device), target.to(self.device)
-                # full RGB/YCrCb
-                if not self.single_channel:
-                    output = self.model(img_BICUBIC).clamp(0.0, 1.0)
-                    loss = self.criterion(output, target)
-                # y
-                else:
-                    output = self.model(img_BICUBIC[:, 0, :, :].unsqueeze(1)).clamp(0.0, 1.0)
-                    loss = self.criterion(output, target[:, 0, :, :].unsqueeze(1))
+
+                output = self.model(img_BICUBIC).clamp(0.0, 1.0)
+                loss = self.criterion(output, target)
+
                 psnr += self.psrn(loss.item())
                 progress_bar(index, len(self.test_loader), 'PSNR: %.4f' % (psnr / (index + 1)))
 

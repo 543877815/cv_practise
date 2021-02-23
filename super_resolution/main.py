@@ -9,6 +9,7 @@ from super_resolution.models.SRCNN.solver import SRCNNTrainer
 from super_resolution.models.FSRCNN.solver import FSRCNNTrainer
 from super_resolution.models.VDSR.solver import VDSRTrainer
 from super_resolution.models.ESPCN.solver import ESPCNTrainer
+from super_resolution.models.DRRN.solver import DRRNTrainer
 
 if __name__ == '__main__':
 
@@ -17,7 +18,7 @@ if __name__ == '__main__':
     parser.add_argument('--use_cuda', type=bool, default=True, help='whether to use cuda')
 
     # hyper-parameters
-    parser.add_argument('--training_batch_size', type=int, default=128, help='training batch size')
+    parser.add_argument('--training_batch_size', type=int, default=16, help='training batch size')
     parser.add_argument('--test_batch_size', type=int, default=1, help='testing batch size')
     parser.add_argument('--epochs', type=int, default=20, help='number of epochs to train for')
     parser.add_argument('--lr', type=float, default=0.01, help='learning rate')
@@ -33,6 +34,8 @@ if __name__ == '__main__':
     parser.add_argument('--single_channel', action='store_true', help='whether to use specific channel')
     parser.add_argument('--num_workers', type=int, default=4, help='number of worker for data loader')
 
+    parser.add_argument('--use_h5py', action='store_true', help='whether to use .h5 file as data input')
+    parser.add_argument('--h5py_input', type=str, default='h5py_input', help='.h5 file data for training')
     parser.add_argument('--train_LR_dir', type=str, default='train_LR_dir', help='low resolution data for training')
     parser.add_argument('--train_HR_dir', type=str, default='train_HR_dir', help='high resolution data for training')
     parser.add_argument('--test_LR_dir', type=str, default='val_LR_dir', help='low resolution data for validation')
@@ -48,7 +51,7 @@ if __name__ == '__main__':
     device = torch.device("cuda" if (args.use_cuda and torch.cuda.is_available()) else "cpu")
 
     # data/models/checkpoint in different platform
-    data_dir, model_dir, checkpoint_dir = get_platform_path()
+    data_dir, model_dir, checkpoint_dir, log_dir = get_platform_path()
     data_train_dir, data_test_dir, data_val_dir = data_dir, data_dir, data_dir
     train_LR_dir, train_HR_dir, test_LR_dir, test_HR_dir = args.train_LR_dir, args.train_HR_dir, args.test_LR_dir, \
                                                            args.test_HR_dir
@@ -125,26 +128,21 @@ if __name__ == '__main__':
             transforms.ToTensor()
         ])
 
-        train_set = DatasetFromTwoFolder(LR_dir=train_LR_dir, HR_dir=train_HR_dir, transform=img_transform,
-                                         target_transform=target_transform,
-                                         config=args)
+        if args.use_h5py:
+            train_set = TrainDataset(args.h5py_input, transform=img_transform, target_transform=target_transform)
+        else:
+
+            train_set = DatasetFromTwoFolder(LR_dir=train_LR_dir, HR_dir=train_HR_dir, transform=img_transform,
+                                             target_transform=target_transform,
+                                             config=args)
 
         test_set = DatasetFromTwoFolder(LR_dir=test_LR_dir, HR_dir=test_HR_dir, transform=img_transform,
                                         target_transform=target_transform,
                                         config=args)
 
-    train_loader = DataLoader(dataset=train_set, batch_size=args.training_batch_size, shuffle=True,
+    train_loader = DataLoader(dataset=train_set, batch_size=args.training_batch_size, shuffle=True, pin_memory=True,
                               num_workers=args.num_workers)
     test_loader = DataLoader(dataset=test_set, batch_size=args.test_batch_size, shuffle=False)
-
-    # train_dataset = TrainDataset("D:\jupyter\FSRCNN-pytorch\91-image_x3.h5")
-    # train_dataloader = DataLoader(dataset=train_dataset,
-    #                               batch_size=16,
-    #                               shuffle=True,
-    #                               num_workers=4,
-    #                               pin_memory=True)
-    # eval_dataset = EvalDataset("D:\jupyter\FSRCNN-pytorch\Set5_x3.h5")
-    # eval_dataloader = DataLoader(dataset=eval_dataset, batch_size=1)
 
     if args.model.lower() == 'srcnn':
         model = SRCNNTrainer(args, train_loader, test_loader)
@@ -154,6 +152,8 @@ if __name__ == '__main__':
         model = VDSRTrainer(args, train_loader, test_loader)
     elif args.model.lower() == 'espcn':
         model = ESPCNTrainer(args, train_loader, test_loader)
+    elif args.model.lower() == 'drrn':
+        model = DRRNTrainer(args, train_loader, test_loader)
     else:
         raise Exception("the model does not exist")
 

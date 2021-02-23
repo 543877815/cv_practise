@@ -33,7 +33,7 @@ if __name__ == "__main__":
     device = torch.device("cuda" if (args.use_cuda and torch.cuda.is_available()) else "cpu")
 
     # data/models/checkpoint in different platform
-    data_dir, model_dir, checkpoint_dir = get_platform_path()
+    data_dir, model_dir, checkpoint_dir, log_dir = get_platform_path()
 
     # data augmentation
     print("==> Preparing data..")

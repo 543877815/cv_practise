@@ -1,19 +1,25 @@
+# reference:
 # https://github.com/icpm/super-resolution
+# https://github.com/twtygqyy/pytorch-vdsr
 from math import log10
 
 import torch
 import torch.backends.cudnn as cudnn
 import os
-from .model import ESPCN
+
+from torch.autograd import Variable
+
+from .model import DRRN
 from utils import progress_bar, get_platform_path
 from torchvision.transforms import transforms
 from PIL import Image
 from torchvision import utils as vutils
+import torch.nn as nn
 
 
-class ESPCNBasic(object):
+class DRRNBasic(object):
     def __init__(self, config, device=None):
-        super(ESPCNBasic, self).__init__()
+        super(DRRNBasic, self).__init__()
         self.CUDA = torch.cuda.is_available()
         if device is None:
             self.device = torch.device("cuda" if (config.use_cuda and self.CUDA) else "cpu")
@@ -26,7 +32,7 @@ class ESPCNBasic(object):
 
         # checkpoint configuration
         self.resume = config.resume
-        self.checkpoint_name = "ESPCN-{}x.pth".format(self.upscale_factor)
+        self.checkpoint_name = "VDSR-{}x.pth".format(self.upscale_factor)
         self.best_quality = 0
         self.start_epoch = 1
 
@@ -38,6 +44,19 @@ class ESPCNBasic(object):
         self.model.load_state_dict(checkpoint['net'])
         self.best_quality = checkpoint['psnr']
         self.start_epoch = checkpoint['epoch']
+
+    def convert_BICUBIC(self, img):
+        img_BICUBIC = torch.empty(img.shape[0], img.shape[1], img.shape[2] * self.upscale_factor,
+                                  img.shape[3] * self.upscale_factor)
+        for i in range(len(img)):
+            x, y = img[i].shape[1:]
+            transform = transforms.Compose([
+                transforms.ToPILImage(),
+                transforms.Resize((x * self.upscale_factor, y * self.upscale_factor), interpolation=Image.BICUBIC),
+                transforms.ToTensor(),
+            ])
+            img_BICUBIC[i] = transform(img[i])
+        return img_BICUBIC
 
     def convert_same(self, img, target):
         target_new = torch.empty((img.shape))
@@ -57,20 +76,20 @@ class ESPCNBasic(object):
         return 10 * log10(1 / mse)
 
 
-class ESPCNTester(ESPCNBasic):
+class DRRNTester(DRRNBasic):
     def __init__(self, config, test_loader=None, device=None):
-        super(ESPCNTester, self).__init__(config)
+        super(DRRNTester, self).__init__(config)
         assert (config.resume is True)
 
         data_dir, _, _, _ = get_platform_path()
         # resolve configuration
         self.output = data_dir + config.output
         self.test_loader = test_loader
-        self.criterion = torch.nn.MSELoss()
+        self.criterion = torch.nn.MSELoss(reduction='sum')
 
     def build_model(self):
         num_channels = 1 if self.single_channel else 3
-        self.model = ESPCN(num_channels=num_channels, upscale_factor=self.upscale_factor).to(self.device)
+        self.model = DRRN(num_channels=num_channels).to(self.device)
         self.load_model()
         if self.CUDA:
             cudnn.benchmark = True
@@ -81,15 +100,16 @@ class ESPCNTester(ESPCNBasic):
         self.model.eval()
         with torch.no_grad():
             for index, (img, filename) in enumerate(self.test_loader):
-                img = img.to(self.device)
+                img_BICUBIC = self.convert_BICUBIC(img)
+                img_BICUBIC = img_BICUBIC.to(self.device)
                 # full RGB/YCrCb
                 if not self.single_channel:
-                    output = self.model(img).clamp(0.0, 1.0).cpu()
+                    output = self.model(img_BICUBIC).clamp(0.0, 1.0).cpu()
                 # y
                 else:
-                    output = self.model(img[:, 0, :, :].unsqueeze(1))
-                    img[:, 0, :, :].data = output
-                    output = img.clamp(0.0, 1.0).cpu()
+                    output = self.model(img_BICUBIC[:, 0, :, :].unsqueeze(1))
+                    img_BICUBIC[:, 0, :, :].data = output
+                    output = img_BICUBIC.clamp(0.0, 1.0).cpu()
                 assert (len(output.shape) == 4 and output.shape[0] == 1)
                 output_name = filename[0].replace('LR', 'HR')
                 if self.color_space == 'RGB':
@@ -100,9 +120,9 @@ class ESPCNTester(ESPCNBasic):
                 print('==> {} is saved to {}'.format(output_name, self.output))
 
 
-class ESPCNTrainer(ESPCNBasic):
-    def __init__(self, config, train_loader=None, test_loader=None, device=None):
-        super(ESPCNTrainer, self).__init__(config, device)
+class DRRNTrainer(DRRNBasic):
+    def __init__(self, config, train_loader=None, test_loader=None, device=None, clip=0.01):
+        super(DRRNTrainer, self).__init__(config, device)
 
         # model configuration
         self.lr = config.lr
@@ -119,12 +139,18 @@ class ESPCNTrainer(ESPCNBasic):
         self.train_loader = train_loader
         self.test_loader = test_loader
 
+        self.clip = clip
+
     def build_model(self):
         num_channels = 1 if self.single_channel else 3
-        self.model = ESPCN(num_channels=num_channels, upscale_factor=self.upscale_factor).to(self.device)
+        self.model = DRRN(num_channels=num_channels).to(self.device)
+
         if self.resume:
             self.load_model()
-        self.criterion = torch.nn.MSELoss()
+        # else:
+        #     self.model.weight_init()
+
+        self.criterion = torch.nn.MSELoss(reduction='sum')
         torch.manual_seed(self.seed)
 
         if self.CUDA:
@@ -132,12 +158,9 @@ class ESPCNTrainer(ESPCNBasic):
             cudnn.benchmark = True
             self.criterion.cuda()
 
-        self.optimizer = torch.optim.Adam([
-            {'params': self.model.first_part.parameters()},
-            {'params': self.model.last_part.parameters(), 'lr': self.lr * 0.1}
-        ], lr=self.lr)
-
-        self.scheduler = torch.optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[250, 500, 750], gamma=0.1)
+        self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.lr, momentum=0.9, weight_decay=1e-4)
+        self.scheduler = torch.optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[10, 20, 30, 40, 50, 60],
+                                                              gamma=0.1)
 
     def save_model(self, epoch, avg_psnr):
         _, _, checkpoint_dir, _ = get_platform_path()
@@ -153,17 +176,27 @@ class ESPCNTrainer(ESPCNBasic):
     def train(self):
         self.model.train()
         train_loss = 0
+
         for index, (img, target) in enumerate(self.train_loader):
-            img, target = img.to(self.device), target.to(self.device)
+            if img.shape != target.shape:
+                img_BICUBIC = self.convert_BICUBIC(img)
+            else:
+                img_BICUBIC = img
 
-            output = self.model(img)
+            img_BICUBIC, target = img_BICUBIC.to(self.device), target.to(self.device)
+
+            output = self.model(img_BICUBIC)
             loss = self.criterion(output, target)
-            train_loss += loss.item()
-            self.optimizer.zero_grad()
 
+            self.optimizer.zero_grad()
             loss.backward()
+            current_lr = self.optimizer.param_groups[0]['lr']
+            nn.utils.clip_grad_norm_(self.model.parameters(), self.clip / current_lr)
             self.optimizer.step()
-            progress_bar(index, len(self.train_loader), 'Loss: %.4f' % (train_loss / (index + 1)))
+
+            train_loss += loss.item()
+            progress_bar(index, len(self.train_loader),
+                         'Loss: %.4f, current learning rate: %f' % (train_loss / (index + 1), current_lr))
 
         avg_train_loss = train_loss / len(self.train_loader)
         print("    Average Loss: {:.4f}".format(avg_train_loss))
@@ -173,13 +206,17 @@ class ESPCNTrainer(ESPCNBasic):
         psnr = 0
         with torch.no_grad():
             for index, (img, target) in enumerate(self.test_loader):
-                img, target = img.to(self.device), target.to(self.device)
+                if img.shape != target.shape:
+                    img_BICUBIC = self.convert_BICUBIC(img)
+                    target = self.convert_same(img_BICUBIC, target)
+                else:
+                    img_BICUBIC = img
+                img_BICUBIC, target = img_BICUBIC.to(self.device), target.to(self.device)
 
-                output = self.model(img)
-                if output.shape != target.shape:
-                    target = self.convert_same(output, target).to(self.device)
-                loss = self.criterion(output, target).clamp(0.0, 1.0)
-                psnr += self.psrn(loss.item())
+                output = self.model(img_BICUBIC).clamp(0.0, 1.0)
+                loss = self.criterion(output, target)
+
+                psnr += self.psrn(loss.item() / target.shape[2] / target.shape[3])
                 progress_bar(index, len(self.test_loader), 'PSNR: %.4f' % (psnr / (index + 1)))
 
         avg_psnr = psnr / len(self.test_loader)

@@ -7,7 +7,6 @@ from six.moves import urllib
 import torch.utils.data as data
 from PIL import Image
 import numpy as np
-from torchvision.transforms import transforms, ToTensor
 
 
 class DatasetFromOneFolder(data.Dataset):
@@ -48,8 +47,14 @@ class DatasetFromOneFolder(data.Dataset):
 class DatasetFromTwoFolder(data.Dataset):
     def __init__(self, LR_dir, HR_dir, config=None, transform=None, target_transform=None):
         super(DatasetFromTwoFolder, self).__init__()
-        self.LR_image_filenames = [os.path.join(LR_dir, x) for x in os.listdir(LR_dir) if is_image_file(x)]
-        self.HR_image_filenames = [os.path.join(HR_dir, x) for x in os.listdir(HR_dir) if is_image_file(x)]
+
+        LR_filenames = os.listdir(LR_dir)
+        LR_filenames.sort(key=lambda x: x[:-4])
+        HR_filenames = os.listdir(HR_dir)
+        HR_filenames.sort(key=lambda x: x[:-4])
+
+        self.LR_image_filenames = [os.path.join(LR_dir, x) for x in LR_filenames if is_image_file(x)]
+        self.HR_image_filenames = [os.path.join(HR_dir, x) for x in HR_filenames if is_image_file(x)]
         self.config = config
 
         self.transform = transform
@@ -77,7 +82,7 @@ class DatasetFromTwoFolder(data.Dataset):
         if self.config.color == 'RGB':
             return img
         elif self.config.color == 'YCbCr':
-            img_ycrcb = self.rgb2ycbcr(np.array(img, dtype=np.uint8))
+            img_ycrcb = rgb2ycbcr(np.array(img, dtype=np.uint8))
             if self.config.single_channel:
                 return img_ycrcb[:, :, 0]
             else:
@@ -85,22 +90,6 @@ class DatasetFromTwoFolder(data.Dataset):
         else:
             raise Exception("the color space does not exist")
 
-    def rgb2ycbcr(self, rgb_img):
-        mat = np.array(
-            [[65.481, 128.553, 24.966],
-             [-37.797, -74.203, 112.0],
-             [112.0, -93.786, -18.214]])
-        scaleFactor = 1 / 255
-        mat = mat * scaleFactor
-        ycbcr_img = np.zeros(rgb_img.shape, dtype=float)
-        offset = np.array([16, 128, 128])
-        for p in range(rgb_img.shape[2]):
-            ycbcr_img[:, :, p] = mat[p, 0] * rgb_img[:, :, 0] + \
-                                 mat[p, 1] * rgb_img[:, :, 1] + \
-                                 mat[p, 2] * rgb_img[:, :, 2] + \
-                                 offset[p]
-        ycbcr_img = np.round(ycbcr_img)
-        return np.uint8(ycbcr_img)
 
 class DataSuperResolutionFromFolder(data.Dataset):
     def __init__(self, image_dir, config, transform=None):
@@ -126,7 +115,7 @@ class DataSuperResolutionFromFolder(data.Dataset):
         if self.config.color == 'RGB':
             return img
         elif self.config.color == 'YCbCr':
-            img_ycrcb = self.rgb2ycbcr(np.array(img, dtype=np.uint8))
+            img_ycrcb = rgb2ycbcr(np.array(img, dtype=np.uint8))
             if self.config.single_channel:
                 return img_ycrcb[:, :, 0]
             else:
@@ -134,32 +123,23 @@ class DataSuperResolutionFromFolder(data.Dataset):
         else:
             raise Exception("the color space does not exist")
 
-    def rgb2ycbcr(self, rgb_img):
-        mat = np.array(
-            [[65.481, 128.553, 24.966],
-             [-37.797, -74.203, 112.0],
-             [112.0, -93.786, -18.214]])
-        scaleFactor = 1 / 255
-        mat = mat * scaleFactor
-        ycbcr_img = np.zeros(rgb_img.shape, dtype=float)
-        offset = np.array([16, 128, 128])
-        for p in range(rgb_img.shape[2]):
-            ycbcr_img[:, :, p] = mat[p, 0] * rgb_img[:, :, 0] + \
-                                 mat[p, 1] * rgb_img[:, :, 1] + \
-                                 mat[p, 2] * rgb_img[:, :, 2] + \
-                                 offset[p]
-        ycbcr_img = np.round(ycbcr_img)
-        return np.uint8(ycbcr_img)
-
 
 class TrainDataset(data.Dataset):
-    def __init__(self, h5_file):
+    def __init__(self, h5_file, transform=None, target_transform=None):
         super(TrainDataset, self).__init__()
         self.h5_file = h5_file
+        self.transform = transform
+        self.target_transform = target_transform
 
     def __getitem__(self, idx):
         with h5py.File(self.h5_file, 'r') as f:
-            return np.expand_dims(f['lr'][idx] / 255., 0), np.expand_dims(f['hr'][idx] / 255., 0)
+            img = np.array(f['lr'][idx], dtype=np.uint8)
+            target = np.array(f['hr'][idx], dtype=np.uint8)
+            if self.transform:
+                img = self.transform(img)
+            if self.target_transform:
+                target = self.target_transform(target)
+            return img, target
 
     def __len__(self):
         with h5py.File(self.h5_file, 'r') as f:
@@ -182,7 +162,7 @@ class EvalDataset(data.Dataset):
 
 def BSD300():
     # data/models/checkpoint in different platform
-    data_dir, _, _ = get_platform_path()
+    data_dir, _, _, _ = get_platform_path()
     data_dir = os.path.join(data_dir, "BSDS300/images")
 
     if not os.path.exists(data_dir):
@@ -206,7 +186,7 @@ def BSD300():
 
 def BSDS500():
     # data/models/checkpoint in different platform
-    data_dir, _, _ = get_platform_path()
+    data_dir, _, _, _ = get_platform_path()
     data_dir = os.path.join(data_dir, "BSR_bsds500/BSR/BSDS500/data/images")
     if not os.path.exists(data_dir):
         url = "http://www.eecs.berkeley.edu/Research/Projects/CS/vision/grouping/BSR/BSR_bsds500.tgz"
@@ -227,7 +207,7 @@ def BSDS500():
 
 def images91():
     # data/models/checkpoint in different platform
-    data_dir, _, _ = get_platform_path()
+    data_dir, _, _, _ = get_platform_path()
     data_dir = os.path.join(data_dir, "91-image")
 
     if not os.path.exists(data_dir):
@@ -240,7 +220,7 @@ def images91():
 
 def Set5():
     # data/models/checkpoint in different platform
-    data_dir, _, _ = get_platform_path()
+    data_dir, _, _, _ = get_platform_path()
     data_dir = os.path.join(data_dir, "Set5")
 
     if not os.path.exists(data_dir):
@@ -253,7 +233,7 @@ def Set5():
 
 def Set14():
     # data/models/checkpoint in different platform
-    data_dir, _, _ = get_platform_path()
+    data_dir, _, _, _ = get_platform_path()
     data_dir = os.path.join(data_dir, "Set14")
 
     if not os.path.exists(data_dir):
@@ -266,7 +246,7 @@ def Set14():
 
 def B100():
     # data/models/checkpoint in different platform
-    data_dir, _, _ = get_platform_path()
+    data_dir, _, _, _ = get_platform_path()
     data_dir = os.path.join(data_dir, "B100")
 
     if not os.path.exists(data_dir):
@@ -279,7 +259,7 @@ def B100():
 
 def Urban100():
     # data/models/checkpoint in different platform
-    data_dir, _, _ = get_platform_path()
+    data_dir, _, _, _ = get_platform_path()
     data_dir = os.path.join(data_dir, "Urban100")
 
     if not os.path.exists(data_dir):
@@ -292,7 +272,7 @@ def Urban100():
 
 def Manga109():
     # data/models/checkpoint in different platform
-    data_dir, _, _ = get_platform_path()
+    data_dir, _, _, _ = get_platform_path()
     data_dir = os.path.join(data_dir, "Manga109")
 
     if not os.path.exists(data_dir):
