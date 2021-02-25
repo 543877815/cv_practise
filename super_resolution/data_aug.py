@@ -4,7 +4,7 @@ from PIL import Image
 from tqdm import tqdm
 import os
 import numpy as np
-from utils import *
+from utils import get_platform_path, is_image_file
 import h5py
 from utils import rgb2ycbcr
 
@@ -19,6 +19,7 @@ if __name__ == '__main__':
                         help='directory of low resoltuion output data for augmentation')
     parser.add_argument('--output', type=str, default='output', help='directory of h5py output data for augmentation')
     parser.add_argument('--use_h5py', action='store_true', help='whether to save as file h5py')
+    parser.add_argument('--number', type=int, default=1000, required=True, help='number of data to generate')
 
     # configuration
     parser.add_argument('--single_y', action='store_true', help='whether to extract y channel in YCrCb color space')
@@ -32,6 +33,7 @@ if __name__ == '__main__':
     parser.add_argument('--scales', dest='scales', nargs='+', default='1.0', help='scale for data augmentation')
     parser.add_argument('--rotations', dest='rotations', nargs='+', default='0', help='rotation for data augmentation')
     parser.add_argument('--flips', dest='flips', nargs='+', default='0', help='flip for data augmentation')
+
     args = parser.parse_args()
 
     args.uf = [int(x) for x in args.uf]
@@ -51,6 +53,8 @@ if __name__ == '__main__':
 
     image_filenames = [os.path.join(args.input, x) for x in os.listdir(args.input) if is_image_file(x)]
 
+    image_filenames = image_filenames[: args.number]
+
     hr_patches = []
     lr_patches = []
 
@@ -58,7 +62,10 @@ if __name__ == '__main__':
         id = 0
         OriImg = Image.open(file_path).convert('RGB')
         size = OriImg.size
+
         for uf in args.uf:
+
+            # 放大
             for scale in args.scales:
                 img = OriImg.copy()
                 scale_x, scale_y = int(size[0] * scale), int(size[1] * scale)
@@ -74,6 +81,7 @@ if __name__ == '__main__':
                 if args.use_bicubic:
                     img_LR = img_LR.resize((scale_x, scale_y), Image.BICUBIC)
 
+                # 翻转
                 for flip in args.flips:
                     if flip == 1:
                         img_LR = img_LR.transpose(Image.FLIP_LEFT_RIGHT)
@@ -86,6 +94,8 @@ if __name__ == '__main__':
                         img_LR = img_LR.transpose(Image.FLIP_TOP_BOTTOM)
                         img = img.transpose(Image.FLIP_LEFT_RIGHT)
                         img = img.transpose(Image.FLIP_TOP_BOTTOM)
+
+                    # 旋转
                     for angle in args.rotations:
 
                         img_LR = img_LR.rotate(angle, expand=True)

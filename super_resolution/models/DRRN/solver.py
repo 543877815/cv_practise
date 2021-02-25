@@ -32,7 +32,7 @@ class DRRNBasic(object):
 
         # checkpoint configuration
         self.resume = config.resume
-        self.checkpoint_name = "VDSR-{}x.pth".format(self.upscale_factor)
+        self.checkpoint_name = "DRRN-{}x.pth".format(self.upscale_factor)
         self.best_quality = 0
         self.start_epoch = 1
 

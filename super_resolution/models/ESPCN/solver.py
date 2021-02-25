@@ -5,7 +5,7 @@ import torch
 import torch.backends.cudnn as cudnn
 import os
 from .model import ESPCN
-from utils import progress_bar, get_platform_path
+from utils import progress_bar, get_platform_path, get_logger
 from torchvision.transforms import transforms
 from PIL import Image
 from torchvision import utils as vutils
@@ -23,12 +23,18 @@ class ESPCNBasic(object):
         self.color_space = config.color
         self.single_channel = config.single_channel
         self.upscale_factor = config.upscaleFactor
+        self.model_name = "ESPCN-{}x".format(self.upscale_factor)
 
         # checkpoint configuration
         self.resume = config.resume
-        self.checkpoint_name = "ESPCN-{}x.pth".format(self.upscale_factor)
+        self.checkpoint_name = "{}.pth".format(self.model_name)
         self.best_quality = 0
         self.start_epoch = 1
+
+        # logger configuration
+        _, _, _, log_dir = get_platform_path()
+        self.logger = get_logger("{}/{}.log".format(log_dir, self.model_name))
+        self.logger.info(config)
 
     def load_model(self):
         _, _, checkpoint_dir, _ = get_platform_path()
@@ -137,7 +143,9 @@ class ESPCNTrainer(ESPCNBasic):
             {'params': self.model.last_part.parameters(), 'lr': self.lr * 0.1}
         ], lr=self.lr)
 
-        self.scheduler = torch.optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[250, 500, 750], gamma=0.1)
+        self.scheduler = torch.optim.lr_scheduler.MultiStepLR(self.optimizer,
+                                                              milestones=[150, 300, 450, 600, 750, 900],
+                                                              gamma=0.5)
 
     def save_model(self, epoch, avg_psnr):
         _, _, checkpoint_dir, _ = get_platform_path()
@@ -167,6 +175,7 @@ class ESPCNTrainer(ESPCNBasic):
 
         avg_train_loss = train_loss / len(self.train_loader)
         print("    Average Loss: {:.4f}".format(avg_train_loss))
+        return avg_train_loss
 
     def test(self):
         self.model.eval()
@@ -190,9 +199,11 @@ class ESPCNTrainer(ESPCNBasic):
         self.build_model()
         for epoch in range(self.start_epoch, self.epochs + self.start_epoch):
             print('\n===> Epoch {} starts:'.format(epoch))
-            self.train()
+            avg_train_loss = self.train()
             avg_psnr = self.test()
             self.scheduler.step()
+            self.logger.info("Epoch [{}/{}]: loss={} PSNR={}".format(epoch, self.epochs + self.start_epoch,
+                                                                     avg_train_loss, avg_psnr))
 
             if avg_psnr > self.best_quality:
                 self.best_quality = avg_psnr

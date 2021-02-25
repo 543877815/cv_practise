@@ -2,7 +2,7 @@
 import argparse
 from torchvision.transforms import transforms
 from torch.utils.data import DataLoader
-from utils import *
+from utils import get_platform_path
 from dataset.dataset import *
 import torch
 from super_resolution.models.SRCNN.solver import SRCNNTrainer
@@ -60,7 +60,8 @@ if __name__ == '__main__':
     print("==> Preparing data..")
     dataset = args.dataset
     if dataset.lower() == 'customize':
-        pass
+        train_LR_dir = train_LR_dir
+        train_HR_dir = train_HR_dir
     else:
         if dataset.lower() == 'bsd300' or dataset.lower() == 'bsds300':
             data_dir = BSD300()
@@ -131,7 +132,6 @@ if __name__ == '__main__':
         if args.use_h5py:
             train_set = TrainDataset(args.h5py_input, transform=img_transform, target_transform=target_transform)
         else:
-
             train_set = DatasetFromTwoFolder(LR_dir=train_LR_dir, HR_dir=train_HR_dir, transform=img_transform,
                                              target_transform=target_transform,
                                              config=args)

@@ -7,7 +7,7 @@ from PIL import Image
 from torch.utils.data import DataLoader
 from torchvision.transforms import transforms
 
-from utils import *
+from utils import get_platform_path
 from dataset.dataset import BSD300, DatasetFromOneFolder, DataSuperResolutionFromFolder
 from super_resolution.models.SRCNN.solver import SRCNNTester
 from super_resolution.models.FSRCNN.solver import FSRCNNTester
