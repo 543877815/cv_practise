@@ -141,10 +141,10 @@ class FCN16s(nn.Module):
         for name, l1 in fcn32s.named_children():
             try:
                 l2 = getattr(self, name)
-                l2.weight  # skip ReLU / Dropout
+                l2.adjust_weight  # skip ReLU / Dropout
             except Exception:
                 continue
-            assert l1.weight.size() == l2.weight.size()
+            assert l1.adjust_weight.size() == l2.adjust_weight.size()
             assert l1.bias.size() == l2.bias.size()
-            l2.weight.data.copy_(l1.weight.data)
+            l2.adjust_weight.data.copy_(l1.adjust_weight.data)
             l2.bias.data.copy_(l1.bias.data)

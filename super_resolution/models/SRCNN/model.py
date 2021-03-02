@@ -1,6 +1,7 @@
 # https://github.com/icpm/super-resolution
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 
 class SRCNN(torch.nn.Module):
@@ -10,7 +11,6 @@ class SRCNN(torch.nn.Module):
         self.conv2 = nn.Conv2d(filter, filter // 2, kernel_size=5, padding=5 // 2)
         self.conv3 = nn.Conv2d(filter // 2, num_channels, kernel_size=5, padding=5 // 2)
         self.relu = nn.ReLU(inplace=True)
-
         self.weight_init(mean=0.0, std=0.001)
 
     def forward(self, x):

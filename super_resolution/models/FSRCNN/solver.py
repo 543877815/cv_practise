@@ -37,7 +37,7 @@ class FSRCNNBasic(object):
         checkpoint = torch.load('{}/{}'.format(checkpoint_dir, self.checkpoint_name))
         self.model.load_state_dict(checkpoint['net'])
         self.best_quality = checkpoint['psnr']
-        self.start_epoch = checkpoint['epoch']
+        self.start_epoch = checkpoint['epoch'] + 1
 
     def convert_same(self, img, target):
         target_new = torch.empty((img.shape))

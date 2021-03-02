@@ -10,7 +10,7 @@ import os
 from torch.autograd import Variable
 
 from .model import DRRN
-from utils import progress_bar, get_platform_path
+from utils import progress_bar, get_platform_path, get_logger
 from torchvision.transforms import transforms
 from PIL import Image
 from torchvision import utils as vutils
@@ -29,12 +29,18 @@ class DRRNBasic(object):
         self.color_space = config.color
         self.single_channel = config.single_channel
         self.upscale_factor = config.upscaleFactor
+        self.model_name = "DRRN-{}x".format(self.upscale_factor)
 
         # checkpoint configuration
         self.resume = config.resume
-        self.checkpoint_name = "DRRN-{}x.pth".format(self.upscale_factor)
+        self.checkpoint_name = "{}.pth".format(self.model_name)
         self.best_quality = 0
         self.start_epoch = 1
+
+        # logger configuration
+        _, _, _, log_dir = get_platform_path()
+        self.logger = get_logger("{}/{}.log".format(log_dir, self.model_name))
+        self.logger.info(config)
 
     def load_model(self):
         _, _, checkpoint_dir, _ = get_platform_path()
@@ -43,7 +49,7 @@ class DRRNBasic(object):
         checkpoint = torch.load('{}/{}'.format(checkpoint_dir, self.checkpoint_name))
         self.model.load_state_dict(checkpoint['net'])
         self.best_quality = checkpoint['psnr']
-        self.start_epoch = checkpoint['epoch']
+        self.start_epoch = checkpoint['epoch'] + 1
 
     def convert_BICUBIC(self, img):
         img_BICUBIC = torch.empty(img.shape[0], img.shape[1], img.shape[2] * self.upscale_factor,
@@ -171,7 +177,7 @@ class DRRNTrainer(DRRNBasic):
             'epoch': epoch
         }
         torch.save(state, model_out_path)
-        print("checkpoint saved to {}".format(model_out_path))
+        self.logger.info("checkpoint saved to {}".format(model_out_path))
 
     def train(self):
         self.model.train()
@@ -200,6 +206,7 @@ class DRRNTrainer(DRRNBasic):
 
         avg_train_loss = train_loss / len(self.train_loader)
         print("    Average Loss: {:.4f}".format(avg_train_loss))
+        return avg_train_loss
 
     def test(self):
         self.model.eval()
@@ -227,9 +234,11 @@ class DRRNTrainer(DRRNBasic):
         self.build_model()
         for epoch in range(self.start_epoch, self.epochs + self.start_epoch):
             print('\n===> Epoch {} starts:'.format(epoch))
-            self.train()
+            avg_train_loss = self.train()
             avg_psnr = self.test()
             self.scheduler.step()
+            self.logger.info("Epoch [{}/{}]: loss={} PSNR={}".format(epoch, self.epochs + self.start_epoch,
+                                                                     avg_train_loss, avg_psnr))
 
             if avg_psnr > self.best_quality:
                 self.best_quality = avg_psnr

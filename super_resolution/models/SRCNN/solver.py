@@ -44,7 +44,7 @@ class SRCNNBasic(object):
         checkpoint = torch.load('{}/{}'.format(checkpoint_dir, self.checkpoint_name))
         self.model.load_state_dict(checkpoint['net'])
         self.best_quality = checkpoint['psnr']
-        self.start_epoch = checkpoint['epoch']
+        self.start_epoch = checkpoint['epoch'] + 1
 
     def convert_BICUBIC(self, img):
         img_BICUBIC = torch.empty(img.shape[0], img.shape[1], img.shape[2] * self.upscale_factor,
@@ -171,7 +171,7 @@ class SRCNNTrainer(SRCNNBasic):
             'epoch': epoch
         }
         torch.save(state, model_out_path)
-        print("checkpoint saved to {}".format(model_out_path))
+        self.logger.info("checkpoint saved to {}".format(model_out_path))
 
     def train(self):
         self.model.train()

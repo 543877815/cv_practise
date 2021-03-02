@@ -33,7 +33,6 @@ class DRRN(nn.Module):
         for _ in range(self.num_recursions):
             out = self.conv2(self.relu(self.conv1(self.relu(out))))
             out = torch.add(out, inputs)
-
         out = self.output(self.relu(out))
         out = torch.add(out, residual)
         return out

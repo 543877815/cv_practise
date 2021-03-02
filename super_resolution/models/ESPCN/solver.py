@@ -43,7 +43,7 @@ class ESPCNBasic(object):
         checkpoint = torch.load('{}/{}'.format(checkpoint_dir, self.checkpoint_name))
         self.model.load_state_dict(checkpoint['net'])
         self.best_quality = checkpoint['psnr']
-        self.start_epoch = checkpoint['epoch']
+        self.start_epoch = checkpoint['epoch'] + 1
 
     def convert_same(self, img, target):
         target_new = torch.empty((img.shape))
@@ -143,9 +143,8 @@ class ESPCNTrainer(ESPCNBasic):
             {'params': self.model.last_part.parameters(), 'lr': self.lr * 0.1}
         ], lr=self.lr)
 
-        self.scheduler = torch.optim.lr_scheduler.MultiStepLR(self.optimizer,
-                                                              milestones=[150, 300, 450, 600, 750, 900],
-                                                              gamma=0.5)
+        self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, mode='min', factor=0.1, patience=4,
+                                                                    min_lr=0.0001, verbose=True)
 
     def save_model(self, epoch, avg_psnr):
         _, _, checkpoint_dir, _ = get_platform_path()
@@ -156,7 +155,7 @@ class ESPCNTrainer(ESPCNBasic):
             'epoch': epoch
         }
         torch.save(state, model_out_path)
-        print("checkpoint saved to {}".format(model_out_path))
+        self.logger.info("checkpoint saved to {}".format(model_out_path))
 
     def train(self):
         self.model.train()

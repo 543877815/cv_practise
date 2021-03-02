@@ -10,6 +10,7 @@ from super_resolution.models.FSRCNN.solver import FSRCNNTrainer
 from super_resolution.models.VDSR.solver import VDSRTrainer
 from super_resolution.models.ESPCN.solver import ESPCNTrainer
 from super_resolution.models.DRRN.solver import DRRNTrainer
+from super_resolution.models.DRCN.solver import DRCNTrainer
 
 if __name__ == '__main__':
 
@@ -152,6 +153,8 @@ if __name__ == '__main__':
         model = VDSRTrainer(args, train_loader, test_loader)
     elif args.model.lower() == 'espcn':
         model = ESPCNTrainer(args, train_loader, test_loader)
+    elif args.model.lower() == 'drcn':
+        model = DRCNTrainer(args, train_loader, test_loader)
     elif args.model.lower() == 'drrn':
         model = DRRNTrainer(args, train_loader, test_loader)
     else:

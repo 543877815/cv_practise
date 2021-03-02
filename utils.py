@@ -142,6 +142,7 @@ def is_image_file(filename):
     return any(filename.endswith(extension) for extension in ['.png', '.jpeg', '.jpg', '.bmp', '.JPEG'])
 
 
+# / 255
 OrigT = np.array(
     [[65.481, 128.553, 24.966],
      [-37.797, -74.203, 112.0],
@@ -149,9 +150,9 @@ OrigT = np.array(
 
 OrigOffset = np.array([16, 128, 128])
 
-# OrigT_inv = [0.00456621  0.          0.00625893;...
-#           0.00456621 -0.00153632 -0.00318811;...
-#           0.00456621  0.00791071  0.]
+# OrigT_inv = np.array([[0.00456621,  0.,  0.00625893],
+#           [0.00456621, -0.00153632, -0.00318811],
+#           [0.00456621,  0.00791071,  0.]])
 OrigT_inv = np.linalg.inv(OrigT)
 
 
@@ -159,14 +160,14 @@ def rgb2ycbcr(rgb_img):
     if rgb_img.shape[2] == 1:
         return rgb_img
     if rgb_img.dtype == np.float64:
-        T = 1 / 255
-        offset = 1 / 255
+        T = 1.0 / 255.0
+        offset = 1 / 255.0
     elif rgb_img.dtype == np.uint8:
-        T = 1 / 255
-        offset = 1
+        T = 1.0 / 255.0
+        offset = 1.0
     elif rgb_img.dtype == np.uint16:
-        T = 257 / 65535
-        offset = 257
+        T = 257.0 / 65535.0
+        offset = 257.0
     else:
         raise Exception('the dtype of image does not support')
     T = T * OrigT
@@ -175,30 +176,30 @@ def rgb2ycbcr(rgb_img):
     for p in range(rgb_img.shape[2]):
         ycbcr_img[:, :, p] = T[p, 0] * rgb_img[:, :, 0] + T[p, 1] * rgb_img[:, :, 1] + T[p, 2] * rgb_img[:, :, 2] + \
                              offset[p]
-    ycbcr_img = ycbcr_img.round()
     return np.array(ycbcr_img, dtype=rgb_img.dtype)
 
 
 def ycbcr2rgb(ycbcr_img):
+    if ycbcr_img.shape[2] == 1:
+        return ycbcr_img
     if ycbcr_img.dtype == np.float64:
-        T = 255
-        offset = 1
+        T = 255.0
+        offset = 1.0
     elif ycbcr_img.dtype == np.uint8:
-        T = 255
-        offset = 255
+        T = 255.0
+        offset = 255.0
     elif ycbcr_img.dtype == np.uint16:
-        T = 65535 / 257
-        offset = 65535
+        T = 65535.0 / 257.0
+        offset = 65535.0
     else:
         raise Exception('the dtype of image does not support')
     T = T * OrigT_inv
     offset = offset * np.matmul(OrigT_inv, OrigOffset)
     rgb_img = np.zeros(ycbcr_img.shape, dtype=float)
     for p in range(rgb_img.shape[2]):
-        rgb_img[:, :, p] = ycbcr_img[:, :, 0] * T[p, 0] + ycbcr_img[:, :, 1] * T[p, 1] + ycbcr_img[:, :, 2] * T[
-            p, 2] - offset[p]
-    rgb_img = np.round(rgb_img)
-    return np.array(rgb_img, dtype=ycbcr_img.dtype)
+        rgb_img[:, :, p] = T[p, 0] * ycbcr_img[:, :, 0] + T[p, 1] * ycbcr_img[:, :, 1] + T[p, 2] * ycbcr_img[:, :, 2] - \
+                           offset[p]
+    return np.array(rgb_img.clip(0, 255), dtype=ycbcr_img.dtype)
 
 
 def get_logger(filename, verbosity=1, name=None):
