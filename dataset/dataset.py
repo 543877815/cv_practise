@@ -1,8 +1,8 @@
 import tarfile
 
 import h5py
-
-from utils import *
+import os
+from utils import get_platform_path, is_image_file, get_logger, rgb2ycbcr
 from six.moves import urllib
 import torch.utils.data as data
 from PIL import Image
@@ -130,6 +130,7 @@ class TrainDataset(data.Dataset):
         self.h5_file = h5_file
         self.transform = transform
         self.target_transform = target_transform
+
 
     def __getitem__(self, idx):
         with h5py.File(self.h5_file, 'r') as f:

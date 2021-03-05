@@ -8,10 +8,10 @@
 | -------- | ------------------ | --------------------------- | ------------------------------ | ------------------------ |
 | Set5     | x2<br />x3<br />x4 | 33.64<br />30.39<br />28.42 | 0.9292<br />0.8678<br />0.8101 | 5.72<br />3.45<br />2.28 |
 | Set14    | x2<br />x3<br />x4 | 30.22<br />27.53<br />25.99 | 0.8683<br />0.7737<br />0.7023 | 5.74<br />3.33<br />2.18 |
-| BSD100   | x2<br />x3<br />x4 | 29.55<br />27.20<br />25.96 |                                |                          |
-| Urban100 | x2<br />x3<br />x4 | 26.66<br />24.64<br />23.14 | 0.8408<br />-<br />0.6573      | 5.72<br />-<br />2.27    |
+| BSD100   | x2<br />x3<br />x4 | 29.55<br />27.20<br />25.96 | 0.8425<br />0.7382<br />0.6672 |                          |
+| Urban100 | x2<br />x3<br />x4 | 26.66<br />24.64<br />23.14 | 0.8408<br />0.7353<br />0.6573 | 5.72<br />-<br />2.27    |
 
-### SRCNN
+### SRCNN(2014)
 
 paper:
 
@@ -20,6 +20,8 @@ paper:
 - [Image Super-Resolution Using Deep Convolutional Networks (TPIAMI 2015)](https://arxiv.org/abs/1501.00092)
 
 Dataset prepare: 91-image, 33x33, stride:14
+
+Todo: 91-image, train: 33x33, test: 21x21, for 9-1-5; for train 33x33, test: 17x17, for 9-5-5), see source code on http://mmlab.ie.cuhk.edu.hk/projects/SRCNN.html.
 
 The best result of the paper is trained on 395,909 images from the ILSVRC 2013 ImageNet detection training partition.
 
@@ -32,7 +34,7 @@ I simply pick the first 1000 images from the validation dataset of ILSVRC 2012.
 | BSD100    | x2<br />x3<br />x4 | 31.32/31.30/31.36<br />28.24/28.25/28.41<br />26.81/26.85/26.90 |                                |
 | Urban 100 | x2<br />x3<br />x4 | 29.05/29.00/29.50<br />25.38/25.31/26.24<br />24.33/24.36/24.52 |                                |
 
-### FSRCNN
+### FSRCNN(2016)
 
 paper: [Accelerating the Super-Resolution Convolutional Neural Network（ECCV）](https://arxiv.org/abs/1608.00367)
 
@@ -57,7 +59,7 @@ It takes a very long time to train.
 | BSD100   | x2<br />x3<br />x4 | 31.42/31.73<br />28.47/28.55<br />26.93/26.92 |                       |
 | Urban100 | x2<br />x3<br />x4 | 29.30/29.81<br />26.61/-<br />24.50/24.61     |                       |
 
-### VDSR
+### VDSR(2016)
 
 paper: [Accurate Image Super-Resolution Using Very Deep Convolutional Networks（CVPR）](http://arxiv.org/abs/1511.04587)
 
@@ -70,7 +72,7 @@ Dataset prepare:  91-image, Bsd300 train set, 41x41, stride:41, scale: 1.0 0.7 0
 | BSD100   | x2<br />x3<br />x4 | 31.81/31.90<br />28.81/28.82<br />27.26/26.90 |                       |
 | Urban100 | x2<br />x3<br />x4 | 30.18/30.76<br />26.09/27.14<br />25.15/25.18 |                       |
 
-### ESPCN
+### ESPCN(2017)
 
 paper: [Real-Time Single Image and Video Super-Resolution Using an Efficient Sub-Pixel Convolutional Neural Network（CVPR)](https://arxiv.org/abs/1609.05158)
 
@@ -88,24 +90,49 @@ for 4x, HR: 68x68, stride: 68, LR: 17x17
 | Set14   | x2<br />x3<br />x4 | 32.13/-/31.79<br />28.94/29.28/28.76/29.42<br />27.43/-/27.23/27.73 |                                      |
 | BSD200  | x2<br />x3<br />x4 | 31.08/-/30.88/-<br />28.16/28.55/28.04/28.52<br />26.93/-/26.77/27.06 |                                      |
 
-### DRCN
+### DRCN(2016)
 
 paper: [Deeply-Recursive Convolutional Network for Image Super-Resolution（CVPR）](https://arxiv.org/abs/1511.04491)
 
-Dataset prepare: 91-image, 41x41, stride: 21, flip: 0 1 2 3, uf: 2 3 4, single model
+Dataset prepare: 91-image, 41x41, stride: 21, flip: 0 1, rotation: 0 90 180 270, uf: 2/3/4, single model
 
-### DRRN
+scales 1.0 0.7 0.5
+
+| Dataset  | Scale              | PSNR(91-images/paper)             | SSIM(91-images/paper)                |
+| -------- | ------------------ | --------------------------------- | ------------------------------------ |
+| Set5     | x2<br />x3<br />x4 | -/37.63<br />-/33.82<br />-/31.53 | -/0.9588<br />-/0.9226<br />-/0.8854 |
+| Set14    | x2<br />x3<br />x4 | -/33.04<br />-/29.76<br />-/28.02 | -/0.9118<br />-/0.8311<br />-/0.7670 |
+| BSD100   | x2<br />x3<br />x4 | -/31.85<br />-/28.80<br />-/27.23 | -/0.8942<br />-/0.7963<br />-/0.7233 |
+| Urban100 | x2<br />x3<br />x4 | -/30.75<br />-/27.15<br />-/25.14 | -/0.9133<br />-/0.8276<br />-/0.7510 |
+
+### DRRN(2017)
 
 paper:  [Image super-resolution via deep recursive residual network（CVPR）](https://openaccess.thecvf.com/content_cvpr_2017/papers/Tai_Image_Super-Resolution_via_CVPR_2017_paper.pdf)
 
 Dataset prepare: 91-image, BSD300 train set, 31x31, stride: 21, rotation: 0 90 180 270, flip: 0 1, uf: 2 3 4, single model
 
-| Dataset  | Scale              | PSNR(291-images/paper)                | SSIM(91-images/paper) |
-| -------- | ------------------ | ------------------------------------- | --------------------- |
-| Set5     | x2<br />x3<br />x4 | 37.30/37.74<br />-/34.03<br />-/31.68 |                       |
-| Set14    | x2<br />x3<br />x4 | 32.71/33.23<br />-/29.96<br />-/28.21 |                       |
-| BSD100   | x2<br />x3<br />x4 | 31.65/32.05<br />-/28.95<br />-/27.38 |                       |
-| Urban100 | x2<br />x3<br />x4 | 29.75/31.23<br />-/27.53<br />-/25.44 |                       |
+| Dataset  | Scale              | PSNR(291-images/paper)                        | SSIM(91-images/paper) |
+| -------- | ------------------ | --------------------------------------------- | --------------------- |
+| Set5     | x2<br />x3<br />x4 | 37.48/37.74<br />33.74/34.03<br />31.40/31.68 |                       |
+| Set14    | x2<br />x3<br />x4 | 32.83/33.23<br />29.76/29.96<br />28.00/28.21 |                       |
+| BSD100   | x2<br />x3<br />x4 | 31.77/32.05<br />28.81/28.95<br />27.27/27.38 |                       |
+| Urban100 | x2<br />x3<br />x4 | 30.18/31.23<br />27.37/27.53<br />25.16/25.44 |                       |
+
+### LapSRN(2016)
+
+
+
+### EDSR/MDSR(NTIRE 2017)
+
+
+
+### SRGAN/SRResNet(2016)
+
+
+
+### RCAN
+
+### WDSR
 
 ## Results
 

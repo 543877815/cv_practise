@@ -154,13 +154,21 @@ class SRCNNTrainer(SRCNNBasic):
             cudnn.benchmark = True
             self.criterion.cuda()
 
-        self.optimizer = torch.optim.Adam([
+        # faster than SGD
+        # self.optimizer = torch.optim.Adam([
+        #     {'params': self.model.conv1.parameters()},
+        #     {'params': self.model.conv2.parameters()},
+        #     {'params': self.model.conv3.parameters(), 'lr': self.lr * 0.1}
+        # ], lr=self.lr)
+
+        self.optimizer = torch.optim.SGD([
             {'params': self.model.conv1.parameters()},
             {'params': self.model.conv2.parameters()},
             {'params': self.model.conv3.parameters(), 'lr': self.lr * 0.1}
-        ], lr=self.lr)
+        ], lr=self.lr, momentum=0.9, weight_decay=0.0)
 
-        self.scheduler = torch.optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[250, 500, 750], gamma=0.5)
+        self.scheduler = torch.optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[250, 500, 750, 1000],
+                                                              gamma=0.5)
 
     def save_model(self, epoch, avg_psnr):
         _, _, checkpoint_dir, _ = get_platform_path()
@@ -177,11 +185,12 @@ class SRCNNTrainer(SRCNNBasic):
         self.model.train()
         train_loss = 0
         for index, (img, target) in enumerate(self.train_loader):
+
             if img.shape != target.shape:
                 img_BICUBIC = self.convert_BICUBIC(img)
+                target = self.convert_same(img_BICUBIC, target)
             else:
                 img_BICUBIC = img
-
             img_BICUBIC, target = img_BICUBIC.to(self.device), target.to(self.device)
 
             output = self.model(img_BICUBIC)

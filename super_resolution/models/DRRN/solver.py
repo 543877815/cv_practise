@@ -1,6 +1,6 @@
 # reference:
 # https://github.com/icpm/super-resolution
-# https://github.com/twtygqyy/pytorch-vdsr
+# https://github.com/jt827859032/DRRN-pytorch
 from math import log10
 
 import torch

@@ -26,7 +26,7 @@ class DRCNBasic(object):
         self.color_space = config.color
         self.single_channel = config.single_channel
         self.upscale_factor = config.upscaleFactor
-        self.num_recursions = 1
+        self.num_recursions = 16
         self.model_name = "DRCN-{}x".format(self.upscale_factor)
 
         # checkpoint configuration
@@ -50,6 +50,7 @@ class DRCNBasic(object):
         self.model.load_state_dict(checkpoint['net'])
         self.best_quality = checkpoint['psnr']
         self.start_epoch = checkpoint['epoch'] + 1
+        print("best quality: {}".format(self.best_quality))
 
     def convert_BICUBIC(self, img):
         img_BICUBIC = torch.empty(img.shape[0], img.shape[1], img.shape[2] * self.upscale_factor,
@@ -84,7 +85,7 @@ class DRCNBasic(object):
 
 class DRCNTester(DRCNBasic):
     def __init__(self, config, test_loader=None, device=None):
-        super(DRCNTester, self).__init__(config)
+        super(DRCNTester, self).__init__(config, device)
         assert (config.resume is True)
 
         data_dir, _, _, _ = get_platform_path()
@@ -128,16 +129,17 @@ class DRCNTester(DRCNBasic):
 
 
 class DRCNTrainer(DRCNBasic):
-    def __init__(self, config, train_loader=None, test_loader=None, device=None):
+    def __init__(self, config, train_loader=None, test_loader=None, device=None, clip=0.01):
         super(DRCNTrainer, self).__init__(config, device)
 
         # model configuration
 
-        self.loss_alpha = 1.0
+        self.loss_alpha = 1
+        self.clip = clip
         self.lr = config.lr
         # self.loss_beta, self.num_recursions = 0.001, 1
-        self.loss_beta, self.num_recursions = 0.001, 16
-        self.loss_alpha_zero_epoch = 25
+        self.loss_beta, self.num_recursions = 0.000001, 16
+        self.loss_alpha_zero_epoch = config.epochs
         self.loss_alpha_decay = self.loss_alpha / self.loss_alpha_zero_epoch
 
         # checkpoint configuration
@@ -200,8 +202,8 @@ class DRCNTrainer(DRCNBasic):
             target_d, output = self.model(img_BICUBIC)
 
             loss1 = 0
-            for i in range(self.num_recursions):
-                loss1 += self.criterion(target_d[i], target) / self.num_recursions
+            for i in range(self.num_recursions + 1):
+                loss1 += self.criterion(target_d[i], target)
 
             loss2 = self.criterion(output, target)
 
@@ -213,8 +215,8 @@ class DRCNTrainer(DRCNBasic):
             loss = self.loss_alpha * loss1 + (1 - self.loss_alpha) * loss2 + reg_term * self.loss_beta
 
             self.optimizer.zero_grad()
-
             loss2.backward()
+
             self.optimizer.step()
 
             train_reg += self.loss_beta * reg_term.item()

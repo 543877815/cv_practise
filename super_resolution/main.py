@@ -33,7 +33,7 @@ if __name__ == '__main__':
     # data configuration
     parser.add_argument('--dataset', type=str, default='customize', help='data that going to use')
     parser.add_argument('--single_channel', action='store_true', help='whether to use specific channel')
-    parser.add_argument('--num_workers', type=int, default=4, help='number of worker for data loader')
+    parser.add_argument('--num_workers', type=int, default=1, help='number of worker for data loader')
 
     parser.add_argument('--use_h5py', action='store_true', help='whether to use .h5 file as data input')
     parser.add_argument('--h5py_input', type=str, default='h5py_input', help='.h5 file data for training')
@@ -56,7 +56,6 @@ if __name__ == '__main__':
     data_train_dir, data_test_dir, data_val_dir = data_dir, data_dir, data_dir
     train_LR_dir, train_HR_dir, test_LR_dir, test_HR_dir = args.train_LR_dir, args.train_HR_dir, args.test_LR_dir, \
                                                            args.test_HR_dir
-
     # data preparing
     print("==> Preparing data..")
     dataset = args.dataset

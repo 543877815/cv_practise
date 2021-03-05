@@ -22,6 +22,7 @@ if __name__ == '__main__':
     parser.add_argument('--number', type=int, default=1000, required=True, help='number of data to generate')
 
     # configuration
+    parser.add_argument('--padding', type=int, default=0, help='padding between input and label')
     parser.add_argument('--single_y', action='store_true', help='whether to extract y channel in YCrCb color space')
     parser.add_argument('--width', type=int, default=41, help='width of crop image')
     parser.add_argument('--height', type=int, default=41, help='height of crop image')
@@ -115,7 +116,8 @@ if __name__ == '__main__':
                                     y2 = scale_y
                                     y1 = scale_y - args.height
                                     continue
-                                sub_img = img.crop((x1, y1, x2, y2))
+                                sub_img = img.crop(
+                                    (x1 + args.padding, y1 + args.padding, x2 - args.padding, y2 - args.padding))
 
                                 # process LR image
                                 if args.use_bicubic:
@@ -132,10 +134,8 @@ if __name__ == '__main__':
                                     if args.single_y:
                                         sub_img = rgb2ycbcr(np.array(sub_img, dtype=np.uint8))
                                         sub_img_LR = rgb2ycbcr(np.array(sub_img_LR, dtype=np.uint8))
-
                                         sub_img = sub_img[:, :, 0]
                                         sub_img_LR = sub_img_LR[:, :, 0]
-
                                     else:
                                         sub_img = np.array(sub_img).astype(np.uint8)
                                         sub_img_LR = np.array(sub_img_LR).astype(np.uint8)
@@ -152,12 +152,20 @@ if __name__ == '__main__':
                                 id = id + 1
 
     if args.use_h5py:
-        h5_file = h5py.File(args.output, 'w')
+        try:
+            h5_file = h5py.File(args.output, 'w')
 
-        hr_patches = np.array(hr_patches)
-        lr_patches = np.array(lr_patches)
+            hr_patches = np.array(hr_patches)
+            lr_patches = np.array(lr_patches)
 
-        h5_file.create_dataset('hr', data=hr_patches)
-        h5_file.create_dataset('lr', data=lr_patches)
+            hr = h5_file.create_dataset('hr', data=hr_patches)
+            lr = h5_file.create_dataset('lr', data=lr_patches)
 
-        h5_file.close()
+            for arg in vars(args):
+                hr.attrs[arg] = str(getattr(args, arg))
+                lr.attrs[arg] = str(getattr(args, arg))
+
+            h5_file.close()
+            
+        except OSError as e:
+            print(e)

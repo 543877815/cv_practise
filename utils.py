@@ -1,6 +1,9 @@
 import hashlib
 import os
 import platform
+
+import cv2
+import math
 import numpy as np
 import gdown
 import sys
@@ -159,7 +162,7 @@ OrigT_inv = np.linalg.inv(OrigT)
 def rgb2ycbcr(rgb_img):
     if rgb_img.shape[2] == 1:
         return rgb_img
-    if rgb_img.dtype == np.float64:
+    if rgb_img.dtype == float:
         T = 1.0 / 255.0
         offset = 1 / 255.0
     elif rgb_img.dtype == np.uint8:
@@ -182,7 +185,7 @@ def rgb2ycbcr(rgb_img):
 def ycbcr2rgb(ycbcr_img):
     if ycbcr_img.shape[2] == 1:
         return ycbcr_img
-    if ycbcr_img.dtype == np.float64:
+    if ycbcr_img.dtype == float:
         T = 255.0
         offset = 1.0
     elif ycbcr_img.dtype == np.uint8:
@@ -202,6 +205,60 @@ def ycbcr2rgb(ycbcr_img):
     return np.array(rgb_img.clip(0, 255), dtype=ycbcr_img.dtype)
 
 
+# Here is the function for shaving the edge of image
+def shave(pred, gt, shave_border):
+    height, width = pred.shape[:2]
+    pred = pred[shave_border:height - shave_border, shave_border:width - shave_border]
+    gt = gt[shave_border:height - shave_border, shave_border:width - shave_border]
+    return pred, gt
+
+
+# Here is the function for PSNR calculation
+def PSNR(pred, gt):
+    imdff = pred - gt
+    rmse = np.mean(np.mean(imdff ** 2, axis=1), axis=0)
+    if rmse == 0:
+        return 100
+    return 10 * math.log10(255 * 255 / rmse)
+
+
+# Here is the function for SSIM calculation
+def SSIM_index(pred, gt):
+    height, width = pred.shape[:2]
+    kernel_size = 11
+    padding = kernel_size // 2
+    std = 1.5
+    if height < kernel_size or width < kernel_size:
+        return float('-inf')
+    K = [0.01, 0.03]
+    L = 255
+    C1, C2 = (K[0] * L) ** 2, (K[1] * L) ** 2
+    pred, gt = np.array(pred, dtype=float), np.array(gt, dtype=float)
+    mu1 = cv2.GaussianBlur(pred, (kernel_size, kernel_size), std, borderType=None)
+    mu2 = cv2.GaussianBlur(gt, (kernel_size, kernel_size), std, borderType=None)
+    mu1, mu2 = shave(mu1, mu2, padding)
+
+    mu1_sq = mu1 * mu1
+    mu2_sq = mu2 * mu2
+    mu1_mu2 = mu1 * mu2
+    sigma1_sq = cv2.GaussianBlur(pred * pred, (kernel_size, kernel_size), std, borderType=None)
+    sigma2_sq = cv2.GaussianBlur(gt * gt, (kernel_size, kernel_size), std, borderType=None)
+    sigma1_sq, sigma2_sq = shave(sigma1_sq, sigma2_sq, padding)
+    sigma1_sq, sigma2_sq = sigma1_sq - mu1_sq, sigma2_sq - mu2_sq
+    sigma12 = cv2.GaussianBlur(pred * gt, (kernel_size, kernel_size), std, borderType=None)
+    sigma12, _ = shave(sigma12, sigma12, padding)
+    sigma12 = sigma12 - mu1_mu2
+    if C1 > 0 and C2 > 0:
+        ssim_map = ((2 * mu1_mu2 + C1) * (2 * sigma12 + C2)) / ((mu1_sq + mu2_sq + C1) * (sigma1_sq + sigma2_sq + C2))
+    else:
+        raise NotImplementedError()
+    mssim = np.mean(ssim_map)
+    return mssim, ssim_map
+
+# TODO: IFC
+def IFC(pred, gt):
+    pass
+
 def get_logger(filename, verbosity=1, name=None):
     level_dict = {0: logging.DEBUG, 1: logging.INFO, 2: logging.WARNING}
     formatter = logging.Formatter(
@@ -210,7 +267,7 @@ def get_logger(filename, verbosity=1, name=None):
     logger = logging.getLogger(name)
     logger.setLevel(level_dict[verbosity])
 
-    fh = logging.FileHandler(filename, "w")
+    fh = logging.FileHandler(filename, "a")
     fh.setFormatter(formatter)
     logger.addHandler(fh)
 
