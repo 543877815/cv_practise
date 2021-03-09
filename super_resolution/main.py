@@ -156,6 +156,10 @@ if __name__ == '__main__':
         model = DRCNTrainer(args, train_loader, test_loader)
     elif args.model.lower() == 'drrn':
         model = DRRNTrainer(args, train_loader, test_loader)
+    elif args.model.lower() == 'lapsrn':
+        model = LapSRNTrainer(args, train_loader, test_loader)
+    elif args.model.lower() == 'lapsrn-BasicGAN':
+        model = LapSRN_GANTrainer(args, train_loader, test_loader)
     else:
         raise Exception("the model does not exist")
 

@@ -1,6 +1,8 @@
 # reference:
 # https://github.com/icpm/super-resolution
 # https://github.com/NJU-Jet/SR_Framework
+# https://github.com/jiny2001/deeply-recursive-cnn-tf/blob/master/super_resolution.py
+
 from math import log10
 
 import torch
@@ -96,7 +98,7 @@ class DRCNTester(DRCNBasic):
 
     def build_model(self):
         num_channels = 1 if self.single_channel else 3
-        self.model = DRCN(device=self.device, num_channels=num_channels, num_recursions=self.num_recursions).to(
+        self.model = DRCN(num_channels=num_channels, num_recursions=self.num_recursions).to(
             self.device)
         self.load_model()
         if self.CUDA:
@@ -134,12 +136,13 @@ class DRCNTrainer(DRCNBasic):
 
         # model configuration
 
-        self.loss_alpha = 1
+        self.loss_alpha = 1.0
         self.clip = clip
         self.lr = config.lr
         # self.loss_beta, self.num_recursions = 0.001, 1
-        self.loss_beta, self.num_recursions = 0.000001, 16
-        self.loss_alpha_zero_epoch = config.epochs
+        # self.loss_beta, self.num_recursions = 0.0000005, 9
+        self.loss_beta, self.num_recursions = 0.00001, 16
+        self.loss_alpha_zero_epoch = 25
         self.loss_alpha_decay = self.loss_alpha / self.loss_alpha_zero_epoch
 
         # checkpoint configuration
@@ -156,7 +159,7 @@ class DRCNTrainer(DRCNBasic):
 
     def build_model(self):
         num_channels = 1 if self.single_channel else 3
-        self.model = DRCN(device=self.device, num_channels=num_channels, num_recursions=self.num_recursions).to(
+        self.model = DRCN(num_channels=num_channels, num_recursions=self.num_recursions).to(
             self.device)
 
         if self.resume:
@@ -171,8 +174,8 @@ class DRCNTrainer(DRCNBasic):
             self.criterion.cuda()
 
         self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.lr, momentum=0.9, weight_decay=1e-4)
-        self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, mode='min', factor=0.1, patience=5,
-                                                                    min_lr=1e-6, verbose=True)
+        self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, mode='min', factor=0.1, patience=25,
+                                                                    min_lr=1e-6, threshold=1e-4, verbose=True)
 
     def save_model(self, epoch, avg_psnr):
         _, _, checkpoint_dir, _ = get_platform_path()
@@ -203,7 +206,7 @@ class DRCNTrainer(DRCNBasic):
 
             loss1 = 0
             for i in range(self.num_recursions + 1):
-                loss1 += self.criterion(target_d[i], target)
+                loss1 += self.criterion(target_d[:, i, :, :].unsqueeze(1), target) / (self.num_recursions + 1)
 
             loss2 = self.criterion(output, target)
 
@@ -213,9 +216,9 @@ class DRCNTrainer(DRCNBasic):
                 reg_term += torch.mean(torch.sum(theta ** 2))
 
             loss = self.loss_alpha * loss1 + (1 - self.loss_alpha) * loss2 + reg_term * self.loss_beta
-
             self.optimizer.zero_grad()
-            loss2.backward()
+
+            loss.backward()
 
             self.optimizer.step()
 
@@ -223,9 +226,10 @@ class DRCNTrainer(DRCNBasic):
             train_loss2 += loss2.item()
             train_loss1 += loss1.item()
             train_loss += loss.item()
+
             progress_bar(index, len(self.train_loader), 'Loss: %.4f, Loss1: %4f, Loss2: %4f, reg_term: %4f' % (
-                train_loss / (index + 1), train_loss1 / (index + 1), train_loss2 / (index + 1),
-                train_reg / (index + 1)))
+                train_loss / (index + 1), train_loss1 / (index + 1),
+                train_loss2 / (index + 1), train_reg / (index + 1)))
 
         avg_train_loss = train_loss / len(self.train_loader)
         print("    Average Loss: {:.4f}".format(avg_train_loss))

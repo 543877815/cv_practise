@@ -132,10 +132,16 @@ if __name__ == '__main__':
 
                                 if args.use_h5py:
                                     if args.single_y:
-                                        sub_img = rgb2ycbcr(np.array(sub_img, dtype=np.uint8))
-                                        sub_img_LR = rgb2ycbcr(np.array(sub_img_LR, dtype=np.uint8))
-                                        sub_img = sub_img[:, :, 0]
-                                        sub_img_LR = sub_img_LR[:, :, 0]
+                                        sub_img = np.array(sub_img, dtype=np.uint8)
+                                        sub_img_LR = np.array(np.array(sub_img_LR, dtype=np.uint8))
+                                        if sub_img.shape[2] == 3:
+                                            sub_img = rgb2ycbcr(sub_img)
+                                            sub_img_LR = rgb2ycbcr(sub_img_LR)
+                                            sub_img = sub_img[:, :, 0]
+                                            sub_img_LR = sub_img_LR[:, :, 0]
+                                        else:
+                                            sub_img = sub_img
+                                            sub_img_LR = sub_img_LR
                                     else:
                                         sub_img = np.array(sub_img).astype(np.uint8)
                                         sub_img_LR = np.array(sub_img_LR).astype(np.uint8)
@@ -158,6 +164,9 @@ if __name__ == '__main__':
             hr_patches = np.array(hr_patches)
             lr_patches = np.array(lr_patches)
 
+            np.random.shuffle(hr_patches)
+            np.random.shuffle(lr_patches)
+
             hr = h5_file.create_dataset('hr', data=hr_patches)
             lr = h5_file.create_dataset('lr', data=lr_patches)
 
@@ -166,6 +175,6 @@ if __name__ == '__main__':
                 lr.attrs[arg] = str(getattr(args, arg))
 
             h5_file.close()
-            
+
         except OSError as e:
             print(e)
