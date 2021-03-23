@@ -3,10 +3,10 @@ import numpy as np
 
 
 class Generator(nn.Module):
-    def __init__(self, latent_dim, img_shape):
+    def __init__(self, latent_dim, img_size):
         super(Generator, self).__init__()
         self.latent_dim = latent_dim
-        self.img_shape = img_shape
+        self.img_shape = img_size
         def block(in_feat, out_feat, normalize=True):
             layers = [nn.Linear(in_feat, out_feat)]
             if normalize:
@@ -30,10 +30,10 @@ class Generator(nn.Module):
 
 
 class Discriminator(nn.Module):
-    def __init__(self, latent_dim, img_shape):
+    def __init__(self, latent_dim, img_size):
         super(Discriminator, self).__init__()
         self.latent_dim = latent_dim
-        self.img_shape = img_shape
+        self.img_shape = img_size
         self.model = nn.Sequential(
             nn.Linear(int(np.prod(self.img_shape)), 512),
             nn.LeakyReLU(0.2, inplace=True),

@@ -4,14 +4,14 @@ from torch.autograd import Variable
 import numpy as np
 
 from utils import get_platform_path
-from .model import Generator, Discriminator, weights_init_normal
+from .model import Generator, Discriminator
 import torch.backends.cudnn as cudnn
 from torchvision.utils import save_image
 
 
-class DCGAN(object):
-    def __init__(self, config, dataloader=None, device=None):
-        super(DCGAN, self).__init__()
+class GAN(object):
+    def __init__(self, config, img_size, dataloader=None, device=None):
+        super(GAN, self).__init__()
 
         self.CUDA = torch.cuda.is_available()
         if device is None:
@@ -20,16 +20,16 @@ class DCGAN(object):
         # data configuration
         self.dataloader = dataloader
         self.epochs = config.epoch
-        self.lr = config.lr
-        self.beta1 = config.beta1
-        self.beta2 = config.beta2
 
         # model configuration
         self.latent_dim = config.latent_dim
-        self.img_size = config.img_size
+        self.img_size = img_size
         self.channels = config.channels
         self.sample_interval = config.sample_interval
-        self.model_name = 'dcgan'
+        self.lr = config.lr
+        self.beta1 = config.beta1
+        self.beta2 = config.beta2
+        self.model_name = 'gan'
         self.generator = None
         self.optimizer_G = None
         self.discriminator = None
@@ -39,12 +39,9 @@ class DCGAN(object):
         self.seed = 123
 
     def build_model(self):
-        self.generator = Generator(latent_dim=self.latent_dim, img_size=self.img_size, channels=self.channels).to(
-            self.device)
-        self.generator.apply(weights_init_normal)
+        self.generator = Generator(latent_dim=self.latent_dim, img_shape=self.img_size).to(self.device)
         self.optimizer_G = torch.optim.Adam(self.generator.parameters(), lr=self.lr, betas=(self.beta1, self.beta2))
-        self.discriminator = Discriminator(img_size=self.img_size, channels=self.channels).to(self.device)
-        self.discriminator.apply(weights_init_normal)
+        self.discriminator = Discriminator(img_shape=self.img_size).to(self.device)
         self.optimizer_D = torch.optim.Adam(self.discriminator.parameters(), lr=self.lr, betas=(self.beta1, self.beta2))
         self.criterion = torch.nn.BCELoss()  # 交叉熵
 

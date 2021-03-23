@@ -1,3 +1,4 @@
+import os
 import torch
 from torch.autograd import Variable
 import numpy as np
@@ -37,9 +38,9 @@ class WGAN(object):
         self.seed = 123
 
     def build_model(self):
-        self.generator = Generator(latent_dim=self.latent_dim, img_shape=self.img_size).to(self.device)
+        self.generator = Generator(latent_dim=self.latent_dim, img_size=self.img_size).to(self.device)
         self.optimizer_G = torch.optim.RMSprop(self.generator.parameters(), lr=self.lr)
-        self.discriminator = Discriminator(latent_dim=self.latent_dim, img_shape=self.img_size).to(self.device)
+        self.discriminator = Discriminator(latent_dim=self.latent_dim, img_size=self.img_size).to(self.device)
         self.optimizer_D = torch.optim.RMSprop(self.discriminator.parameters(), lr=self.lr)
 
         torch.manual_seed(self.seed)
@@ -103,6 +104,9 @@ class WGAN(object):
                     )
 
                 if batches_done % self.sample_interval == 0:
-                    save_image(gen_imgs.data[:25], "{}/{}/{}.png".format(data_dir, self.model_name, batches_done),
+                    save_dir = '{}/{}'.format(data_dir, self.model_name)
+                    if not os.path.exists(save_dir):
+                        os.mkdir(save_dir)
+                    save_image(gen_imgs.data[:25], "{}/{}.png".format(save_dir, batches_done),
                                nrow=5, normalize=True)
                 batches_done += 1
