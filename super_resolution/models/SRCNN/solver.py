@@ -21,16 +21,22 @@ class SRCNNBasic(object):
 
         # model configuration
         self.model = None
+        self.filter = config.filter
         self.color_space = config.color
         self.single_channel = config.single_channel
         self.upscale_factor = config.upscaleFactor
-        self.model_name = "SRCNN-{}x".format(self.upscale_factor)
+        self.model_name = "{}-{}x".format(config.model, self.upscale_factor)
 
         # checkpoint configuration
         self.resume = config.resume
         self.checkpoint_name = "{}.pth".format(self.model_name)
         self.best_quality = 0
         self.start_epoch = 1
+
+        # parameters
+        self.momentum = config.momentum
+        self.scheduler_gamma = config.scheduler_gamma
+        self.weight_decay = config.weight_decay
 
         # logger configuration
         _, _, _, log_dir = get_platform_path()
@@ -90,7 +96,7 @@ class SRCNNTester(SRCNNBasic):
 
     def build_model(self):
         num_channels = 1 if self.single_channel else 3
-        self.model = SRCNN(num_channels=num_channels, filter=64).to(self.device)
+        self.model = SRCNN(num_channels=num_channels, filter=self.filter).to(self.device)
         self.load_model()
         if self.CUDA:
             cudnn.benchmark = True
@@ -140,7 +146,7 @@ class SRCNNTrainer(SRCNNBasic):
 
     def build_model(self):
         num_channels = 1 if self.single_channel else 3
-        self.model = SRCNN(num_channels=num_channels, filter=64).to(self.device)
+        self.model = SRCNN(num_channels=num_channels, filter=self.filter).to(self.device)
         if self.resume:
             self.load_model()
         else:
@@ -165,10 +171,10 @@ class SRCNNTrainer(SRCNNBasic):
             {'params': self.model.conv1.parameters()},
             {'params': self.model.conv2.parameters()},
             {'params': self.model.conv3.parameters(), 'lr': self.lr * 0.1}
-        ], lr=self.lr, momentum=0.9, weight_decay=0.0)
+        ], lr=self.lr, momentum=self.momentum, weight_decay=self.weight_decay)
 
         self.scheduler = torch.optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[250, 500, 750, 1000],
-                                                              gamma=0.5)
+                                                              gamma=self.scheduler_gamma)
 
     def save_model(self, epoch, avg_psnr):
         _, _, checkpoint_dir, _ = get_platform_path()

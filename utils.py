@@ -4,35 +4,49 @@ import platform
 
 import cv2
 import math
+import imageio
 import numpy as np
 import gdown
 import sys
 import time
 import logging
+import torch
+import datetime
+import matplotlib
+
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+from multiprocessing import Process
+from multiprocessing import Queue
+import torch.optim as optim
+import torch.optim.lr_scheduler as lrs
 
 TOTAL_BAR_LENGTH = 80
 LAST_T = time.time()
 BEGIN_T = LAST_T
 
 
-def get_platform_path():
+def get_platform_path(args=None):
     system = platform.system()
     data_dir, model_dir, checkpoint_dir, log_dir, dirs = '', '', '', '', []
-    if system == 'Windows':
-        drive, common_dir = 'F', 'cache'
-        data_dir = '{}:/{}/data'.format(drive, common_dir)
-        model_dir = '{}:/{}/model'.format(drive, common_dir)
-        checkpoint_dir = '{}:/{}/checkpoint'.format(drive, common_dir)
-        log_dir = '{}:/{}/log'.format(drive, common_dir)
-        dirs = [data_dir, model_dir, checkpoint_dir, log_dir]
+    if args is not None and args.use_relative:
+        pass
+    else:
+        if system == 'Windows':
+            drive, common_dir = 'F', 'cache'
+            data_dir = '{}:/{}/data'.format(drive, common_dir)
+            model_dir = '{}:/{}/model'.format(drive, common_dir)
+            checkpoint_dir = '{}:/{}/checkpoint'.format(drive, common_dir)
+            log_dir = '{}:/{}/log'.format(drive, common_dir)
+            dirs = [data_dir, model_dir, checkpoint_dir, log_dir]
 
-    elif system == 'Linux':
-        common_dir = '/data'
-        data_dir = '{}/data'.format(common_dir)
-        model_dir = '{}/model'.format(common_dir)
-        checkpoint_dir = '{}/checkpoint'.format(common_dir)
-        log_dir = '{}/log'.format(common_dir)
-        dirs = [data_dir, model_dir, checkpoint_dir, log_dir]
+        elif system == 'Linux':
+            common_dir = '/data'
+            data_dir = '{}/data'.format(common_dir)
+            model_dir = '{}/model'.format(common_dir)
+            checkpoint_dir = '{}/checkpoint'.format(common_dir)
+            log_dir = '{}/log'.format(common_dir)
+            dirs = [data_dir, model_dir, checkpoint_dir, log_dir]
 
     for dir in dirs:
         if not os.path.exists(dir):
@@ -255,9 +269,11 @@ def SSIM_index(pred, gt):
     mssim = np.mean(ssim_map)
     return mssim, ssim_map
 
+
 # TODO: IFC
 def IFC(pred, gt):
     pass
+
 
 def get_logger(filename, verbosity=1, name=None):
     level_dict = {0: logging.DEBUG, 1: logging.INFO, 2: logging.WARNING}
@@ -276,3 +292,121 @@ def get_logger(filename, verbosity=1, name=None):
     logger.addHandler(sh)
 
     return logger
+
+
+class checkpoint():
+    def __init__(self, args):
+        self.args = args
+        self.ok = True
+        self.log = torch.Tensor()
+        now = datetime.datetime.now().strftime('%Y-%m-%d-%H:%M:%S')
+
+        if not args.load:
+            if not args.save:
+                args.save = now
+            self.dir = os.path.join('..', 'experiment', args.save)
+        else:
+            self.dir = os.path.join('..', 'experiment', args.load)
+            if os.path.exists(self.dir):
+                self.log = torch.load(self.get_path('psnr_log.pt'))
+                print('Continue from epoch {}...'.format(len(self.log)))
+            else:
+                args.load = ''
+
+        if args.reset:
+            os.system('rm -rf ' + self.dir)
+            args.load = ''
+
+        os.makedirs(self.dir, exist_ok=True)
+        os.makedirs(self.get_path('model'), exist_ok=True)
+        for d in args.data_test:
+            os.makedirs(self.get_path('results-{}'.format(d)), exist_ok=True)
+
+        open_type = 'a' if os.path.exists(self.get_path('log.txt')) else 'w'
+        self.log_file = open(self.get_path('log.txt'), open_type)
+        with open(self.get_path('configs.txt'), open_type) as f:
+            f.write(now + '\n\n')
+            for arg in vars(args):
+                f.write('{}: {}\n'.format(arg, getattr(args, arg)))
+            f.write('\n')
+
+        self.n_processes = 8
+
+    def get_path(self, *subdir):
+        return os.path.join(self.dir, *subdir)
+
+    def save(self, trainer, epoch, is_best=False):
+        trainer.model.save(self.get_path('model'), epoch, is_best=is_best)
+        trainer.loss.save(self.dir)
+        trainer.loss.plot_loss(self.dir, epoch)
+
+        self.plot_psnr(epoch)
+        trainer.optimizer.save(self.dir)
+        torch.save(self.log, self.get_path('psnr_log.pt'))
+
+    def add_log(self, log):
+        self.log = torch.cat([self.log, log])
+
+    def write_log(self, log, refresh=False):
+        print(log)
+        self.log_file.write(log + '\n')
+        if refresh:
+            self.log_file.close()
+            self.log_file = open(self.get_path('log.txt'), 'a')
+
+    def done(self):
+        self.log_file.close()
+
+    def plot_psnr(self, epoch):
+        axis = np.linspace(1, epoch, epoch)
+        for idx_data, d in enumerate(self.args.data_test):
+            label = 'SR on {}'.format(d)
+            fig = plt.figure()
+            plt.title(label)
+            for idx_scale, scale in enumerate(self.args.scale):
+                plt.plot(
+                    axis,
+                    self.log[:, idx_data, idx_scale].numpy(),
+                    label='Scale {}'.format(scale)
+                )
+            plt.legend()
+            plt.xlabel('Epochs')
+            plt.ylabel('PSNR')
+            plt.grid(True)
+            plt.savefig(self.get_path('test_{}.pdf'.format(d)))
+            plt.close(fig)
+
+    def begin_background(self):
+        self.queue = Queue()
+
+        def bg_target(queue):
+            while True:
+                if not queue.empty():
+                    filename, tensor = queue.get()
+                    if filename is None: break
+                    imageio.imwrite(filename, tensor.numpy())
+
+        self.process = [
+            Process(target=bg_target, args=(self.queue,)) \
+            for _ in range(self.n_processes)
+        ]
+
+        for p in self.process: p.start()
+
+    def end_background(self):
+        for _ in range(self.n_processes): self.queue.put((None, None))
+        while not self.queue.empty(): time.sleep(1)
+        for p in self.process: p.join()
+
+    def save_results(self, dataset, filename, save_list, scale):
+        if self.args.save_results:
+            filename = self.get_path(
+                'results-{}'.format(dataset.dataset.name),
+                '{}_x{}_'.format(filename, scale)
+            )
+
+            postfix = ('SR', 'LR', 'HR')
+            for v, p in zip(save_list, postfix):
+                normalized = v[0].mul(255 / self.args.rgb_range)
+                tensor_cpu = normalized.byte().permute(1, 2, 0).cpu()
+                self.queue.put(('{}{}.png'.format(filename, p), tensor_cpu))

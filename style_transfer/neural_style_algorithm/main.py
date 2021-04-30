@@ -4,7 +4,6 @@
 from __future__ import print_function
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 import torch.optim as optim
 
 from PIL import Image
@@ -55,6 +54,7 @@ def get_style_model_and_losses(cnn, normalization_mean, normalization_std,
 
         model.add_module(name, layer)
 
+        # 将 ContentLoss 和 StyleLoss 整合到 model 中
         if name in content_layers:
             # add content loss:
             target = model(content_img).detach()
@@ -82,7 +82,7 @@ def get_style_model_and_losses(cnn, normalization_mean, normalization_std,
 def run_style_transfer(model, normalization_mean, normalization_std,
                        content_img, style_img, input_img, style_layers,
                        content_layers, epochs=300,
-                       style_weight=1000000, content_weight=1):
+                       style_weight=1000000, content_weight=10):
     """Run the style transfer."""
     print('Building the style transfer model..')
     model, style_losses, content_losses = get_style_model_and_losses(model, normalization_mean, normalization_std,
@@ -180,9 +180,9 @@ if __name__ == '__main__':
     content_layers_default = ['conv_4']
     style_layers_default = ['conv_1', 'conv_2', 'conv_3', 'conv_4', 'conv_5']
 
-    # init image
-    input_img = content_img.clone()
-    # input_img = torch.randn(content_img.data.size(), device=device)
+    # init image, if using noise, the content weight should be 10 or larger, else 1 is enough
+    # input_img = content_img.clone()
+    input_img = torch.randn(content_img.data.size(), device=device)
 
     # run
     output = run_style_transfer(model=model, normalization_mean=cnn_normalization_mean,

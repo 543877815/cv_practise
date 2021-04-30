@@ -7,6 +7,8 @@ from six.moves import urllib
 import torch.utils.data as data
 from PIL import Image
 import numpy as np
+from tqdm import tqdm
+import shutil
 
 
 class DatasetFromOneFolder(data.Dataset):
@@ -91,9 +93,9 @@ class DatasetFromTwoFolder(data.Dataset):
             raise Exception("the color space does not exist")
 
 
-class DataSuperResolutionFromFolder(data.Dataset):
+class DatasetForSRFromFolder(data.Dataset):
     def __init__(self, image_dir, config, transform=None):
-        super(DataSuperResolutionFromFolder, self).__init__()
+        super(DatasetForSRFromFolder, self).__init__()
         self.image_filenames = [os.path.join(image_dir, x) for x in os.listdir(image_dir) if is_image_file(x)]
         self.config = config
         self.transform = transform
@@ -124,9 +126,9 @@ class DataSuperResolutionFromFolder(data.Dataset):
             raise Exception("the color space does not exist")
 
 
-class TrainDataset(data.Dataset):
+class DatasetFromH5py(data.Dataset):
     def __init__(self, h5_file, transform=None, target_transform=None, multi_train=1):
-        super(TrainDataset, self).__init__()
+        super(DatasetFromH5py, self).__init__()
         self.multi_train = multi_train
         self.h5_file = h5_file
         self.transform = transform
@@ -184,7 +186,29 @@ class EvalDataset(data.Dataset):
             return len(f['lr'])
 
 
-def BSD300():
+def buildRawData(Origin_HR_dir, train_HR_dir, train_LR_dir, config):
+    if not os.path.exists(train_LR_dir):
+        os.mkdir(train_LR_dir)
+    if not os.path.exists(train_HR_dir):
+        os.mkdir(train_HR_dir)
+    for image in tqdm(os.listdir(Origin_HR_dir)):
+        abs_image = os.path.join(Origin_HR_dir, image)
+        img_HR = Image.open(abs_image).convert("RGB")
+        size = img_HR.size
+        scale_x, scale_y = int(size[0]), int(size[1])
+        scale_x = scale_x - (scale_x % config.upscaleFactor)
+        scale_y = scale_y - (scale_y % config.upscaleFactor)
+        img_HR = img_HR.resize((scale_x, scale_y), Image.BICUBIC)
+        img_LR = img_HR.resize((scale_x // config.upscaleFactor, scale_y // config.upscaleFactor), Image.BICUBIC)
+        if config.use_bicubic:
+            img_LR = img_LR.resize((scale_x, scale_y), Image.BICUBIC)
+        path_HR = os.path.join(train_HR_dir, image)
+        img_HR.save(path_HR)
+        path_LR = os.path.join(train_LR_dir, image)
+        img_LR.save(path_LR)
+
+
+def BSD300(config):
     # data/models/checkpoint in different platform
     data_dir, _, _, _ = get_platform_path()
     data_dir = os.path.join(data_dir, "BSDS300/images")
@@ -205,10 +229,16 @@ def BSD300():
 
         os.remove(file_path)
 
-    return data_dir
+    Origin_HR_dir = data_dir + '/train'
+    train_LR_dir = data_dir + '/LR_x{}'.format(config.upscaleFactor)
+    train_HR_dir = data_dir + '/HR_x{}'.format(config.upscaleFactor)
+
+    print("===> Generate low resolution images:")
+    buildRawData(train_LR_dir=train_LR_dir, train_HR_dir=train_HR_dir, Origin_HR_dir=Origin_HR_dir, config=config)
+    return train_LR_dir, train_HR_dir
 
 
-def BSDS500():
+def BSDS500(config):
     # data/models/checkpoint in different platform
     data_dir, _, _, _ = get_platform_path()
     data_dir = os.path.join(data_dir, "BSR_bsds500/BSR/BSDS500/data/images")
@@ -228,8 +258,16 @@ def BSDS500():
 
         os.remove(file_path)
 
+    Origin_HR_dir = data_dir + '/train'
+    train_LR_dir = data_dir + '/LR_x{}'.format(config.upscaleFactor)
+    train_HR_dir = data_dir + '/HR_x{}'.format(config.upscaleFactor)
 
-def images91():
+    print("===> Generate low resolution images:")
+    buildRawData(train_LR_dir=train_LR_dir, train_HR_dir=train_HR_dir, Origin_HR_dir=Origin_HR_dir, config=config)
+    return train_LR_dir, train_HR_dir
+
+
+def images91(config):
     # data/models/checkpoint in different platform
     data_dir, _, _, _ = get_platform_path()
     data_dir = os.path.join(data_dir, "91-image")
@@ -239,10 +277,16 @@ def images91():
         print("===> Downloading url:", url)
         os.system('git clone {} {}'.format(url, data_dir))
 
-    return data_dir
+    Origin_HR_dir = data_dir + '/HR'
+    train_LR_dir = data_dir + '/LR_x{}'.format(config.upscaleFactor)
+    train_HR_dir = data_dir + '/HR_x{}'.format(config.upscaleFactor)
+
+    print("===> Generate low resolution images:")
+    buildRawData(train_LR_dir=train_LR_dir, train_HR_dir=train_HR_dir, Origin_HR_dir=Origin_HR_dir, config=config)
+    return train_LR_dir, train_HR_dir
 
 
-def Set5():
+def Set5(config):
     # data/models/checkpoint in different platform
     data_dir, _, _, _ = get_platform_path()
     data_dir = os.path.join(data_dir, "Set5")
@@ -252,10 +296,16 @@ def Set5():
         print("===> Downloading url:", url)
         os.system('git clone {} {}'.format(url, data_dir))
 
-    return data_dir
+    Origin_HR_dir = data_dir + '/HR'
+    train_LR_dir = data_dir + '/LR_x{}'.format(config.upscaleFactor)
+    train_HR_dir = data_dir + '/HR_x{}'.format(config.upscaleFactor)
+
+    print("===> Generate low resolution images:")
+    buildRawData(train_LR_dir=train_LR_dir, train_HR_dir=train_HR_dir, Origin_HR_dir=Origin_HR_dir, config=config)
+    return train_LR_dir, train_HR_dir
 
 
-def Set14():
+def Set14(config):
     # data/models/checkpoint in different platform
     data_dir, _, _, _ = get_platform_path()
     data_dir = os.path.join(data_dir, "Set14")
@@ -265,10 +315,16 @@ def Set14():
         print("===> Downloading url:", url)
         os.system('git clone {} {}'.format(url, data_dir))
 
-    return data_dir
+    Origin_HR_dir = data_dir + '/HR'
+    train_LR_dir = data_dir + '/LR_x{}'.format(config.upscaleFactor)
+    train_HR_dir = data_dir + '/HR_x{}'.format(config.upscaleFactor)
+
+    print("===> Generate low resolution images:")
+    buildRawData(train_LR_dir=train_LR_dir, train_HR_dir=train_HR_dir, Origin_HR_dir=Origin_HR_dir, config=config)
+    return train_LR_dir, train_HR_dir
 
 
-def B100():
+def B100(config):
     # data/models/checkpoint in different platform
     data_dir, _, _, _ = get_platform_path()
     data_dir = os.path.join(data_dir, "B100")
@@ -278,10 +334,16 @@ def B100():
         print("===> Downloading url:", url)
         os.system('git clone {} {}'.format(url, data_dir))
 
-    return data_dir
+    Origin_HR_dir = data_dir + '/HR'
+    train_LR_dir = data_dir + '/LR_x{}'.format(config.upscaleFactor)
+    train_HR_dir = data_dir + '/HR_x{}'.format(config.upscaleFactor)
+
+    print("===> Generate low resolution images:")
+    buildRawData(train_LR_dir=train_LR_dir, train_HR_dir=train_HR_dir, Origin_HR_dir=Origin_HR_dir, config=config)
+    return train_LR_dir, train_HR_dir
 
 
-def Urban100():
+def Urban100(config):
     # data/models/checkpoint in different platform
     data_dir, _, _, _ = get_platform_path()
     data_dir = os.path.join(data_dir, "Urban100")
@@ -291,10 +353,16 @@ def Urban100():
         print("===> Downloading url:", url)
         os.system('git clone {} {}'.format(url, data_dir))
 
-    return data_dir
+    Origin_HR_dir = data_dir + '/HR'
+    train_LR_dir = data_dir + '/LR_x{}'.format(config.upscaleFactor)
+    train_HR_dir = data_dir + '/HR_x{}'.format(config.upscaleFactor)
+
+    print("===> Generate low resolution images:")
+    buildRawData(train_LR_dir=train_LR_dir, train_HR_dir=train_HR_dir, Origin_HR_dir=Origin_HR_dir, config=config)
+    return train_LR_dir, train_HR_dir
 
 
-def Manga109():
+def Manga109(config):
     # data/models/checkpoint in different platform
     data_dir, _, _, _ = get_platform_path()
     data_dir = os.path.join(data_dir, "Manga109")
@@ -304,4 +372,32 @@ def Manga109():
         print("===> Downloading url:", url)
         os.system('git clone {} {}'.format(url, data_dir))
 
+    Origin_HR_dir = data_dir + '/HR'
+    train_LR_dir = data_dir + '/LR_x{}'.format(config.upscaleFactor)
+    train_HR_dir = data_dir + '/HR_x{}'.format(config.upscaleFactor)
+
+    print("===> Generate low resolution images:")
+    buildRawData(train_LR_dir=train_LR_dir, train_HR_dir=train_HR_dir, Origin_HR_dir=Origin_HR_dir, config=config)
+    return train_LR_dir, train_HR_dir
+
+
+def DIV2K():
+    # data/models/checkpoint in different platform
+    data_dir, _, _, _ = get_platform_path()
+    data_dir = os.path.join(data_dir, "DIV2K")
+    if not os.path.exists(data_dir):
+        url = "https://cv.snu.ac.kr/research/EDSR/DIV2K.tar"
+        print("===> Downloading url:", url)
+
+        data = urllib.request.urlopen(url)
+        file_path = os.path.join(data_dir, os.path.basename(url))
+        with open(file_path, 'wb') as f:
+            f.write(data.read())
+
+        print("===> Extracting data")
+        with tarfile.open(file_path) as tar:
+            for item in tar:
+                tar.extract(item, data_dir)
+
+        os.remove(file_path)
     return data_dir

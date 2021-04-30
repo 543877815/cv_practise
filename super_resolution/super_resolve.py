@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader
 from torchvision.transforms import transforms
 
 from utils import get_platform_path
-from dataset.dataset import BSD300, DatasetFromOneFolder, DataSuperResolutionFromFolder
+from dataset.dataset import DatasetForSRFromFolder
 from super_resolution.models.SRCNN.solver import SRCNNTester
 from super_resolution.models.FSRCNN.solver import FSRCNNTester
 from super_resolution.models.VDSR.solver import VDSRTester
@@ -50,7 +50,7 @@ if __name__ == '__main__':
         transforms.ToTensor(),
     ])
 
-    test_set = DataSuperResolutionFromFolder(image_dir=input_dir, config=args, transform=img_transform)
+    test_set = DatasetForSRFromFolder(image_dir=input_dir, config=args, transform=img_transform)
     test_loader = DataLoader(dataset=test_set, batch_size=1, shuffle=False)
 
     # ===========================================================
