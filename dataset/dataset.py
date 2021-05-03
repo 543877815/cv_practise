@@ -1,5 +1,5 @@
 import tarfile
-
+import random
 import h5py
 import os
 from utils import get_platform_path, is_image_file, get_logger, rgb2ycbcr
@@ -47,7 +47,7 @@ class DatasetFromOneFolder(data.Dataset):
 
 
 class DatasetFromTwoFolder(data.Dataset):
-    def __init__(self, LR_dir, HR_dir, config=None, transform=None, target_transform=None):
+    def __init__(self, LR_dir, HR_dir, train=False, config=None, transform=None, target_transform=None):
         super(DatasetFromTwoFolder, self).__init__()
 
         LR_filenames = os.listdir(LR_dir)
@@ -58,6 +58,7 @@ class DatasetFromTwoFolder(data.Dataset):
         self.LR_image_filenames = [os.path.join(LR_dir, x) for x in LR_filenames if is_image_file(x)]
         self.HR_image_filenames = [os.path.join(HR_dir, x) for x in HR_filenames if is_image_file(x)]
         self.config = config
+        self.train = train
 
         self.transform = transform
         self.target_transform = target_transform
@@ -69,10 +70,32 @@ class DatasetFromTwoFolder(data.Dataset):
             img = self.transform(img)
         if self.target_transform:
             target = self.target_transform(target)
+        if self.train and self.config.dataset != 'customize':
+            img, target = self.get_patch(LR_img=img, HR_img=target)
         return img, target
 
     def __len__(self):
         return len(self.LR_image_filenames)
+
+    def get_patch(self, LR_img, HR_img):
+        height, width = HR_img.shape[1], HR_img.shape[2]
+        size = self.config.img_size
+        if self.config.use_bicubic:
+            tp = size
+            ip = size
+        else:
+            tp = size
+            ip = tp // self.config.upscaleFactor
+
+        ix = random.randrange(0, width - ip + 1)
+        iy = random.randrange(0, height - ip + 1)
+
+        if self.config.use_bicubic:
+            tx, ty = ix, iy
+        else:
+            tx, ty = self.config.upscaleFactor * ix, self.config.upscaleFactor * iy
+
+        return LR_img[:, iy:iy + ip, ix:ix + ip], HR_img[:, ty: ty + tp, tx:tx + tp]
 
     def load_img(self, filepath):
         img = Image.open(filepath)

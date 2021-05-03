@@ -79,7 +79,7 @@ if __name__ == '__main__':
     if config.use_h5py:
         train_set = DatasetFromH5py(config.h5py_input, transform=img_transform, target_transform=target_transform)
     else:
-        train_set = DatasetFromTwoFolder(LR_dir=train_LR_dir, HR_dir=train_HR_dir, transform=img_transform,
+        train_set = DatasetFromTwoFolder(LR_dir=train_LR_dir, HR_dir=train_HR_dir, train=True, transform=img_transform,
                                          target_transform=target_transform, config=config)
 
     train_loader = DataLoader(dataset=train_set, batch_size=config.training_batch_size, shuffle=True,
