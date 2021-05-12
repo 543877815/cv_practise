@@ -2,15 +2,15 @@ import tarfile
 import random
 import h5py
 import os
-from utils import get_platform_path, is_image_file, get_logger, rgb2ycbcr
+from utils import get_platform_path, is_image_file, rgb2ycbcr
 from six.moves import urllib
 import torch.utils.data as data
 from PIL import Image
 import numpy as np
 from tqdm import tqdm
-import shutil
 
 
+# deprecated
 class DatasetFromOneFolder(data.Dataset):
     def __init__(self, image_dir, config=None, transform=None, target_transform=None):
         super(DatasetFromOneFolder, self).__init__()
@@ -40,7 +40,7 @@ class DatasetFromOneFolder(data.Dataset):
         else:
             raise Exception("the color space does not exist")
         y, Cb, Cr = img.split()
-        if self.config.single_channel:
+        if self.config.num_channels == 1:
             return y
         else:
             return img
@@ -70,7 +70,7 @@ class DatasetFromTwoFolder(data.Dataset):
             img = self.transform(img)
         if self.target_transform:
             target = self.target_transform(target)
-        if self.train and self.config.dataset != 'customize':
+        if self.train:
             img, target = self.get_patch(LR_img=img, HR_img=target)
         return img, target
 
@@ -80,6 +80,7 @@ class DatasetFromTwoFolder(data.Dataset):
     def get_patch(self, LR_img, HR_img):
         height, width = HR_img.shape[1], HR_img.shape[2]
         size = self.config.img_size
+
         if self.config.use_bicubic:
             tp = size
             ip = size
@@ -103,15 +104,14 @@ class DatasetFromTwoFolder(data.Dataset):
             return img
         else:
             img.convert('RGB')
-
-        if self.config.color == 'RGB':
+        if self.config.color_space == 'RGB':
             return img
-        elif self.config.color == 'YCbCr':
+        elif self.config.color_space == 'YCbCr':
             img_ycrcb = rgb2ycbcr(np.array(img, dtype=np.uint8))
-            if self.config.single_channel:
-                return img_ycrcb[:, :, 0]
+            if self.config.num_channels == 1:
+                return Image.fromarray(img_ycrcb[:, :, 0])
             else:
-                return img_ycrcb
+                return Image.fromarray(img_ycrcb)
         else:
             raise Exception("the color space does not exist")
 
@@ -141,7 +141,7 @@ class DatasetForSRFromFolder(data.Dataset):
             return img
         elif self.config.color == 'YCbCr':
             img_ycrcb = rgb2ycbcr(np.array(img, dtype=np.uint8))
-            if self.config.single_channel:
+            if self.config.num_channels == 1:
                 return img_ycrcb[:, :, 0]
             else:
                 return img_ycrcb
@@ -210,6 +210,8 @@ class EvalDataset(data.Dataset):
 
 
 def buildRawData(Origin_HR_dir, train_HR_dir, train_LR_dir, config):
+    if not config.rebuild_data or config.resume:
+        return
     if not os.path.exists(train_LR_dir):
         os.mkdir(train_LR_dir)
     if not os.path.exists(train_HR_dir):
@@ -218,17 +220,46 @@ def buildRawData(Origin_HR_dir, train_HR_dir, train_LR_dir, config):
         abs_image = os.path.join(Origin_HR_dir, image)
         img_HR = Image.open(abs_image).convert("RGB")
         size = img_HR.size
-        scale_x, scale_y = int(size[0]), int(size[1])
-        scale_x = scale_x - (scale_x % config.upscaleFactor)
-        scale_y = scale_y - (scale_y % config.upscaleFactor)
-        img_HR = img_HR.resize((scale_x, scale_y), Image.BICUBIC)
-        img_LR = img_HR.resize((scale_x // config.upscaleFactor, scale_y // config.upscaleFactor), Image.BICUBIC)
-        if config.use_bicubic:
-            img_LR = img_LR.resize((scale_x, scale_y), Image.BICUBIC)
-        path_HR = os.path.join(train_HR_dir, image)
-        img_HR.save(path_HR)
-        path_LR = os.path.join(train_LR_dir, image)
-        img_LR.save(path_LR)
+        for scale in config.scales:
+            scale_x, scale_y = int(size[0] * scale), int(size[1] * scale)
+            img_HR_scale = img_HR.resize((scale_x, scale_y), Image.BICUBIC)
+            for upscaleFactor in config.upscaleFactor:
+                scale_x = scale_x - (scale_x % upscaleFactor)
+                scale_y = scale_y - (scale_y % upscaleFactor)
+                img_HR_scale = img_HR_scale.resize((scale_x, scale_y), Image.BICUBIC)
+                img_LR = img_HR_scale.resize((scale_x // upscaleFactor, scale_y // upscaleFactor), Image.BICUBIC)
+                if config.use_bicubic:
+                    img_LR = img_LR.resize((scale_x, scale_y), Image.BICUBIC)
+                for rotation in config.rotations:
+                    img_LR = img_LR.rotate(rotation, expand=True)
+                    img_HR_scale = img_HR_scale.rotate(rotation, expand=True)
+
+                    for flip in config.flips:
+                        if flip == 1:
+                            img_LR = img_LR.transpose(Image.FLIP_LEFT_RIGHT)
+                            img_HR_scale = img_HR_scale.transpose(Image.FLIP_LEFT_RIGHT)
+                        elif flip == 2:
+                            img_LR = img_LR.transpose(Image.FLIP_TOP_BOTTOM)
+                            img_HR_scale = img_HR_scale.transpose(Image.FLIP_TOP_BOTTOM)
+                        elif flip == 3:
+                            img_LR = img_LR.transpose(Image.FLIP_TOP_BOTTOM)
+                            img_LR = img_LR.transpose(Image.FLIP_LEFT_RIGHT)
+                            img_HR_scale = img_HR_scale.transpose(Image.FLIP_TOP_BOTTOM)
+                            img_HR_scale = img_HR_scale.transpose(Image.FLIP_LEFT_RIGHT)
+
+                        def get_suffix(image):
+                            for extension in ['.png', '.jpeg', '.jpg', '.bmp', '.JPEG']:
+                                if image.endswith(extension):
+                                    return extension
+
+                        suffix = get_suffix(image)
+                        image_name = image.replace(suffix,
+                                                   "_x{}_s{}_r{}_f{}{}".format(upscaleFactor, scale,
+                                                                               rotation, flip, suffix))
+                        path_LR = os.path.join(train_LR_dir, image_name)
+                        path_HR = os.path.join(train_HR_dir, image_name)
+                        img_LR.save(path_LR)
+                        img_HR_scale.save(path_HR)
 
 
 def BSD300(config):

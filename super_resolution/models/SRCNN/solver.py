@@ -22,9 +22,10 @@ class SRCNNBasic(object):
         # model configuration
         self.model = None
         self.filter = config.filter
-        self.color_space = config.color
-        self.single_channel = config.single_channel
+        self.color_space = config.color_space
+        self.num_channels = config.num_channels
         self.upscale_factor = config.upscaleFactor
+        self.test_upscale_factor = config.test_upscaleFactor
         self.model_name = "{}-{}x".format(config.model, self.upscale_factor)
 
         # checkpoint configuration
@@ -37,6 +38,7 @@ class SRCNNBasic(object):
         self.momentum = config.momentum
         self.scheduler_gamma = config.scheduler_gamma
         self.weight_decay = config.weight_decay
+        self.milestones = config.milestones
 
         # logger configuration
         _, _, _, log_dir = get_platform_path()
@@ -53,13 +55,14 @@ class SRCNNBasic(object):
         self.start_epoch = checkpoint['epoch'] + 1
 
     def convert_BICUBIC(self, img):
-        img_BICUBIC = torch.empty(img.shape[0], img.shape[1], img.shape[2] * self.upscale_factor,
-                                  img.shape[3] * self.upscale_factor)
+        img_BICUBIC = torch.empty(img.shape[0], img.shape[1], img.shape[2] * self.test_upscale_factor,
+                                  img.shape[3] * self.test_upscale_factor)
         for i in range(len(img)):
             x, y = img[i].shape[1:]
             transform = transforms.Compose([
                 transforms.ToPILImage(),
-                transforms.Resize((x * self.upscale_factor, y * self.upscale_factor), interpolation=Image.BICUBIC),
+                transforms.Resize((x * self.test_upscale_factor, y * self.test_upscale_factor),
+                                  interpolation=Image.BICUBIC),
                 transforms.ToTensor(),
             ])
             img_BICUBIC[i] = transform(img[i])
@@ -95,8 +98,7 @@ class SRCNNTester(SRCNNBasic):
         self.criterion = torch.nn.MSELoss()
 
     def build_model(self):
-        num_channels = 1 if self.single_channel else 3
-        self.model = SRCNN(num_channels=num_channels, filter=self.filter).to(self.device)
+        self.model = SRCNN(num_channels=self.num_channels, filter=self.filter).to(self.device)
         self.load_model()
         if self.CUDA:
             cudnn.benchmark = True
@@ -110,10 +112,10 @@ class SRCNNTester(SRCNNBasic):
                 img_BICUBIC = self.convert_BICUBIC(img[0])
                 img_BICUBIC = img_BICUBIC.to(self.device)
                 # full RGB/YCrCb
-                if not self.single_channel:
+                if self.num_channels == 3:
                     output = self.model(img_BICUBIC).clamp(0.0, 1.0).cpu()
                 # y
-                else:
+                elif self.num_channels == 1:
                     output = self.model(img_BICUBIC).cpu()
                     output = [output, img[1], img[2]]
                 output_name = filename[0].replace('LR', 'HR')
@@ -145,8 +147,7 @@ class SRCNNTrainer(SRCNNBasic):
         self.test_loader = test_loader
 
     def build_model(self):
-        num_channels = 1 if self.single_channel else 3
-        self.model = SRCNN(num_channels=num_channels, filter=self.filter).to(self.device)
+        self.model = SRCNN(num_channels=self.num_channels, filter=self.filter).to(self.device)
         if self.resume:
             self.load_model()
         else:
@@ -173,7 +174,7 @@ class SRCNNTrainer(SRCNNBasic):
             {'params': self.model.conv3.parameters(), 'lr': self.lr * 0.1}
         ], lr=self.lr, momentum=self.momentum, weight_decay=self.weight_decay)
 
-        self.scheduler = torch.optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[250, 500, 750, 1000],
+        self.scheduler = torch.optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=self.milestones,
                                                               gamma=self.scheduler_gamma)
 
     def save_model(self, epoch, avg_psnr):

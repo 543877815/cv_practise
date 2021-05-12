@@ -11,11 +11,22 @@ parser.add_argument('--use_relative', default=False, action="store_true",
                     help='whether to use relative path to for data/model/checkpoint/log')
 parser.add_argument('--preprocess', default=False, action="store_true", help='whether to use data preprocessing')
 
+# distributed configuration
+parser.add_argument('--local_rank', type=int, default=0, help='this parameter is passed by torch.distributed.launch')
+parser.add_argument('--distributed', type=bool, const=True, nargs='?', default=True,
+                    help='When more than one gpu device is passed, automatically start one process for each device '
+                         'and give it the correct distributed args (rank, world_size etc). Disable this if you want'
+                         'training to be performed with only one process using the DataParallel module.'
+                         'Default: %(default)s')
+parser.add_argument('--rank', help='Rank for distributed training.', type=int, default=None)
+parser.add_argument('--world_size', help='World size for distributed training.', type=int, default=None)
+
 # cuda && Hardware configuration
 parser.add_argument('--use_cuda', type=bool, default=True, help='whether to use cuda')
 parser.add_argument('--n_threads', type=int, default=6, help='number of threads for data loading')
 parser.add_argument('--cpu', action='store_true', help='use cpu only')
-parser.add_argument('--n_GPUs', type=int, default=1, help='number of GPUs')
+parser.add_argument('--gpu', help='The cuda device(s) to use. Example: ""--gpu 0 1" will train '
+                                  'on GPU 0 and GPU 1. Default: Only use CPU', type=int, default=[], nargs='*', )
 
 # hyper-parameters
 parser.add_argument('--training_batch_size', type=int, default=16, help='training batch size')
@@ -30,7 +41,7 @@ parser.add_argument('--resume', '-r', action='store_true', help='resume from che
 
 # data configuration
 parser.add_argument('--dataset', type=str, default='urban100', help='data that going to use')
-parser.add_argument('--single_channel', action='store_true', help='whether to use specific channel')
+parser.add_argument('--num_channels', type=int, default=1, help='whether to use specific channel')
 parser.add_argument('--num_workers', type=int, default=1, help='number of worker for data loader')
 parser.add_argument('--use_bicubic', type=bool, default=True, help='where to use bicubic to resize LR to HR')
 parser.add_argument('--use_h5py', action='store_true', help='whether to use .h5 file as data input')
@@ -40,7 +51,7 @@ parser.add_argument('--train_HR_dir', type=str, default='train_HR_dir', help='hi
 parser.add_argument('--test_LR_dir', type=str, default='val_LR_dir', help='low resolution data for validation')
 parser.add_argument('--test_HR_dir', type=str, default='val_HR_dir', help='high resolution data for validation')
 
-parser.add_argument('--color', type=str, default='RGB', help='color space to use, RGB/YCbCr')
+parser.add_argument('--color_space', type=str, default='RGB', help='color space to use, RGB/YCbCr')
 
 # Optimization specifications
 parser.add_argument('--lr', type=float, default=1e-4, help='learning rate')

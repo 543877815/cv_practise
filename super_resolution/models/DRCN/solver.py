@@ -26,7 +26,7 @@ class DRCNBasic(object):
         # model configuration
         self.model = None
         self.color_space = config.color
-        self.single_channel = config.single_channel
+        self.num_channels = config.num_channels
         self.upscale_factor = config.upscaleFactor
         self.num_recursions = 16
         self.model_name = "DRCN-{}x".format(self.upscale_factor)
@@ -97,8 +97,7 @@ class DRCNTester(DRCNBasic):
         self.criterion = torch.nn.MSELoss(reduction='mean')
 
     def build_model(self):
-        num_channels = 1 if self.single_channel else 3
-        self.model = DRCN(num_channels=num_channels, num_recursions=self.num_recursions).to(
+        self.model = DRCN(num_channels=self.num_channels, num_recursions=self.num_recursions).to(
             self.device)
         self.load_model()
         if self.CUDA:
@@ -113,10 +112,10 @@ class DRCNTester(DRCNBasic):
                 img_BICUBIC = self.convert_BICUBIC(img)
                 img_BICUBIC = img_BICUBIC.to(self.device)
                 # full RGB/YCrCb
-                if not self.single_channel:
+                if self.num_channels == 3:
                     output = self.model(img_BICUBIC).clamp(0.0, 1.0).cpu()
                 # y
-                else:
+                elif self.num_channels == 1:
                     output = self.model(img_BICUBIC[:, 0, :, :].unsqueeze(1))
                     img_BICUBIC[:, 0, :, :].data = output
                     output = img_BICUBIC.clamp(0.0, 1.0).cpu()
@@ -158,8 +157,7 @@ class DRCNTrainer(DRCNBasic):
         self.test_loader = test_loader
 
     def build_model(self):
-        num_channels = 1 if self.single_channel else 3
-        self.model = DRCN(num_channels=num_channels, num_recursions=self.num_recursions).to(
+        self.model = DRCN(num_channels=self.num_channels, num_recursions=self.num_recursions).to(
             self.device)
 
         if self.resume:

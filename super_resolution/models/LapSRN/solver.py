@@ -27,7 +27,7 @@ class LapSRNBasic(object):
         # model configuration
         self.model = None
         self.color_space = config.color
-        self.single_channel = config.single_channel
+        self.num_channels = config.num_channels
         self.upscale_factor = config.upscaleFactor
         self.model_name = "LapSRN-{}x".format(self.upscale_factor)
 
@@ -94,8 +94,7 @@ class LapSRNTester(LapSRNBasic):
         self.criterion = torch.nn.MSELoss(reduction='sum')
 
     def build_model(self):
-        num_channels = 1 if self.single_channel else 3
-        self.model = LapSRN(num_channels=num_channels).to(self.device)
+        self.model = LapSRN(num_channels=self.num_channels).to(self.device)
         self.load_model()
         if self.CUDA:
             cudnn.benchmark = True
@@ -109,10 +108,10 @@ class LapSRNTester(LapSRNBasic):
                 img_BICUBIC = self.convert_BICUBIC(img)
                 img_BICUBIC = img_BICUBIC.to(self.device)
                 # full RGB/YCrCb
-                if not self.single_channel:
+                if self.num_channels == 3:
                     output = self.model(img_BICUBIC).clamp(0.0, 1.0).cpu()
                 # y
-                else:
+                elif self.num_channels == 1:
                     output = self.model(img_BICUBIC[:, 0, :, :].unsqueeze(1))
                     img_BICUBIC[:, 0, :, :].data = output
                     output = img_BICUBIC.clamp(0.0, 1.0).cpu()
@@ -146,8 +145,7 @@ class LapSRNTrainer(LapSRNBasic):
         self.test_loader = test_loader
 
     def build_model(self):
-        num_channels = 1 if self.single_channel else 3
-        self.model = LapSRN(num_channels=num_channels).to(self.device)
+        self.model = LapSRN(num_channels=self.num_channels).to(self.device)
 
         if self.resume:
             self.load_model()

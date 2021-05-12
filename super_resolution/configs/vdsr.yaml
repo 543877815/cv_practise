@@ -1,0 +1,34 @@
+# hardware
+gpu: [0]
+# model configuration
+model: "VDSR"
+num_channels: 1
+filter: 64
+num_residuals: 18
+# dataset
+dataset: "customize"
+color_space: 'YCbCr'
+upscaleFactor: [2,3,4]
+test_upscaleFactor: 3
+img_size: 41
+scales: [1.0, 0.7, 0.5]
+rotations: [0, 90, 180, 270]
+flips: [0, 1, 2, 3]
+buildRawData: True
+Origin_HR_dir: "F:\\cache\\data\\291-image\\HR"
+train_HR_dir: "F:\\cache\\data\\291-image\\HR_train"
+train_LR_dir: "F:\\cache\\data\\291-image\\LR_train"
+test_HR_dir: "F:\\cache\\data\\Set5\\HR"
+test_LR_dir: "F:\\cache\\data\\Set5\\LR_bicubic\\X3"
+use_h5py: False
+h5py_input: "h5py_input"
+rebuild_data: True
+# experiment
+lr: 0.1
+training_batch_size: 128
+test_batch_size: 1
+momentum: 0.9
+weight_decay: 0.0001
+scheduler_gamma: 0.1
+epochs: 500
+milestones: [100, 200, 300]

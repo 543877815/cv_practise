@@ -26,16 +26,25 @@ class VSDRBasic(object):
 
         # model configuration
         self.model = None
-        self.color_space = config.color
-        self.single_channel = config.single_channel
+        self.color_space = config.color_space
+        self.filter = config.filter
+        self.num_residuals = config.num_residuals
+        self.num_channels = config.num_channels
         self.upscale_factor = config.upscaleFactor
-        self.model_name = "VDSR-{}x".format(self.upscale_factor)
+        self.test_upscaleFactor = config.test_upscaleFactor
+        self.model_name = "{}-{}x".format(config.model, self.upscale_factor)
 
         # checkpoint configuration
         self.resume = config.resume
         self.checkpoint_name = "{}.pth".format(self.model_name)
         self.best_quality = 0
         self.start_epoch = 1
+
+        # parameters
+        self.momentum = config.momentum
+        self.scheduler_gamma = config.scheduler_gamma
+        self.weight_decay = config.weight_decay
+        self.milestones = config.milestones
 
         # logger configuration
         _, _, _, log_dir = get_platform_path()
@@ -52,13 +61,13 @@ class VSDRBasic(object):
         self.start_epoch = checkpoint['epoch'] + 1
 
     def convert_BICUBIC(self, img):
-        img_BICUBIC = torch.empty(img.shape[0], img.shape[1], img.shape[2] * self.upscale_factor,
-                                  img.shape[3] * self.upscale_factor)
+        img_BICUBIC = torch.empty(img.shape[0], img.shape[1], img.shape[2] * self.test_upscaleFactor,
+                                  img.shape[3] * self.test_upscaleFactor)
         for i in range(len(img)):
             x, y = img[i].shape[1:]
             transform = transforms.Compose([
                 transforms.ToPILImage(),
-                transforms.Resize((x * self.upscale_factor, y * self.upscale_factor), interpolation=Image.BICUBIC),
+                transforms.Resize((x * self.test_upscaleFactor, y * self.test_upscaleFactor), interpolation=Image.BICUBIC),
                 transforms.ToTensor(),
             ])
             img_BICUBIC[i] = transform(img[i])
@@ -94,8 +103,8 @@ class VDSRTester(VSDRBasic):
         self.criterion = torch.nn.MSELoss(reduction='sum')
 
     def build_model(self):
-        num_channels = 1 if self.single_channel else 3
-        self.model = VDSR(num_channels=num_channels, base_channels=64, num_residuals=18).to(self.device)
+        self.model = VDSR(num_channels=self.num_channels, filter=self.filter, num_residuals=self.num_residuals).to(
+            self.device)
         self.load_model()
         if self.CUDA:
             cudnn.benchmark = True
@@ -109,10 +118,10 @@ class VDSRTester(VSDRBasic):
                 img_BICUBIC = self.convert_BICUBIC(img)
                 img_BICUBIC = img_BICUBIC.to(self.device)
                 # full RGB/YCrCb
-                if not self.single_channel:
+                if self.num_channels == 3:
                     output = self.model(img_BICUBIC).clamp(0.0, 1.0).cpu()
                 # y
-                else:
+                elif self.num_channels == 1:
                     output = self.model(img_BICUBIC[:, 0, :, :].unsqueeze(1))
                     img_BICUBIC[:, 0, :, :].data = output
                     output = img_BICUBIC.clamp(0.0, 1.0).cpu()
@@ -148,8 +157,8 @@ class VDSRTrainer(VSDRBasic):
         self.clip = clip
 
     def build_model(self):
-        num_channels = 1 if self.single_channel else 3
-        self.model = VDSR(num_channels=num_channels, base_channels=64, num_residuals=18).to(self.device)
+        self.model = VDSR(num_channels=self.num_channels, filter=self.filter, num_residuals=self.num_residuals).to(
+            self.device)
 
         if self.resume:
             self.load_model()
@@ -164,8 +173,10 @@ class VDSRTrainer(VSDRBasic):
             cudnn.benchmark = True
             self.criterion.cuda()
 
-        self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.lr, momentum=0.9, weight_decay=1e-4)
-        self.scheduler = torch.optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=[10, 20, 30], gamma=0.1)
+        self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.lr, momentum=self.weight_decay,
+                                         weight_decay=self.weight_decay)
+        self.scheduler = torch.optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=self.milestones,
+                                                              gamma=self.scheduler_gamma)
 
     def save_model(self, epoch, avg_psnr):
         _, _, checkpoint_dir, _ = get_platform_path()

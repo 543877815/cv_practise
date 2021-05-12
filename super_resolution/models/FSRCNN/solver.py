@@ -21,7 +21,7 @@ class FSRCNNBasic(object):
         # model configuration
         self.model = None
         self.color_space = config.color
-        self.single_channel = config.single_channel
+        self.num_channels = config.num_channels
         self.upscale_factor = config.upscaleFactor
 
         # checkpoint configuration
@@ -69,7 +69,7 @@ class FSRCNNTester(FSRCNNBasic):
         self.criterion = torch.nn.MSELoss()
 
     def build_model(self):
-        num_channels = 1 if self.single_channel else 3
+        num_channels = self.num_channels
         self.model = FSRCNN(num_channels=num_channels, upscale_factor=self.upscale_factor).to(self.device)
         self.load_model()
         if self.CUDA:
@@ -83,10 +83,10 @@ class FSRCNNTester(FSRCNNBasic):
             for index, (img, filename) in enumerate(self.test_loader):
                 img = img.to(self.device)
                 # full RGB/YCrCb
-                if not self.single_channel:
+                if self.num_channels == 3:
                     output = self.model(img).clamp(0.0, 1.0).cpu()
                 # y
-                else:
+                elif self.num_channels == 1:
                     output = self.model(img[:, 0, :, :].unsqueeze(1))
                     img[:, 0, :, :].data = output
                     output = img.clamp(0.0, 1.0).cpu()
@@ -120,7 +120,7 @@ class FSRCNNTrainer(FSRCNNBasic):
         self.test_loader = test_loader
 
     def build_model(self):
-        num_channels = 1 if self.single_channel else 3
+        num_channels = self.num_channels
         self.model = FSRCNN(num_channels=num_channels, upscale_factor=self.upscale_factor).to(self.device)
         if self.resume:
             self.load_model()

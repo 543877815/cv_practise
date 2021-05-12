@@ -24,7 +24,7 @@ if __name__ == '__main__':
 
     # data configuration
     parser.add_argument('--color', type=str, default='RGB', help='color space to use, RGB/YCbCr')
-    parser.add_argument('--single_channel', action='store_true', help='whether to use specific channel')
+    parser.add_argument('--num_channels', type=int, default=1, help='number of channel')
 
     args = parser.parse_args()
 
@@ -61,7 +61,7 @@ if __name__ == '__main__':
         output_img, ground_true_img, BICUBIC_img, criterion = output_img.to(device), ground_true_img.to(
             device), BICUBIC_img.to(device), criterion.to(device)
 
-        if args.single_channel:
+        if args.num_channels == 1:
             BICUBIC_mse = criterion(BICUBIC_img[0], ground_true_img[0])
             mse = criterion(output_img[0], ground_true_img[0])
             BICUBIC_psnr = 10 * log10(1 / BICUBIC_mse.item())

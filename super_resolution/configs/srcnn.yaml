@@ -1,15 +1,29 @@
+# hardware
+gpu: [0]
+# model
 model: "SRCNN"
 filter: 64
-dataset: "91-images"
 num_channels: 1
-color_space: 'YCrCb'
-upscaleFactor: 4
-lr: 0.01
+upscaleFactor: [3]
+test_upscaleFactor: 3
+scales: [1.0, 0.9, 0.8, 0.7, 0.6]
+rotations: [0, 90, 180, 270]
+flips: [0, 1, 2, 3]
+# dataset
+dataset: "91-images"
+img_size: 33
+color_space: 'YCbCr'
+test_HR_dir: "F:\\cache\\data\\Set5\\HR"
+test_LR_dir: "F:\\cache\\data\\Set5\\LR_bicubic\\X3"
+use_h5py: False
+h5py_input: "h5py_input"
+rebuild_data: True
+# experiments
+lr: 0.001
 training_batch_size: 16
 test_batch_size: 1
-img_size: 33
 momentum: 0.9
 weight_decay: 0.0
 scheduler_gamma: 0.95
-gpus: 1
 epochs: 20000
+milestones: [250, 500, 750, 1000]
