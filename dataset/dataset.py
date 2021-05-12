@@ -8,7 +8,7 @@ import torch.utils.data as data
 from PIL import Image
 import numpy as np
 from tqdm import tqdm
-
+import torch
 
 # deprecated
 class DatasetFromOneFolder(data.Dataset):
@@ -230,6 +230,9 @@ def buildRawData(Origin_HR_dir, train_HR_dir, train_LR_dir, config):
                 img_LR = img_HR_scale.resize((scale_x // upscaleFactor, scale_y // upscaleFactor), Image.BICUBIC)
                 if config.use_bicubic:
                     img_LR = img_LR.resize((scale_x, scale_y), Image.BICUBIC)
+                # avoid size too low
+                if img_LR.size[0] < config.img_size:
+                    continue
                 for rotation in config.rotations:
                     img_LR = img_LR.rotate(rotation, expand=True)
                     img_HR_scale = img_HR_scale.rotate(rotation, expand=True)
