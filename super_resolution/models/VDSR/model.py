@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from math import sqrt
+from torch.nn import functional as F
 
 
 class Conv_ReLU_Block(nn.Module):
@@ -14,12 +15,12 @@ class Conv_ReLU_Block(nn.Module):
 
 
 class VDSR(nn.Module):
-    def __init__(self, num_channels, num_residuals=18, filter=64):
+    def __init__(self, num_channels, num_residuals=18, num_filter=64):
         super(VDSR, self).__init__()
-        self.input = nn.Conv2d(in_channels=num_channels, out_channels=filter, kernel_size=3, stride=1, padding=1,
+        self.input = nn.Conv2d(in_channels=num_channels, out_channels=num_filter, kernel_size=3, stride=1, padding=1,
                                bias=False)
         self.residual_layer = self.make_layer(Conv_ReLU_Block, num_residuals)
-        self.output = nn.Conv2d(in_channels=filter, out_channels=1, kernel_size=3, stride=1, padding=1,
+        self.output = nn.Conv2d(in_channels=num_filter, out_channels=1, kernel_size=3, stride=1, padding=1,
                                 bias=False)
         self.relu = nn.ReLU(inplace=True)
 
@@ -35,7 +36,8 @@ class VDSR(nn.Module):
             layers.append(block())
         return nn.Sequential(*layers)
 
-    def forward(self, x):
+    def forward(self, x, gt):
+        x = F.interpolate(x, size=gt.shape[2:], mode='bicubic', align_corners=True)
         residual = x
         out = self.relu(self.input(x))
         out = self.residual_layer(out)

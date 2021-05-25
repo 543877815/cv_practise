@@ -26,11 +26,13 @@ LAST_T = time.time()
 BEGIN_T = LAST_T
 
 
-def get_platform_path(args=None):
+def get_platform_path(config=None):
     system = platform.system()
     data_dir, model_dir, checkpoint_dir, log_dir, dirs = '', '', '', '', []
-    if args is not None and args.use_relative:
-        pass
+    if config and config.use_relative:
+        checkpoint_dir = 'checkpoint/'
+        model_dir = 'model/'
+        log_dir = 'log/'
     else:
         if system == 'Windows':
             drive, common_dir = 'F', 'cache'

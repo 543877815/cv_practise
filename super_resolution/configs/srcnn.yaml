@@ -13,11 +13,11 @@ flips: [0, 1, 2, 3]
 dataset: "91-images"
 img_size: 33
 color_space: 'YCbCr'
-test_HR_dir: "F:\\cache\\data\\Set5\\HR"
-test_LR_dir: "F:\\cache\\data\\Set5\\LR_bicubic\\X3"
+test_HR_dir: "F:\\cache\\data\\Set5,Set14\\set5_HR\\3"
+test_LR_dir: "F:\\cache\\data\\Set5,Set14\\set5_LR\\3"
 use_h5py: False
 h5py_input: "h5py_input"
-rebuild_data: True
+force_rebuild: True
 # experiments
 lr: 0.001
 training_batch_size: 16

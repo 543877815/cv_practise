@@ -147,6 +147,7 @@ if __name__ == '__main__':
     parser.add_argument('--epochs', type=int, default=300, help="desired epochs to run")
     args = parser.parse_args()
 
+
     # detect device
     print("CUDA Available: ", torch.cuda.is_available())
     device = torch.device("cuda" if (args.use_cuda and torch.cuda.is_available()) else "cpu")

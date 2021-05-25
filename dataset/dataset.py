@@ -1,3 +1,4 @@
+import shutil
 import tarfile
 import random
 import h5py
@@ -10,40 +11,8 @@ import numpy as np
 from tqdm import tqdm
 import torch
 
-# deprecated
-class DatasetFromOneFolder(data.Dataset):
-    def __init__(self, image_dir, config=None, transform=None, target_transform=None):
-        super(DatasetFromOneFolder, self).__init__()
-        self.image_filenames = [os.path.join(image_dir, x) for x in os.listdir(image_dir) if is_image_file(x)]
-        self.config = config
 
-        self.transform = transform
-        self.target_transform = target_transform
 
-    def __getitem__(self, item):
-        img = self.load_img(self.image_filenames[item])
-        target = img.copy()
-        if self.transform:
-            img = self.transform(img)
-        if self.target_transform:
-            target = self.target_transform(target)
-        return img, target
-
-    def __len__(self):
-        return len(self.image_filenames)
-
-    def load_img(self, filepath):
-        if self.config.color == 'YCbCr':
-            img = Image.open(filepath).convert('YCbCr')
-        elif self.config.color == 'RGB':
-            img = Image.open(filepath).convert('RGB')
-        else:
-            raise Exception("the color space does not exist")
-        y, Cb, Cr = img.split()
-        if self.config.num_channels == 1:
-            return y
-        else:
-            return img
 
 
 class DatasetFromTwoFolder(data.Dataset):
@@ -51,8 +20,8 @@ class DatasetFromTwoFolder(data.Dataset):
         super(DatasetFromTwoFolder, self).__init__()
 
         LR_filenames = os.listdir(LR_dir)
-        LR_filenames.sort(key=lambda x: x[:-4])
         HR_filenames = os.listdir(HR_dir)
+        LR_filenames.sort(key=lambda x: x[:-4])
         HR_filenames.sort(key=lambda x: x[:-4])
 
         self.LR_image_filenames = [os.path.join(LR_dir, x) for x in LR_filenames if is_image_file(x)]
@@ -102,8 +71,7 @@ class DatasetFromTwoFolder(data.Dataset):
         img = Image.open(filepath)
         if len(img.split()) == 1:
             return img
-        else:
-            img.convert('RGB')
+        img = img.convert('RGB')
         if self.config.color_space == 'RGB':
             return img
         elif self.config.color_space == 'YCbCr':
@@ -209,15 +177,21 @@ class EvalDataset(data.Dataset):
             return len(f['lr'])
 
 
-def buildRawData(Origin_HR_dir, train_HR_dir, train_LR_dir, config):
-    if not config.rebuild_data or config.resume:
+def buildRawData(origin_HR_dir, train_HR_dir, train_LR_dir, config):
+    if config.force_rebuild:
+        shutil.rmtree(train_HR_dir)
+        shutil.rmtree(train_LR_dir)
+    if os.path.exists(train_HR_dir) and len(os.listdir(train_HR_dir)) > 0 and \
+            os.path.exists(train_LR_dir) and len(os.listdir(train_LR_dir)) > 0:
+        assert len(os.listdir(train_HR_dir)) == len(os.listdir(train_LR_dir)), \
+         "The number of train data is not equal to the number of test data, please rebuild the data."
         return
     if not os.path.exists(train_LR_dir):
         os.mkdir(train_LR_dir)
     if not os.path.exists(train_HR_dir):
         os.mkdir(train_HR_dir)
-    for image in tqdm(os.listdir(Origin_HR_dir)):
-        abs_image = os.path.join(Origin_HR_dir, image)
+    for image in tqdm(os.listdir(origin_HR_dir)):
+        abs_image = os.path.join(origin_HR_dir, image)
         img_HR = Image.open(abs_image).convert("RGB")
         size = img_HR.size
         for scale in config.scales:
@@ -286,12 +260,12 @@ def BSD300(config):
 
         os.remove(file_path)
 
-    Origin_HR_dir = data_dir + '/train'
+    origin_HR_dir = data_dir + '/train'
     train_LR_dir = data_dir + '/LR_x{}'.format(config.upscaleFactor)
     train_HR_dir = data_dir + '/HR_x{}'.format(config.upscaleFactor)
 
     print("===> Generate low resolution images:")
-    buildRawData(train_LR_dir=train_LR_dir, train_HR_dir=train_HR_dir, Origin_HR_dir=Origin_HR_dir, config=config)
+    buildRawData(train_LR_dir=train_LR_dir, train_HR_dir=train_HR_dir, origin_HR_dir=origin_HR_dir, config=config)
     return train_LR_dir, train_HR_dir
 
 
@@ -315,12 +289,12 @@ def BSDS500(config):
 
         os.remove(file_path)
 
-    Origin_HR_dir = data_dir + '/train'
+    origin_HR_dir = data_dir + '/train'
     train_LR_dir = data_dir + '/LR_x{}'.format(config.upscaleFactor)
     train_HR_dir = data_dir + '/HR_x{}'.format(config.upscaleFactor)
 
     print("===> Generate low resolution images:")
-    buildRawData(train_LR_dir=train_LR_dir, train_HR_dir=train_HR_dir, Origin_HR_dir=Origin_HR_dir, config=config)
+    buildRawData(train_LR_dir=train_LR_dir, train_HR_dir=train_HR_dir, origin_HR_dir=origin_HR_dir, config=config)
     return train_LR_dir, train_HR_dir
 
 
@@ -334,12 +308,12 @@ def images91(config):
         print("===> Downloading url:", url)
         os.system('git clone {} {}'.format(url, data_dir))
 
-    Origin_HR_dir = data_dir + '/HR'
+    origin_HR_dir = data_dir + '/HR'
     train_LR_dir = data_dir + '/LR_x{}'.format(config.upscaleFactor)
     train_HR_dir = data_dir + '/HR_x{}'.format(config.upscaleFactor)
 
     print("===> Generate low resolution images:")
-    buildRawData(train_LR_dir=train_LR_dir, train_HR_dir=train_HR_dir, Origin_HR_dir=Origin_HR_dir, config=config)
+    buildRawData(train_LR_dir=train_LR_dir, train_HR_dir=train_HR_dir, origin_HR_dir=origin_HR_dir, config=config)
     return train_LR_dir, train_HR_dir
 
 
@@ -353,12 +327,12 @@ def Set5(config):
         print("===> Downloading url:", url)
         os.system('git clone {} {}'.format(url, data_dir))
 
-    Origin_HR_dir = data_dir + '/HR'
+    origin_HR_dir = data_dir + '/HR'
     train_LR_dir = data_dir + '/LR_x{}'.format(config.upscaleFactor)
     train_HR_dir = data_dir + '/HR_x{}'.format(config.upscaleFactor)
 
     print("===> Generate low resolution images:")
-    buildRawData(train_LR_dir=train_LR_dir, train_HR_dir=train_HR_dir, Origin_HR_dir=Origin_HR_dir, config=config)
+    buildRawData(train_LR_dir=train_LR_dir, train_HR_dir=train_HR_dir, origin_HR_dir=origin_HR_dir, config=config)
     return train_LR_dir, train_HR_dir
 
 
@@ -372,12 +346,12 @@ def Set14(config):
         print("===> Downloading url:", url)
         os.system('git clone {} {}'.format(url, data_dir))
 
-    Origin_HR_dir = data_dir + '/HR'
+    origin_HR_dir = data_dir + '/HR'
     train_LR_dir = data_dir + '/LR_x{}'.format(config.upscaleFactor)
     train_HR_dir = data_dir + '/HR_x{}'.format(config.upscaleFactor)
 
     print("===> Generate low resolution images:")
-    buildRawData(train_LR_dir=train_LR_dir, train_HR_dir=train_HR_dir, Origin_HR_dir=Origin_HR_dir, config=config)
+    buildRawData(train_LR_dir=train_LR_dir, train_HR_dir=train_HR_dir, origin_HR_dir=origin_HR_dir, config=config)
     return train_LR_dir, train_HR_dir
 
 
@@ -391,12 +365,12 @@ def B100(config):
         print("===> Downloading url:", url)
         os.system('git clone {} {}'.format(url, data_dir))
 
-    Origin_HR_dir = data_dir + '/HR'
+    origin_HR_dir = data_dir + '/HR'
     train_LR_dir = data_dir + '/LR_x{}'.format(config.upscaleFactor)
     train_HR_dir = data_dir + '/HR_x{}'.format(config.upscaleFactor)
 
     print("===> Generate low resolution images:")
-    buildRawData(train_LR_dir=train_LR_dir, train_HR_dir=train_HR_dir, Origin_HR_dir=Origin_HR_dir, config=config)
+    buildRawData(train_LR_dir=train_LR_dir, train_HR_dir=train_HR_dir, origin_HR_dir=origin_HR_dir, config=config)
     return train_LR_dir, train_HR_dir
 
 
@@ -410,12 +384,12 @@ def Urban100(config):
         print("===> Downloading url:", url)
         os.system('git clone {} {}'.format(url, data_dir))
 
-    Origin_HR_dir = data_dir + '/HR'
+    origin_HR_dir = data_dir + '/HR'
     train_LR_dir = data_dir + '/LR_x{}'.format(config.upscaleFactor)
     train_HR_dir = data_dir + '/HR_x{}'.format(config.upscaleFactor)
 
     print("===> Generate low resolution images:")
-    buildRawData(train_LR_dir=train_LR_dir, train_HR_dir=train_HR_dir, Origin_HR_dir=Origin_HR_dir, config=config)
+    buildRawData(train_LR_dir=train_LR_dir, train_HR_dir=train_HR_dir, origin_HR_dir=origin_HR_dir, config=config)
     return train_LR_dir, train_HR_dir
 
 
@@ -429,12 +403,12 @@ def Manga109(config):
         print("===> Downloading url:", url)
         os.system('git clone {} {}'.format(url, data_dir))
 
-    Origin_HR_dir = data_dir + '/HR'
+    origin_HR_dir = data_dir + '/HR'
     train_LR_dir = data_dir + '/LR_x{}'.format(config.upscaleFactor)
     train_HR_dir = data_dir + '/HR_x{}'.format(config.upscaleFactor)
 
     print("===> Generate low resolution images:")
-    buildRawData(train_LR_dir=train_LR_dir, train_HR_dir=train_HR_dir, Origin_HR_dir=Origin_HR_dir, config=config)
+    buildRawData(train_LR_dir=train_LR_dir, train_HR_dir=train_HR_dir, origin_HR_dir=origin_HR_dir, config=config)
     return train_LR_dir, train_HR_dir
 
 

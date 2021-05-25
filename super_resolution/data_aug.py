@@ -1,8 +1,11 @@
+import sys
+import os
+
+sys.path.append(os.path.abspath('../'))
 import argparse
 from math import floor
 from PIL import Image
 from tqdm import tqdm
-import os
 import numpy as np
 from utils import get_platform_path, is_image_file
 import h5py
@@ -13,9 +16,9 @@ if __name__ == '__main__':
 
     # file-setting
     parser.add_argument('--input', type=str, default='input', help='directory of input data for augmentation')
-    parser.add_argument('--output_HR', type=str, default='output_HR',
+    parser.add_argument('--output_HR', type=str, default=None,
                         help='directory of high resolution output data for augmentation')
-    parser.add_argument('--output_LR', type=str, default='output_LR',
+    parser.add_argument('--output_LR', type=str, default=None,
                         help='directory of low resoltuion output data for augmentation')
     parser.add_argument('--output', type=str, default='output', help='directory of h5py output data for augmentation')
     parser.add_argument('--use_h5py', action='store_true', help='whether to save as file h5py')
@@ -43,9 +46,9 @@ if __name__ == '__main__':
     args.flips = [int(x) for x in args.flips]
     print(args)
 
-    if not os.path.exists(args.output_HR):
+    if args.output_HR is not None and not os.path.exists(args.output_HR):
         os.mkdir(args.output_HR)
-    if not os.path.exists(args.output_LR):
+    if args.output_LR is not None and not os.path.exists(args.output_LR):
         os.mkdir(args.output_LR)
 
     # data/models/checkpoint in different platform
@@ -163,9 +166,6 @@ if __name__ == '__main__':
 
             hr_patches = np.array(hr_patches)
             lr_patches = np.array(lr_patches)
-
-            np.random.shuffle(hr_patches)
-            np.random.shuffle(lr_patches)
 
             hr = h5_file.create_dataset('hr', data=hr_patches)
             lr = h5_file.create_dataset('lr', data=lr_patches)

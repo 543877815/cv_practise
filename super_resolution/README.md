@@ -63,14 +63,14 @@ It takes a very long time to train.
 
 paper: [Accurate Image Super-Resolution Using Very Deep Convolutional Networks（CVPR）](http://arxiv.org/abs/1511.04587)
 
-Dataset prepare:  91-image, Bsd300 train set, 41x41, stride:41, scale: 1.0 0.7 0.5, rotation: 0 90 180 270, flip: 0 1 2, uf: 2 3 4, single model
+Dataset prepare:  91-image, Bsd300 train set, 41x41, stride:41, scale: 1.0 0.7 0.5, rotation: 0 90 180 270, flip: 0 1 2, upscaleFactor: 2 3 4, single model
 
-| Dataset  | Scale              | PSNR(91-images/paper)                         | SSIM(91-images/paper) |
-| -------- | ------------------ | --------------------------------------------- | --------------------- |
-| Set5     | x2<br />x3<br />x4 | 37.46/37.53<br />33.67/33.66<br />31.33/31.35 |                       |
-| Set14    | x2<br />x3<br />x4 | 32.84/33.03<br />29.76/29.77<br />27.98/28.01 |                       |
-| BSD100   | x2<br />x3<br />x4 | 31.81/31.90<br />28.81/28.82<br />27.26/26.90 |                       |
-| Urban100 | x2<br />x3<br />x4 | 30.18/30.76<br />26.09/27.14<br />25.15/25.18 |                       |
+| Dataset  | Scale              | PSNR(291-images/paper)                        | SSIM(291-images/paper)                              |
+| -------- | ------------------ | --------------------------------------------- | --------------------------------------------------- |
+| Set5     | x2<br />x3<br />x4 | 37.46/37.53<br />33.67/33.66<br />31.33/31.35 | 0.9574/0.9587<br />0.9211/0.9213<br />0.8827/0.8838 |
+| Set14    | x2<br />x3<br />x4 | 32.84/33.03<br />29.76/29.77<br />27.98/28.01 | 0.9110/0.9124<br />0.8314/0.8314<br />0.7669/0.7674 |
+| BSD100   | x2<br />x3<br />x4 | 31.81/31.90<br />28.81/28.82<br />27.26/26.90 | 0.8942/0.8960<br />0.7970/0.7976<br />0.7242/0.7251 |
+| Urban100 | x2<br />x3<br />x4 | 30.18/30.76<br />26.09/27.14<br />25.15/25.18 | 0.9165/0.9140<br />0.8358/0.8279<br />0.7504/0.7524 |
 
 ### ESPCN(2017)
 
@@ -134,66 +134,7 @@ Dataset prepare: 91-image, BSD300 train set, 31x31, stride: 21, rotation: 0 90 1
 
 ### WDSR
 
-## Results
-
-The method transforms RGB to YCrCb is mainly refer to matlab' s `rgb2ycrcb` function. The PSNR is calculated only on the y channel on the [YCrCb](https://en.wikipedia.org/wiki/YCbCr) color space, and the detail Implementation is refer to the code in [SelfExSR](https://github.com/jbhuang0604/SelfExSR/blob/master/quant_eval/compute_difference.m), which crops some margin pixels during testing in order to get the similar result as the paper.
 
 
+CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python -m torch.distributed.launch --nproc_per_node=8 train.py --network=pretrained_gans/Gs.pth --model checkpoints/39_PL_netG.pth --dis_model checkpoints/39_PL_netD.pth --resume True --start_iter 40
 
-
-
-Results on Set 5
-
-| Scale       | BicuBic | SRCNN        | FSRCNN(not finish) | VDSR         | ESPCN/91/ImageNet | DRCN | DRRN |
-| ----------- | ------- | ------------ | ------------------ | ------------ | ----------------- | ---- | ---- |
-| **2x**-PSNR | 33.64   | 35.84(36.66) | 36.81(37.00)       | 37.15(37.53) | 36.36()           |      |      |
-| **3x**-PSNR | 30.39   | 32.18(32.75) | 32.83(33.16)       | 33.30(33.66) | 32.32(32.55)      |      |      |
-| **4x**-PSNR | 28.42   | 29.94(30.48) | 28.71(30.71)       | 30.55(31.35) | 29.94()           |      |      |
-| **2x**-SSIM | 0.9292  |              |                    |              |                   |      |      |
-| **3x**-SSIM | 0.8678  |              |                    |              |                   |      |      |
-| **4x**-SSIM | 0.8101  |              |                    |              |                   |      |      |
-| **2x**-IFC  | 5.72    |              |                    |              |                   |      |      |
-| **3x**-IFC  | 3.45    |              |                    |              |                   |      |      |
-| **4x**-IFC  | 2.28    |              |                    |              |                   |      |      |
-
-Results on Set 14
-
-| Scale       | BicuBic | SRCNN        | FSRCNN       | VDSR         | ESPCN/91/ImageNet |
-| ----------- | ------- | ------------ | ------------ | ------------ | ----------------- |
-| **2x**-PSNR | 30.22   | 31.81(34.42) | 32.35(32.63) | 32.64(33.03) | 32.13             |
-| **3x**-PSNR | 27.53   | 28.84(29.28) | 29.23(29.43) | 29.53(29.77) | 28.94(29.08)      |
-| **4x**-PSNR | 25.99   | 27.04(27.49) | 27.42(27.59) | 27.89(28.01) | 27.05()           |
-| **2x**-SSIM | 0.8683  |              |              |              |                   |
-| **3x**-SSIM | 0.7737  |              |              |              |                   |
-| **4x**-SSIM | 0.7023  |              |              |              |                   |
-| **2x**-IFC  | 5.74    |              |              |              |                   |
-| **3x**-IFC  | 3.33    |              |              |              |                   |
-| **4x**-IFC  | 2.18    |              |              |              |                   |
-
-Results on Urban 100
-
-| Scale       | BicuBic | SRCNN | FSRCNN | VDSR |
-| ----------- | ------- | ----- | ------ | ---- |
-| **2x**-PSNR | 26.66   |       |        |      |
-| **3x**-PSNR | 23.98   |       |        |      |
-| **4x**-PSNR | 23.14   |       |        |      |
-| **2x**-SSIM | 0.8408  |       |        |      |
-| **3x**-SSIM |         |       |        |      |
-| **4x**-SSIM | 0.6573  |       |        |      |
-| **2x**-IFC  | 5.72    |       |        |      |
-| **3x**-IFC  |         |       |        |      |
-| **4x**-IFC  | 2.27    |       |        |      |
-
-Results on BSD 100 
-
-| Scale       | BicuBic | SRCNN | FSRCNN | VDSR |
-| ----------- | ------- | ----- | ------ | ---- |
-| **2x**-PSNR | 29.55   |       |        |      |
-| **3x**-PSNR | 27.20   | 28.57 |        |      |
-| **4x**-PSNR | 25.96   |       |        |      |
-| **2x**-SSIM | 0.8425  |       |        |      |
-| **3x**-SSIM | 0.7382  |       |        |      |
-| **4x**-SSIM | 0.6672  |       |        |      |
-| **2x**-IFC  | 5.26    |       |        |      |
-| **3x**-IFC  | 3.00    |       |        |      |
-| **4x**-IFC  | 1.91    |       |        |      |

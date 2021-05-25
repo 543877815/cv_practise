@@ -1,0 +1,42 @@
+# hardware
+gpu: [ 0 ]
+# model configuration
+model: "VDSR"
+num_channels: 1
+num_residuals: 18
+num_filter: 64
+# dataset
+dataset: "customize"
+color_space: 'YCbCr'
+img_size: 41
+upscaleFactor: [ 2,3,4 ]
+test_upscaleFactor: 3
+scales: [ 1.0, 0.7, 0.5 ]
+rotations: [ 0, 90, 180, 270 ]
+flips: [ 0, 1, 2, 3 ]
+buildRawData: True
+origin_HR_dir: "F:\\cache\\data\\291-image\\HR"
+train_HR_dir: "F:\\cache\\data\\291-image\\HR_train"
+train_LR_dir: "F:\\cache\\data\\291-image\\LR_train"
+test_HR_dir: "F:\\cache\\data\\Set5,Set14\\set5_HR\\3"
+test_LR_dir: "F:\\cache\\data\\Set5,Set14\\set5_LR\\3"
+use_h5py: False
+h5py_input: "h5py_input"
+force_rebuild: True
+# experiment
+lr: 0.1
+training_batch_size: 128
+test_batch_size: 1
+momentum: 0.9
+weight_decay: 0.0001
+scheduler_gamma: 0.1
+epochs: 50
+milestones: [ 10, 20, 30 ]
+# checkpoint
+checkpoint_interval: 10
+checkpoint_dir: "checkpoints/"
+# visualization
+tensorboard_log_dir: "runs/"
+tensorboard_image_interval: 100
+tensorboard_draw_model: True
+tensorboard_input: [ 64, 1, 41, 41 ]
