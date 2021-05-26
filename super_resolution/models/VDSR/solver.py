@@ -7,7 +7,7 @@ import torch
 import torch.backends.cudnn as cudnn
 import os
 from .model import VDSR
-from utils import progress_bar, get_platform_path, get_logger
+from utils import progress_bar, get_platform_path, get_logger, shave
 from torchvision.transforms import transforms
 from PIL import Image
 from torchvision import utils as vutils
@@ -21,8 +21,6 @@ class VSDRBasic(object):
     def __init__(self, config, device=None):
         super(VSDRBasic, self).__init__()
         self.CUDA = torch.cuda.is_available()
-        if device is None and not config.distributed:
-            self.device = torch.device("cuda" if (config.use_cuda and self.CUDA) else "cpu")
         self.device = device
 
         # model configuration
@@ -153,7 +151,6 @@ class VDSRTrainer(VSDRBasic):
 
         self.train_loader = train_loader
         self.test_loader = test_loader
-
         self.clip = config.clip
 
         # model init
@@ -162,7 +159,6 @@ class VDSRTrainer(VSDRBasic):
     def build_model(self):
         self.model = VDSR(num_channels=self.num_channels, num_filter=self.num_filter,
                           num_residuals=self.num_residuals).to(self.device)
-
         if self.resume:
             self.load_model()
         # else:
@@ -225,6 +221,7 @@ class VDSRTrainer(VSDRBasic):
             for index, (img, target) in enumerate(self.test_loader):
                 img, target = img.to(self.device), target.to(self.device)
                 output = self.model(img, target).clamp(0.0, 1.0)
+                output, target = shave(output, target, self.test_upscaleFactor)
                 loss = self.criterion(output, target)
                 psnr += self.psrn(loss.item() / target.shape[2] / target.shape[3])
                 if not self.distributed or self.local_rank == 0:
@@ -270,6 +267,7 @@ class VDSRTrainer(VSDRBasic):
                         len(save_input) > 0 and len(save_target) > 0:
                     self.writer.add_graph(model=self.model, input_to_model=[save_input[0], save_target[0]])
 
+                # tensorboard images
                 if epoch % self.tensorboard_image_interval == 0:
 
                     assert len(save_input) == len(save_output) == len(save_target), \
@@ -285,9 +283,3 @@ class VDSRTrainer(VSDRBasic):
                         grid = vutils.make_grid(images)
                         self.writer.add_image('image-{}'.format(i), grid, epoch)
 
-                    # if save_input.shape != save_output.shape:
-                    #     save_input = F.interpolate(save_input, size=save_output.shape[2:], mode='nearest')
-
-                    # self.writer.add_image('input', save_input.squeeze(0), epoch, dataformats='CHW')
-                    # self.writer.add_image('output', save_output.squeeze(0), epoch, dataformats='CHW')
-                    # self.writer.add_image('target', save_target.squeeze(0), epoch, dataformats='CHW')

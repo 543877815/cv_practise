@@ -161,6 +161,13 @@ def is_image_file(filename):
     return any(filename.endswith(extension) for extension in ['.png', '.jpeg', '.jpg', '.bmp', '.JPEG'])
 
 
+def shave(pred, gt, shave_border):
+    height, width = pred.shape[:2]
+    pred = pred[shave_border:height - shave_border, shave_border:width - shave_border]
+    gt = gt[shave_border:height - shave_border, shave_border:width - shave_border]
+    return pred, gt
+
+
 # / 255
 OrigT = np.array(
     [[65.481, 128.553, 24.966],
@@ -223,9 +230,9 @@ def ycbcr2rgb(ycbcr_img):
 
 # Here is the function for shaving the edge of image
 def shave(pred, gt, shave_border):
-    height, width = pred.shape[:2]
-    pred = pred[shave_border:height - shave_border, shave_border:width - shave_border]
-    gt = gt[shave_border:height - shave_border, shave_border:width - shave_border]
+    height, width = pred.shape[2:]
+    pred = pred[:, :, shave_border:height - shave_border, shave_border:width - shave_border]
+    gt = gt[:, :, shave_border:height - shave_border, shave_border:width - shave_border]
     return pred, gt
 
 

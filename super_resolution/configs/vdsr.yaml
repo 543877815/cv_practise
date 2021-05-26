@@ -1,6 +1,6 @@
 # hardware
-gpu: [ 1 ]
-distributed: False
+gpu: [ 1, 2 ]
+distributed: True
 address: '127.0.0.1'
 port: '23456'
 # model configuration
@@ -17,8 +17,7 @@ test_upscaleFactor: 3
 scales: [ 1.0, 0.7, 0.5 ]
 rotations: [ 0, 90, 180, 270 ]
 flips: [ 0, 1, 2, 3 ]
-use_h5py: True
-
+use_h5py: False
 buildRawData: True
 platform: linux
 force_rebuild: False
@@ -31,21 +30,21 @@ data_flist:
     test_LR_dir: "F:\\cache\\data\\Set5,Set14\\set5_LR\\3"
   linux:
     origin_HR_dir: "/data/data/291-image/HR"
-    train_HR_dir: "/data/data/291-image/HR_train"
-    train_LR_dir: "/data/data/291-image/LR_train"
+    train_HR_dir: "/data/data/super_resolution/data_for_VDSR/HR_x2"
+    train_LR_dir: "/data/data/super_resolution/data_for_VDSR/LR_x2"
     test_HR_dir: "/data/data/Set5,Set14/set5_HR/2/"
     test_LR_dir: "/data/data/Set5,Set14/set5_LR/2/"
     h5py_input: "/data/data/super_resolution/data_for_VDSR/train.h5"
 # experiment
-lr: 0.01
-training_batch_size: 256
+lr: 0.1
+training_batch_size: 64
 test_batch_size: 1
 clip: 0.4
 momentum: 0.9
 weight_decay: 0.0001
 scheduler_gamma: 0.1
 epochs: 100
-milestones: [ 10, 20, 30, 50 ]
+milestones: [ 20, 40, 60, 80 ]
 # checkpoint
 checkpoint_interval: 1
 checkpoint_dir: "checkpoints/"

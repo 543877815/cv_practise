@@ -133,14 +133,16 @@ def get_trainer(config, train_loader, test_loader, device=None):
 
 
 def main():
-
     # get configuration
     configs = get_config(args)
 
     # detect device
     print("CUDA Available: ", torch.cuda.is_available())
-    device = torch.device("cuda:{}".format(configs.gpu[0]) if (args.use_cuda and torch.cuda.is_available()) else "cpu")
-
+    if not configs.distributed:
+        device = torch.device(
+            "cuda:{}".format(configs.gpu[0]) if (args.use_cuda and torch.cuda.is_available()) else "cpu")
+    else:
+        device = torch.device("cuda", args.local_rank)
     # get dataset
     train_set, test_set = get_dataset(configs)
 
