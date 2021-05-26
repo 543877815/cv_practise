@@ -56,6 +56,7 @@ def get_dataset(config):
     # data preparing
     print("===> Preparing data..")
     if config.use_h5py:
+        print("===> Use h5py as input..")
         train_set = DatasetFromH5py(h5_file=data_flist.h5py_input, transform=img_transform,
                                     target_transform=target_transform)
         assert len(train_set), 'No file found at {}'.format(data_flist.h5py_input)
@@ -63,13 +64,16 @@ def get_dataset(config):
         dataset = config.dataset
         if dataset.lower() == 'customize':
             if config.buildRawData:
+                print("===> build raw data..")
                 assert (data_flist.origin_HR_dir and data_flist.train_HR_dir and data_flist.train_LR_dir) is not None, \
                     'origin_HR_dir, train_HR_dir and train_HR_dir should exist when using dataset="customize".'
-                buildRawData(origin_HR_dir=data_flist.origin_HR_dir, train_HR_dir=data_flist.train_HR_dir,
-                             train_LR_dir=data_flist.train_LR_dir, config=config)
+                if not config.distributed or config.local_rank == 0:
+                    buildRawData(origin_HR_dir=data_flist.origin_HR_dir, train_HR_dir=data_flist.train_HR_dir,
+                                 train_LR_dir=data_flist.train_LR_dir, config=config)
             train_LR_dir = train_LR_dir
             train_HR_dir = train_HR_dir
         else:
+            print("===> Use unprocessed dataset..")
             if dataset.lower() == 'bsd300' or dataset.lower() == 'bsds300':
                 train_LR_dir, train_HR_dir = BSD300(config)
             elif dataset.lower() == 'bsd500' or dataset.lower() == 'bsds500':

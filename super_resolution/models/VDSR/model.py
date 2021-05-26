@@ -36,8 +36,7 @@ class VDSR(nn.Module):
             layers.append(block())
         return nn.Sequential(*layers)
 
-    def forward(self, x, gt):
-        x = F.interpolate(x, size=gt.shape[2:], mode='bicubic', align_corners=True)
+    def forward(self, x):
         residual = x
         out = self.relu(self.input(x))
         out = self.residual_layer(out)

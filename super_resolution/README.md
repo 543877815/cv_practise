@@ -1,5 +1,32 @@
 # Super Resolution
 
+## DataFlow
+
+### Patch pair
+
+prepare image (like crop to 41x41) as patch pair:
+
+![1](./readme/1.png)
+
+### H5py
+
+Save the patch above to `.h5` file with key `lr` and `hr` respectively.
+
+```python
+import h5py
+import matplotlib.pyplot as plt
+f = h5py.File('test.h5','r')
+f.keys()
+plt.imshow(f['lr'][1])
+plt.imshow(f['hr'][1])
+```
+
+![2](./readme/2.png)
+
+### Dataloader
+
+Using traditional data processing flow in Pytorch but crop image patch randomly.
+
 ## Methods
 
 ### Bibubic
@@ -19,9 +46,13 @@ paper:
 
 - [Image Super-Resolution Using Deep Convolutional Networks (TPIAMI 2015)](https://arxiv.org/abs/1501.00092)
 
-Dataset prepare: 91-image, 33x33, stride:14
+Dataset prepare: for 9-5-5, 91-image, train: 33x33, test: 21x21, stride: 14, for 9-1-5; for train 33x33, test: 17x17, for 9-5-5), see source code on http://mmlab.ie.cuhk.edu.hk/projects/SRCNN.html.
 
-Todo: 91-image, train: 33x33, test: 21x21, for 9-1-5; for train 33x33, test: 17x17, for 9-5-5), see source code on http://mmlab.ie.cuhk.edu.hk/projects/SRCNN.html.
+```bash
+python data_aug.py --number 91 --use_bicubic --width 33 --height 33 --stride 14 -uf 2 --input F:\\cache\\data\\91-image\\HR --single_y --use_h5py --output F:\\cache\\data\\data_for_SRCNN\\train_x2.h5
+```
+
+
 
 The best result of the paper is trained on 395,909 images from the ILSVRC 2013 ImageNet detection training partition.
 
@@ -63,7 +94,27 @@ It takes a very long time to train.
 
 paper: [Accurate Image Super-Resolution Using Very Deep Convolutional Networks（CVPR）](http://arxiv.org/abs/1511.04587)
 
-Dataset prepare:  91-image, Bsd300 train set, 41x41, stride:41, scale: 1.0 0.7 0.5, rotation: 0 90 180 270, flip: 0 1 2, upscaleFactor: 2 3 4, single model
+Prepare data. 91-image and Bsd300 training set, height:41, width:41, stride:41, scale: 1.0 0.7 0.5, rotation: 0 90 180 270, flip: 0 1 2 3, upscaleFactor: 2 3 4, single model, y channel in YCrCb space only.:
+
+```bash
+python data_aug.py --number 291 --use_bicubic --width 41 --height 41 --stride 41 -uf 2 3 4 --scales 1.0 0.7 0.5 --rotations 0 90 180 270 --flips 0 1 2 3 --input /data/data/291-images/ --single_y --use_h5py --output /data/data/super_resolution/data_for_VDSR/train.h5
+```
+
+Training. Set `use_h5py=True` when using `.h5` file as data input:
+
+```bash
+python -m torch.distributed.launch --nproc_per_node=2 main.py --configs configs/vdsr.yaml
+python main.py --configs configs/vdsr.yaml
+```
+
+Resume:
+
+```bash
+python -m torch.distributed.launch --nproc_per_node=2 main.py --configs configs/vdsr.yaml -r
+python main.py --configs configs/vdsr.yaml -r
+```
+
+Result:
 
 | Dataset  | Scale              | PSNR(291-images/paper)                        | SSIM(291-images/paper)                              |
 | -------- | ------------------ | --------------------------------------------- | --------------------------------------------------- |

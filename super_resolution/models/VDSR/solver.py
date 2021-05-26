@@ -13,9 +13,8 @@ from PIL import Image
 from torchvision import utils as vutils
 from torch.utils.tensorboard import SummaryWriter
 import torch.nn as nn
-import numpy as np
 from torch.nn import functional as F
-
+from collections import OrderedDict
 
 class VSDRBasic(object):
     def __init__(self, config, device=None):
@@ -68,11 +67,16 @@ class VSDRBasic(object):
         print('==> Resuming from checkpoint...')
         assert os.path.isdir(checkpoint_dir), 'Error: no checkpoint directory found!'
         checkpoint = torch.load('{}/{}'.format(checkpoint_dir, self.checkpoint_name))
-        self.model.load_state_dict(checkpoint['net'])
+        new_state_dict = OrderedDict()
+        for key, value in checkpoint['net'].items():
+            key = key.replace('module.', '')
+            new_state_dict[key] = value
+        self.model.load_state_dict(new_state_dict)
         self.best_quality = checkpoint['psnr']
         self.start_epoch = checkpoint['epoch'] + 1
         self.logger.info("Start from epoch {}, best PSNR: {}".format(self.start_epoch, self.best_quality))
 
+    # Deprecated (Too ugly...)
     def convert_BICUBIC(self, img):
         img_BICUBIC = torch.empty(img.shape[0], img.shape[1], img.shape[2] * self.test_upscaleFactor,
                                   img.shape[3] * self.test_upscaleFactor)
@@ -101,6 +105,7 @@ class VDSRTester(VSDRBasic):
         self.output = data_dir + config.output
         self.test_loader = test_loader
         self.criterion = torch.nn.MSELoss(reduction='sum')
+        self.build_model()
 
     def build_model(self):
         self.model = VDSR(num_channels=self.num_channels, num_filter=self.num_filter,
@@ -191,19 +196,16 @@ class VDSRTrainer(VSDRBasic):
     def train(self):
         self.model.train()
         train_loss = 0
-
         for index, (img, target) in enumerate(self.train_loader):
+            assert img.shape == target.shape, 'the shape of input is not equal to the shape of output'
             img, target = img.to(self.device), target.to(self.device)
-            output = self.model(img, target)
+            output = self.model(img)
             loss = self.criterion(output, target)
-
             self.optimizer.zero_grad()
             loss.backward()
             nn.utils.clip_grad_norm_(self.model.parameters(), self.clip)
             self.optimizer.step()
-
             train_loss += loss.item()
-
             if not self.distributed or self.local_rank == 0:
                 progress_bar(index, len(self.train_loader), 'Loss: %.4f' % (train_loss / (index + 1)))
 
@@ -219,8 +221,9 @@ class VDSRTrainer(VSDRBasic):
         save_inputs, save_outputs, save_targets = [], [], []
         with torch.no_grad():
             for index, (img, target) in enumerate(self.test_loader):
+                assert img.shape == target.shape, 'the shape of input is not equal to the shape of output'
                 img, target = img.to(self.device), target.to(self.device)
-                output = self.model(img, target).clamp(0.0, 1.0)
+                output = self.model(img).clamp(0.0, 1.0)
                 output, target = shave(output, target, self.test_upscaleFactor)
                 loss = self.criterion(output, target)
                 psnr += self.psrn(loss.item() / target.shape[2] / target.shape[3])

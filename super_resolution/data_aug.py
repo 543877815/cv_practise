@@ -34,7 +34,7 @@ if __name__ == '__main__':
                         help='whether to use Bicubic Interpolation after downsampling')
     parser.add_argument('--upscaleFactor', '-uf', dest='uf', nargs='+', default=2,
                         help='super resolution upscale factor')
-    parser.add_argument('--scales', dest='scales', nargs='+', default='1.0', help='scale for data augmentation')
+    parser.add_argument('--scales', dest='scales', nargs='+', default='1', help='scale for data augmentation')
     parser.add_argument('--rotations', dest='rotations', nargs='+', default='0', help='rotation for data augmentation')
     parser.add_argument('--flips', dest='flips', nargs='+', default='0', help='flip for data augmentation')
 
