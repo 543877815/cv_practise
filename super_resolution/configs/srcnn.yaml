@@ -1,29 +1,56 @@
 # hardware
 gpu: [0]
+distributed: False
+address: '127.0.0.1'
+port: '23456'
 # model
 model: "SRCNN"
-filter: 64
+num_filter: 64
 num_channels: 1
+# dataset
+dataset: "customize"
+color_space: 'YCbCr'
+img_size: 33
 upscaleFactor: [3]
 test_upscaleFactor: 3
-scales: [1.0, 0.9, 0.8, 0.7, 0.6]
-rotations: [0, 90, 180, 270]
-flips: [0, 1, 2, 3]
-# dataset
-dataset: "91-images"
-img_size: 33
-color_space: 'YCbCr'
-test_HR_dir: "F:\\cache\\data\\Set5,Set14\\set5_HR\\3"
-test_LR_dir: "F:\\cache\\data\\Set5,Set14\\set5_LR\\3"
-use_h5py: False
-h5py_input: "h5py_input"
-force_rebuild: True
+scales: [1.0]
+rotations: [0]
+flips: [0]
+use_h5py: True
+buildRawData: True
+platform: windows
+force_rebuild: False
+data_flist:
+  windows:
+    origin_HR_dir: "F:\\cache\\data\\291-image\\HR"
+    train_HR_dir: "F:\\cache\\data\\291-image\\HR_train"
+    train_LR_dir: "F:\\cache\\data\\291-image\\LR_train"
+    test_HR_dir: "F:\\cache\\data\\Set5_SR\\HR_3"
+    test_LR_dir: "F:\\cache\\data\\Set5_SR\\LR_3"
+    h5py_input: "F:\\cache\\data\\data_for_SRCNN\\train_x3.h5"
+  linux:
+    origin_HR_dir: "/data/data/291-images"
+    train_HR_dir: "/data/data/super_resolution/data_for_VDSR/HR_train"
+    train_LR_dir: "/data/data/super_resolution/data_for_VDSR/LR_train"
+    test_HR_dir: "/data/data/Set5/HR_x2/"
+    test_LR_dir: "/data/data/Set5/LR_x2/"
+    h5py_input: "/data/data/super_resolution/data_for_VDSR/train.h5"
 # experiments
-lr: 0.001
-training_batch_size: 16
+lr: 0.1
+training_batch_size: 32
 test_batch_size: 1
 momentum: 0.9
-weight_decay: 0.0
+weight_decay: 0.0001
 scheduler_gamma: 0.95
-epochs: 20000
-milestones: [250, 500, 750, 1000]
+epochs: 2000
+milestones: [1000, 1250, 1500, 2000]
+# checkpoint
+checkpoint_interval: 1
+checkpoint_dir: "checkpoints/"
+# visualization
+tensorboard_log_dir: "runs/"
+tensorboard_image_interval: 1
+tensorboard_image_sample: 10
+tensorboard_image_size: [ 256, 256 ]
+tensorboard_draw_model: True
+tensorboard_input: [ 64, 1, 41, 41 ]

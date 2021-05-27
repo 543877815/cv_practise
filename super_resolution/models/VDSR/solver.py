@@ -266,9 +266,9 @@ class VDSRTrainer(VSDRBasic):
                 self.writer.add_scalar('psnr', avg_psnr, epoch)
 
                 # tensorboard graph
-                if epoch == self.start_epoch and self.tensorboard_draw_model and \
+                if epoch == 0 and self.tensorboard_draw_model and \
                         len(save_input) > 0 and len(save_target) > 0:
-                    self.writer.add_graph(model=self.model, input_to_model=[save_input[0], save_target[0]])
+                    self.writer.add_graph(model=self.model, input_to_model=[save_input[0]])
 
                 # tensorboard images
                 if epoch % self.tensorboard_image_interval == 0:

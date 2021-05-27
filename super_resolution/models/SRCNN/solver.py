@@ -20,6 +20,7 @@ class SRCNNBasic(object):
     def __init__(self, config, device=None):
         super(SRCNNBasic, self).__init__()
         self.CUDA = torch.cuda.is_available()
+        self.device = device
 
         # model configuration
         self.model = None
@@ -27,7 +28,7 @@ class SRCNNBasic(object):
         self.color_space = config.color_space
         self.num_channels = config.num_channels
         self.upscale_factor = config.upscaleFactor
-        self.test_upscale_factor = config.test_upscaleFactor
+        self.test_upscaleFactor = config.test_upscaleFactor
         self.model_name = "{}-{}x".format(config.model, self.upscale_factor)
 
         # checkpoint configuration
@@ -284,7 +285,7 @@ class SRCNNTrainer(SRCNNBasic):
                 # tensorboard graph
                 if epoch == self.start_epoch and self.tensorboard_draw_model and \
                         len(save_input) > 0 and len(save_target) > 0:
-                    self.writer.add_graph(model=self.model, input_to_model=[save_input[0], save_target[0]])
+                    self.writer.add_graph(model=self.model, input_to_model=[save_input[0]])
 
                 # tensorboard images
                 if epoch % self.tensorboard_image_interval == 0:
