@@ -2,15 +2,40 @@
 
 ## DataFlow
 
+**Note**: the size of `test_HR` and `test_LR` should match the input and output of the model. Some models (SRCNN) use bicubic resize of the low-resolution image as input, which has the same size of high-resolution. While others (FSRCNN) use `x` scale downsampling low-resolution image as input, the size of which should be able to divided evenly by the correspond high-resolution image by the up-scale factor.
+
 ### Patch pair
 
-prepare image (like crop to 41x41) as patch pair:
+This method should first build `train_HR` and `train_LR` patch correspondingly using `data_aug.py`, which will prepare image (like crop to 41x41) as patch pair:
 
 ![1](./readme/1.png)
 
+In the `configs/model.yml` file:
+
+```yml
+use_h5py: False
+train_HR_dir: path_to_train_HR
+train_LR_dir: path_to_train_HR
+test_HR_dir: path_to_test_HR
+test_LR_dir: path_to_test_LR
+```
+
+**Note**: the size of `train_HR` and `train_LR` should match input and output of the model.
+
 ### H5py
 
-Save the patch above to `.h5` file with key `lr` and `hr` respectively.
+This method should first build `train_HR` and `train_LR` patch correspondingly using `data_aug.py`, which will prepare image (like crop to 41x41) as patch pair. By setting `use_h5py=True`, you can save the patch above to single `.h5` file with key `lr` and `hr` respectively. This method is recommended to hardware with large RAM.
+
+In the `configs/model.yml` file:
+
+```yml
+use_h5py: True
+h5py_input: path_to_h5_file
+test_HR_dir: path_to_test_HR
+test_LR_dir: path_to_test_LR
+```
+
+**Visualization**:
 
 ```python
 import h5py
@@ -27,6 +52,19 @@ plt.imshow(f['hr'][1])
 
 Using traditional data processing flow in Pytorch but crop image patch randomly.
 
+In the `configs/model.yml` file:
+
+```yml
+use_h5py: False
+origin_HR_dir: path_to_origin_HR
+train_HR_dir: path_to_train_HR
+train_LR_dir: path_to_train_HR
+test_HR_dir: path_to_test_HR
+test_LR_dir: path_to_test_LR
+```
+
+This method will generate whole image using with augmentation, and then crop patch correspondingly during training.
+
 ## Methods
 
 ### Bibubic
@@ -42,36 +80,52 @@ Using traditional data processing flow in Pytorch but crop image patch randomly.
 
 paper:
 
-- [Learning a Deep Convolutional Network for Image Super-Resolution(ECCV 2014)](chrome-extension://oemmndcbldboiebfnladdacbdfmadadm/http://personal.ie.cuhk.edu.hk/~ccloy/files/eccv_2014_deepresolution.pdf)
+- [Learning a Deep Convolutional Network for Image Super-Resolution(ECCV 2014)](https://link.springer.com/content/pdf/10.1007/978-3-319-10593-2_13.pdf)
 
 - [Image Super-Resolution Using Deep Convolutional Networks (TPIAMI 2015)](https://arxiv.org/abs/1501.00092)
 
-Dataset prepare: for 9-5-5, 91-image, train: 33x33, test: 21x21, stride: 14, for 9-1-5; for train 33x33, test: 17x17, for 9-5-5), see source code on http://mmlab.ie.cuhk.edu.hk/projects/SRCNN.html.
+**Dataset prepare**: for 9-5-5, 91-image, train: 33x33, test: 21x21, stride: 14, for 9-1-5; for train 33x33, test: 17x17, for 9-5-5), see source code on http://mmlab.ie.cuhk.edu.hk/projects/SRCNN.html.
 
 ```bash
-python data_aug.py --number 91 --use_bicubic --width 33 --height 33 --stride 14 -uf 2 --input F:\\cache\\data\\91-image\\HR --single_y --use_h5py --output F:\\cache\\data\\data_for_SRCNN\\train_x2.h5
+python data_aug.py --number 91 --use_bicubic --width 33 --height 33 --stride 14 -uf 2 \
+                   --input F:\\cache\\data\\91-image\\HR --single_y --use_h5py \
+                   --output F:\cache\data\data_for_SRCNN\\train_x2.h5
 ```
-
-
 
 The best result of the paper is trained on 395,909 images from the ILSVRC 2013 ImageNet detection training partition.
 
 I simply pick the first 1000 images from the validation dataset of ILSVRC 2012.
 
-| Dataset   | Scale              | PSNR(91-images/ImageNet/paper)                               | SSIM(91-images/ImageNet/paper) |
-| --------- | ------------------ | ------------------------------------------------------------ | ------------------------------ |
-| Set5      | x2<br />x3<br />x4 | 36.55/36.64/36.66/<br />32.18/32.45/32.75<br />30.34/30.36/30.49 |                                |
-| Set14     | x2<br />x3<br />x4 | 32.33/32.35/32.45<br />28.84/29.06/29.28<br />27.37/27.41/27.49 |                                |
-| BSD100    | x2<br />x3<br />x4 | 31.32/31.30/31.36<br />28.24/28.25/28.41<br />26.81/26.85/26.90 |                                |
-| Urban 100 | x2<br />x3<br />x4 | 29.05/29.00/29.50<br />25.38/25.31/26.24<br />24.33/24.36/24.52 |                                |
+**Training**: 
+
+```bash
+python -m torch.distributed.launch --nproc_per_node=2 main.py --configs configs/srcnn.yaml
+python main.py --configs configs/srcnn.yaml
+```
+
+**Resume**:
+
+```bash
+python -m torch.distributed.launch --nproc_per_node=2 main.py --configs configs/srcnn.yaml -r
+python main.py --configs configs/srcnn.yaml -r
+```
+
+**Result**:
+
+| Dataset   | Scale              | PSNR(91-images/ImageNet/paper)                               | SSIM(91-images/ImageNet/paper)                               |
+| --------- | ------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| Set5      | x2<br />x3<br />x4 | 36.55/36.65/36.66/<br />32.18/32.45/32.75<br />30.34/30.36/30.49 | 0.9529/0.9532/0.9542<br />0.9041/0.9039/0.9090<br />0.8597/0.8604/0.8628 |
+| Set14     | x2<br />x3<br />x4 | 32.33/32.35/32.45<br />28.84/29.06/29.28<br />27.37/27.41/27.49 | 0.9052/0.9049/0.9067<br />0.8156/0.8146/0.8215<br />0.7485/0.7496/0.7513 |
+| BSD100    | x2<br />x3<br />x4 | 31.32/31.30/31.36<br />28.24/28.25/28.41<br />26.81/26.85/26.90 | 0.8869/0.8860/0.8977<br />0.7811/0.7802/0.7971<br />0.7084/0.7095/0.7184 |
+| Urban 100 | x2<br />x3<br />x4 | 29.05/29.00/-<br />25.38/25.31/-<br />24.33/24.36/-          | 0.9004/0.8996/-<br />0.7969/0.7959/-<br />0.7143/0.7155/-    |
 
 ### FSRCNN(2016)
 
 paper: [Accelerating the Super-Resolution Convolutional Neural Network（ECCV）](https://arxiv.org/abs/1608.00367)
 
-Dataset prepare: 91-image
+Dataset prepare: 91-image dataset
 
-Fine tune: General-100 (actually without this to get the following answer :)
+Fine tune in paper: General-100 (I only train on 91-image dataset :)
 
 For 2x, HR: 20x20, stride:2, LR: 10x10
 
@@ -79,42 +133,67 @@ For 3x, HR: 21x21, stride:3, LR: 7x7
 
 For 4x, HR: 24x24, stride:4, LR: 6x6
 
-Scale: 1.0 0.9 0.8 0.7 0.6, rotation: 0 90 180 270
+Scale: 1.0 0.9 0.8 0.7 0.6, rotation: 0 90 180 270.
+
+**Dataset prepare**:
+
+```bash
+python data_aug.py --number 91 --width 20 --height 20 --stride 2 -uf 2 \
+				   --rotations 0 90 180 270 --scales 1.0 0.9 0.8 0.7 0.6 \
+                   --input F:\\cache\\data\\91-image\\HR --single_y --use_h5py \
+                   --output F:\cache\data\data_for_FSRCNN\\train_x2.h5
+```
+
+**Training**:
+
+```bash
+python -m torch.distributed.launch --nproc_per_node=2 main.py --configs configs/fsrcnn.yaml
+python main.py --configs configs/fsrcnn.yaml
+```
 
 It takes a very long time to train.
 
-| Dataset  | Scale              | PSNR(91-images/paper)                         | SSIM(91-images/paper) |
-| -------- | ------------------ | --------------------------------------------- | --------------------- |
-| Set5     | x2<br />x3<br />x4 | 36.94/36.66<br />33.04/32.75<br />30.66/30.48 |                       |
-| Set14    | x2<br />x3<br />x4 | 32.48/34.54<br />29.33/29.28<br />27.43/27.49 |                       |
-| BSD100   | x2<br />x3<br />x4 | 31.42/31.73<br />28.47/28.55<br />26.93/26.92 |                       |
-| Urban100 | x2<br />x3<br />x4 | 29.30/29.81<br />26.61/-<br />24.50/24.61     |                       |
+For 2x, the number of dataset is 14632248.
+
+For 3x, the number of dataset is 6473984.
+
+For 4x, the number of dataset is 3546584.
+
+| Scale              | Dataset  | PSNR(91-images/paper)                         | SSIM(91-images/paper)                               |
+| ------------------ | -------- | --------------------------------------------- | --------------------------------------------------- |
+| x2<br />x3<br />x4 | Set5     | 36.96/36.94<br />33.05/33.06<br />30.66/30.55 | 0.9551/0.9552<br />0.9128/0.9128<br />0.8651/0.8619 |
+| x2<br />x3<br />x4 | Set14    | 32.48/32.54<br />29.33/29.37<br />27.43/27.50 | 0.9071/0.9080<br />0.8225/0.8231<br />0.7492/0.7509 |
+| x2<br />x3<br />x4 | BSD100   | 31.42/31.73<br />28.47/28.55<br />26.93/26.92 | 0.8883/0.9064<br />0.7877/0.8123<br />0.7105/0.7378 |
+| x2<br />x3<br />x4 | Urban100 | 29.30/-<br />26.61/-<br />24.50/-             | 0.9051/-<br />0.8150/-<br />0.7218/-                |
 
 ### VDSR(2016)
 
 paper: [Accurate Image Super-Resolution Using Very Deep Convolutional Networks（CVPR）](http://arxiv.org/abs/1511.04587)
 
-Prepare data. 91-image and Bsd300 training set, height:41, width:41, stride:41, scale: 1.0 0.7 0.5, rotation: 0 90 180 270, flip: 0 1 2 3, upscaleFactor: 2 3 4, single model, y channel in YCrCb space only.:
+**Dataset prepare**. 91-image and Bsd300 training set, height:41, width:41, stride:41, scale: 1.0 0.7 0.5, rotation: 0 90 180 270, flip: 0 1 2 3, upscaleFactor: 2 3 4, single model, y channel in YCrCb space only.:
 
 ```bash
-python data_aug.py --number 291 --use_bicubic --width 41 --height 41 --stride 41 -uf 2 3 4 --scales 1.0 0.7 0.5 --rotations 0 90 180 270 --flips 0 1 2 3 --input /data/data/291-images/ --single_y --use_h5py --output /data/data/super_resolution/data_for_VDSR/train.h5
+python data_aug.py --number 291 --use_bicubic --width 41 --height 41 --stride 41 \
+				   -uf 2 3 4 --scales 1.0 0.7 0.5 --rotations 0 90 180 270 --flips 0 1 2 3 \
+				   --input /data/data/291-images/  --single_y --use_h5py \
+				   --output /data/data/super_resolution/data_for_VDSR/train.h5
 ```
 
-Training. Set `use_h5py=True` when using `.h5` file as data input:
+**Training**. 
 
 ```bash
 python -m torch.distributed.launch --nproc_per_node=2 main.py --configs configs/vdsr.yaml
 python main.py --configs configs/vdsr.yaml
 ```
 
-Resume:
+**Resume**:
 
 ```bash
 python -m torch.distributed.launch --nproc_per_node=2 main.py --configs configs/vdsr.yaml -r
 python main.py --configs configs/vdsr.yaml -r
 ```
 
-Result:
+**Result**:
 
 | Dataset  | Scale              | PSNR(291-images/paper)                        | SSIM(291-images/paper)                              |
 | -------- | ------------------ | --------------------------------------------- | --------------------------------------------------- |
@@ -135,11 +214,37 @@ for 3x, HR: 51x51, stride: 51, LR: 17x17
 
 for 4x, HR: 68x68, stride: 68, LR: 17x17
 
-| Dataset | Scale              | PSNR(91-images/paper/ImageNet/paper)                         | SSIM(91-images/paper/ImageNet/paper) |
-| ------- | ------------------ | ------------------------------------------------------------ | ------------------------------------ |
-| Set5    | x2<br />x3<br />x4 | 36.35/-/35.64/-<br />32.32/32.75/31.95/33.00<br />30.66/-/30.14/30.90 |                                      |
-| Set14   | x2<br />x3<br />x4 | 32.13/-/31.79<br />28.94/29.28/28.76/29.42<br />27.43/-/27.23/27.73 |                                      |
-| BSD200  | x2<br />x3<br />x4 | 31.08/-/30.88/-<br />28.16/28.55/28.04/28.52<br />26.93/-/26.77/27.06 |                                      |
+**Dataset prepare**.
+
+stride $$(17-\sum mod(f,2))\times r$$  for HR and $$17-\sum mod(f,2)$$, thus 28 for x2, 42 for x2, 56 for x3 (maybe).
+
+```bash
+python data_aug.py --number 91 --width 34 --height 34 --stride 28 -uf 2 \
+				   --input /data/data/91-images/data  --single_y --use_h5py \
+				   --output /data/data/super_resolution/data_for_ESPCN/train_x2.h5
+```
+
+**Training**. 
+
+```bash
+python -m torch.distributed.launch --nproc_per_node=2 main.py --configs configs/espcn.yaml
+python main.py --configs configs/espcn.yaml
+```
+
+**Resume**:
+
+```bash
+python -m torch.distributed.launch --nproc_per_node=2 main.py --configs configs/espcn.yaml -r
+python main.py --configs configs/espcn.yaml -r
+```
+
+**Result**:
+
+| Dataset | Scale              | PSNR(91-images/paper/ImageNet/paper)                         | SSIM(91-images/paper/ImageNet/paper)      |
+| ------- | ------------------ | ------------------------------------------------------------ | ----------------------------------------- |
+| Set5    | x2<br />x3<br />x4 | 36.36/-/35.65/-<br />32.32/32.75/31.95/33.00<br />30.66/-/30.14/30.90 | 0.9519/-/0.9459/-<br />0.9013/-/-/-<br /> |
+| Set14   | x2<br />x3<br />x4 | 32.13/-/31.79<br />28.94/29.28/28.76/29.42<br />27.43/-/27.23/27.73 | 0.9032/-/0.8978/<br />0.8129/-/-/<br />   |
+| BSD200  | x2<br />x3<br />x4 | 31.08/-/30.88/-<br />28.16/28.55/28.04/28.52<br />26.93/-/26.77/27.06 | 0.8836/-/0.8796/<br />0.7789/-/-/         |
 
 ### DRCN(2016)
 
@@ -189,3 +294,6 @@ Dataset prepare: 91-image, BSD300 train set, 31x31, stride: 21, rotation: 0 90 1
 
 CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python -m torch.distributed.launch --nproc_per_node=8 train.py --network=pretrained_gans/Gs.pth --model checkpoints/39_PL_netG.pth --dis_model checkpoints/39_PL_netD.pth --resume True --start_iter 40
 
+## Source
+
+- [BaiduNetDisk](https://pan.baidu.com/s/1AHKdBOUO9rJ_JSYsqiTylQ ), code: scao 

@@ -32,20 +32,19 @@ if __name__ == '__main__':
     parser.add_argument('--stride', type=int, default=41, help='stride of crop image')
     parser.add_argument('--use_bicubic', action='store_true',
                         help='whether to use Bicubic Interpolation after downsampling')
-    parser.add_argument('--upscaleFactor', '-uf', dest='uf', nargs='+', default=2,
+    parser.add_argument('--upscaleFactor', '-uf', dest='uf', nargs='+', default='2',
                         help='super resolution upscale factor')
     parser.add_argument('--scales', dest='scales', nargs='+', default='1', help='scale for data augmentation')
     parser.add_argument('--rotations', dest='rotations', nargs='+', default='0', help='rotation for data augmentation')
     parser.add_argument('--flips', dest='flips', nargs='+', default='0', help='flip for data augmentation')
+    parser.add_argument('--seed', type=int, default=1234, help='shuffle seed for np.random.shuffle')
 
     args = parser.parse_args()
-
     args.uf = [int(x) for x in args.uf]
     args.scales = [float(x) for x in args.scales]
     args.rotations = [float(x) for x in args.rotations]
     args.flips = [int(x) for x in args.flips]
     print(args)
-
     if args.output_HR is not None and not os.path.exists(args.output_HR):
         os.mkdir(args.output_HR)
     if args.output_LR is not None and not os.path.exists(args.output_LR):
@@ -62,13 +61,13 @@ if __name__ == '__main__':
     hr_patches = []
     lr_patches = []
 
+    print("===> {} images".format(len(image_filenames)))
+
     for file_path in tqdm(image_filenames):
         id = 0
         OriImg = Image.open(file_path).convert('RGB')
         size = OriImg.size
-
         for uf in args.uf:
-
             # 放大
             for scale in args.scales:
                 img = OriImg.copy()
@@ -84,7 +83,6 @@ if __name__ == '__main__':
                 # 上采样为同一个大小
                 if args.use_bicubic:
                     img_LR = img_LR.resize((scale_x, scale_y), Image.BICUBIC)
-
                 # 翻转
                 for flip in args.flips:
                     if flip == 1:
@@ -98,13 +96,10 @@ if __name__ == '__main__':
                         img_LR = img_LR.transpose(Image.FLIP_TOP_BOTTOM)
                         img = img.transpose(Image.FLIP_LEFT_RIGHT)
                         img = img.transpose(Image.FLIP_TOP_BOTTOM)
-
                     # 旋转
                     for angle in args.rotations:
-
                         img_LR = img_LR.rotate(angle, expand=True)
                         img = img.rotate(angle, expand=True)
-
                         for i in range(int(floor(scale_x / args.stride))):
                             for j in range(int(floor(scale_y / args.stride))):
                                 x1 = i * args.stride
@@ -132,7 +127,6 @@ if __name__ == '__main__':
                                     assert y2 % uf == 0, 'the image height is no divisible by {}'.format(uf)
                                     sub_img_LR = img_LR.crop((x1 / uf, y1 / uf,
                                                               x2 / uf, y2 / uf))
-
                                 if args.use_h5py:
                                     if args.single_y:
                                         sub_img = np.array(sub_img, dtype=np.uint8)
@@ -148,7 +142,6 @@ if __name__ == '__main__':
                                     else:
                                         sub_img = np.array(sub_img).astype(np.uint8)
                                         sub_img_LR = np.array(sub_img_LR).astype(np.uint8)
-
                                     hr_patches.append(sub_img)
                                     lr_patches.append(sub_img_LR)
                                 else:
@@ -159,13 +152,17 @@ if __name__ == '__main__':
                                     sub_img_LR.save(
                                         "{}/{}_{}_x{}.png".format(args.output_LR, os.path.basename(file_path), id, uf))
                                 id = id + 1
-
     if args.use_h5py:
         try:
             h5_file = h5py.File(args.output, 'w')
-
             hr_patches = np.array(hr_patches)
             lr_patches = np.array(lr_patches)
+            # shuffle using same seed
+            np.random.seed(args.seed)
+            np.random.shuffle(hr_patches)
+            np.random.seed(args.seed)
+            np.random.shuffle(lr_patches)
+            print("===> {} patches".format(len(hr_patches)))
 
             hr = h5_file.create_dataset('hr', data=hr_patches)
             lr = h5_file.create_dataset('lr', data=lr_patches)
@@ -178,3 +175,5 @@ if __name__ == '__main__':
 
         except OSError as e:
             print(e)
+
+    print("===> finished !!")

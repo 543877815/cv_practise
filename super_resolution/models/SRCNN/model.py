@@ -5,11 +5,11 @@ import torch.nn.functional as F
 
 
 class SRCNN(torch.nn.Module):
-    def __init__(self, num_channels=1, filter=64):
+    def __init__(self, num_channels=1, num_filter=64):
         super(SRCNN, self).__init__()
-        self.conv1 = nn.Conv2d(num_channels, filter, kernel_size=9, padding=9 // 2, stride=1)
-        self.conv2 = nn.Conv2d(filter, filter // 2, kernel_size=5, padding=5 // 2, stride=1)
-        self.conv3 = nn.Conv2d(filter // 2, num_channels, kernel_size=5, padding=5 // 2, stride=1)
+        self.conv1 = nn.Conv2d(num_channels, num_filter, kernel_size=9, padding=9 // 2, stride=1)
+        self.conv2 = nn.Conv2d(num_filter, num_filter // 2, kernel_size=5, padding=5 // 2, stride=1)
+        self.conv3 = nn.Conv2d(num_filter // 2, num_channels, kernel_size=5, padding=5 // 2, stride=1)
         self.relu = nn.ReLU(inplace=True)
         self.weight_init(mean=0.0, std=0.001)
 

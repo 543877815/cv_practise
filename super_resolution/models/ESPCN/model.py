@@ -7,16 +7,16 @@ from torch import nn
 
 
 class ESPCN(nn.Module):
-    def __init__(self, upscale_factor, num_channels=1, filter=64):
+    def __init__(self, upscale_factor, num_channels=1, num_filter=64):
         super(ESPCN, self).__init__()
         self.first_part = nn.Sequential(
-            nn.Conv2d(num_channels, filter, kernel_size=5, padding=5 // 2),
+            nn.Conv2d(num_channels, num_filter, kernel_size=5, padding=5 // 2),
             nn.Tanh(),
-            nn.Conv2d(filter, filter // 2, kernel_size=3, padding=3 // 2),
+            nn.Conv2d(num_filter, num_filter // 2, kernel_size=3, padding=3 // 2),
             nn.Tanh(),
         )
         self.last_part = nn.Sequential(
-            nn.Conv2d(filter // 2, num_channels * (upscale_factor ** 2), kernel_size=3, padding=3 // 2),
+            nn.Conv2d(num_filter // 2, num_channels * (upscale_factor ** 2), kernel_size=3, padding=3 // 2),
             nn.PixelShuffle(upscale_factor)
         )
 

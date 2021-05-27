@@ -9,3 +9,10 @@ distributed
 python -m torch.distributed.launch --nproc_per_node=2 main.py --configs configs/vdsr.yaml
 common
 python main.py --configs configs/vdsr.yaml
+
+FSRCNN
+data prepare
+python data_aug.py --number 1 --width 20 --height 20 --stride 2 -uf 2 \
+				   --rotations 0 90 180 270 --scales 1.0 0.9 0.8 0.7 0.6 \
+           --input /data/data/91-images/data --single_y --use_h5py \
+           --output /data/data/super_resolution/data_for_FSRCNN/test_x2.h5

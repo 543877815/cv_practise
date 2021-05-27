@@ -20,14 +20,15 @@ use_h5py: True
 buildRawData: True
 platform: windows
 force_rebuild: False
+seed: 123
 data_flist:
   windows:
     origin_HR_dir: "F:\\cache\\data\\291-image\\HR"
     train_HR_dir: "F:\\cache\\data\\291-image\\HR_train"
     train_LR_dir: "F:\\cache\\data\\291-image\\LR_train"
-    test_HR_dir: "F:\\cache\\data\\Set5_SR\\HR_3"
-    test_LR_dir: "F:\\cache\\data\\Set5_SR\\LR_3"
-    h5py_input: "F:\\cache\\data\\data_for_SRCNN\\train_x3.h5"
+    test_HR_dir: "F:\\cache\\data\\Set5_SR\\HR_2"
+    test_LR_dir: "F:\\cache\\data\\Set5_SR\\LR_2"
+    h5py_input: "F:\\cache\\data\\data_for_SRCNN\\train_x2.h5"
   linux:
     origin_HR_dir: "/data/data/291-images"
     train_HR_dir: "/data/data/super_resolution/data_for_VDSR/HR_train"
@@ -48,9 +49,9 @@ milestones: [1000, 1250, 1500, 2000]
 checkpoint_interval: 1
 checkpoint_dir: "checkpoints/"
 # visualization
-tensorboard_log_dir: "runs/"
+tensorboard_log_dir: "runs/srcnn"
 tensorboard_image_interval: 1
 tensorboard_image_sample: 10
 tensorboard_image_size: [ 256, 256 ]
 tensorboard_draw_model: True
-tensorboard_input: [ 64, 1, 41, 41 ]
+tensorboard_input: [ 64, 1, 33, 33 ]

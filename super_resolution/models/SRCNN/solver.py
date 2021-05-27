@@ -24,7 +24,7 @@ class SRCNNBasic(object):
 
         # model configuration
         self.model = None
-        self.filter = config.num_filter
+        self.num_filter = config.num_filter
         self.color_space = config.color_space
         self.num_channels = config.num_channels
         self.upscale_factor = config.upscaleFactor
@@ -120,7 +120,7 @@ class SRCNNTester(SRCNNBasic):
         self.build_model()
 
     def build_model(self):
-        self.model = SRCNN(num_channels=self.num_channels, filter=self.filter).to(self.device)
+        self.model = SRCNN(num_channels=self.num_channels, num_filter=self.num_filter).to(self.device)
         self.load_model()
         if self.CUDA:
             cudnn.benchmark = True
@@ -171,7 +171,7 @@ class SRCNNTrainer(SRCNNBasic):
         self.build_model()
 
     def build_model(self):
-        self.model = SRCNN(num_channels=self.num_channels, filter=self.filter).to(self.device)
+        self.model = SRCNN(num_channels=self.num_channels, num_filter=self.num_filter).to(self.device)
         if self.resume:
             self.load_model()
         else:
@@ -231,7 +231,7 @@ class SRCNNTrainer(SRCNNBasic):
         print("    Average Loss: {:.4f}".format(avg_train_loss))
         return avg_train_loss
 
-    def test(self, epoch):
+    def test(self):
         self.model.eval()
         psnr = 0
         # random sample output to tensorboard
@@ -259,14 +259,16 @@ class SRCNNTrainer(SRCNNBasic):
         for epoch in range(self.start_epoch, self.epochs + self.start_epoch):
             print('\n===> Epoch {} starts:'.format(epoch))
             avg_train_loss = self.train()
-            avg_psnr, save_input, save_output, save_target = self.test(epoch)
+            avg_psnr, save_input, save_output, save_target = self.test()
             self.scheduler.step()
 
             if not self.distributed or self.local_rank == 0:
 
                 # save to logger
-                self.logger.info("Epoch [{}/{}]: lr={} loss={} PSNR={}".format(epoch, self.epochs + self.start_epoch,
-                                                                               self.lr, avg_train_loss, avg_psnr))
+                self.logger.info(
+                    "Epoch [{}/{}]: lr={:.6f} loss={:.6f} PSNR={:.6f}".format(epoch, self.epochs + self.start_epoch,
+                                                                              self.optimizer.param_groups[0]['lr'],
+                                                                              avg_train_loss, avg_psnr))
 
                 # save best model
                 if avg_psnr > self.best_quality:
