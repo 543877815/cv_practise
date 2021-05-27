@@ -16,6 +16,7 @@ import torch.nn as nn
 from torch.nn import functional as F
 from collections import OrderedDict
 
+
 class VSDRBasic(object):
     def __init__(self, config, device=None):
         super(VSDRBasic, self).__init__()
@@ -248,8 +249,10 @@ class VDSRTrainer(VSDRBasic):
             if not self.distributed or self.local_rank == 0:
 
                 # save to logger
-                self.logger.info("Epoch [{}/{}]: lr={} loss={} PSNR={}".format(epoch, self.epochs + self.start_epoch,
-                                                                               self.lr, avg_train_loss, avg_psnr))
+                self.logger.info(
+                    "Epoch [{}/{}]: lr={:.6f} loss={:.6f} PSNR={:.6f}".format(epoch, self.epochs + self.start_epoch,
+                                                                              self.optimizer.param_groups[0]['lr'],
+                                                                              avg_train_loss, avg_psnr))
 
                 # save best model
                 if avg_psnr > self.best_quality:
@@ -268,7 +271,7 @@ class VDSRTrainer(VSDRBasic):
                 # tensorboard graph
                 if epoch == self.start_epoch and self.tensorboard_draw_model and \
                         len(save_input) > 0 and len(save_target) > 0:
-                    self.writer.add_graph(model=self.model, input_to_model=[save_input[0], save_target[0]])
+                    self.writer.add_graph(model=self.model, input_to_model=[save_input[0]])
 
                 # tensorboard images
                 if epoch % self.tensorboard_image_interval == 0:
@@ -285,4 +288,3 @@ class VDSRTrainer(VSDRBasic):
                         images = torch.cat((save_input[i], save_output[i], save_target[i]))
                         grid = vutils.make_grid(images)
                         self.writer.add_image('image-{}'.format(i), grid, epoch)
-
