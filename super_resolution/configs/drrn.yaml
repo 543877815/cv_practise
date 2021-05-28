@@ -1,21 +1,22 @@
 # hardware
-gpu: [ 0 ]
-distributed: False
+gpu: [ 0, 1 ]
+distributed: True
 address: '127.0.0.1'
 port: '23456'
 # model configuration
-model: "ESPCN"
+model: "DRRN"
 num_channels: 1
+num_recursions: 25
 num_filter: 64
 # dataset
 dataset: "customize"
 color_space: 'YCbCr'
-img_size: 20
-upscaleFactor: [ 3 ]
-test_upscaleFactor: 3
-scales: [ 1.0 ]
-rotations: [ 0 ]
-flips: [ 0 ]
+img_size: 31
+upscaleFactor: [ 2,3,4 ]
+test_upscaleFactor: 2
+scales: [ 1.0, 0.7, 0.5 ]
+rotations: [ 0, 90, 180, 270 ]
+flips: [ 0, 1, 2]
 use_h5py: True
 buildRawData: True
 platform: linux
@@ -30,29 +31,28 @@ data_flist:
     test_LR_dir: "F:\\cache\\data\\Set5,Set14\\set5_LR\\3"
   linux:
     origin_HR_dir: "/data/data/291-images"
-    train_HR_dir: "/data/data/super_resolution/data_for_ESPCN/HR_train"
-    train_LR_dir: "/data/data/super_resolution/data_for_ESPCN/LR_train"
-    test_HR_dir: "/data/data/Set5/HR/"
-    test_LR_dir: "/data/data/Set5/LR_bicubic/X3/"
-    h5py_input: "/data/data/super_resolution/data_for_ESPCN/train_x3.h5"
+    train_HR_dir: "/data/data/super_resolution/data_for_DRRN/HR_train"
+    train_LR_dir: "/data/data/super_resolution/data_for_DRRN/LR_train"
+    test_HR_dir: "/data/data/Set5/HR_x2/"
+    test_LR_dir: "/data/data/Set5/LR_x2/"
+    h5py_input: "/data/data/super_resolution/data_for_VDSR/train.h5"
 # experiment
-lr: 0.001
+lr: 0.1
 training_batch_size: 64
 test_batch_size: 1
+clip: 0.01
+momentum: 0.9
+weight_decay: 0.0001
 scheduler_gamma: 0.1
-scheduler_patience: 10
-scheduler_factor: 0.1
-scheduler_min_lr: 0.0001
-scheduler_threshold: 0.00001
-epochs: 3000
-milestones: [ 100, 500, 1000 ]
+epochs: 100
+milestones: [10, 20, 30, 40, 50, 60]
 # checkpoint
 checkpoint_interval: 1
 checkpoint_dir: "checkpoints/"
 # visualization
-tensorboard_log_dir: "runs/espcn"
+tensorboard_log_dir: "runs/drrn"
 tensorboard_image_interval: 1
 tensorboard_image_sample: 10
 tensorboard_image_size: [ 256, 256 ]
 tensorboard_draw_model: True
-tensorboard_input: [ 64, 1, 10, 10 ]
+tensorboard_input: [ 64, 1, 31, 31 ]

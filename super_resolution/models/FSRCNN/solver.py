@@ -34,13 +34,8 @@ class FSRCNNBasic(object):
         self.checkpoint_name = "{}.pth".format(self.model_name)
         self.best_quality = 0
         self.start_epoch = 1
+        self.epochs = config.epochs
         self.checkpoint_interval = config.checkpoint_interval
-
-        # parameters
-        self.momentum = config.momentum
-        self.scheduler_gamma = config.scheduler_gamma
-        self.weight_decay = config.weight_decay
-        self.milestones = config.milestones
 
         # logger configuration
         _, _, _, log_dir = get_platform_path()
@@ -95,17 +90,17 @@ class FSRCNNTester(FSRCNNBasic):
     def __init__(self, config, test_loader=None):
         super(FSRCNNTester, self).__init__(config)
         assert (config.resume is True)
-
         data_dir, _, _, _ = get_platform_path()
         # resolve configuration
         self.output = data_dir + config.output
         self.test_loader = test_loader
-        self.criterion = torch.nn.MSELoss()
+        self.criterion = None
         self.build_model()
 
     def build_model(self):
         self.model = FSRCNN(num_channels=self.num_channels, upscale_factor=self.upscale_factor[0],
                             d=self.d, s=self.s, m=self.m).to(self.device)
+        self.criterion = torch.nn.MSELoss()
         self.load_model()
         if self.CUDA:
             cudnn.benchmark = True
@@ -138,18 +133,18 @@ class FSRCNNTrainer(FSRCNNBasic):
     def __init__(self, config, train_loader=None, test_loader=None, device=None):
         super(FSRCNNTrainer, self).__init__(config, device)
 
-        # model configuration
-        self.lr = config.lr
-
-        # checkpoint configuration
-        self.epochs = config.epochs
-
         # parameters configuration
         self.criterion = None
         self.optimizer = None
         self.scheduler = None
         self.seed = config.seed
+        self.lr = config.lr
+        self.momentum = config.momentum
+        self.scheduler_gamma = config.scheduler_gamma
+        self.weight_decay = config.weight_decay
+        self.milestones = config.milestones
 
+        # data loader
         self.train_loader = train_loader
         self.test_loader = test_loader
 

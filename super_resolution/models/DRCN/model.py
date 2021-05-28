@@ -5,23 +5,23 @@ from math import sqrt
 
 
 class DRCN(nn.Module):
-    def __init__(self, upscale_factor=2, num_channels=1, base_channel=256, out_channels=1,
+    def __init__(self, upscale_factor=2, num_channels=1, num_filter=256, out_channels=1,
                  num_recursions=9):
         super(DRCN, self).__init__()
         self.upscale_factor = upscale_factor
         self.num_recursions = num_recursions
         # fea_in
-        self.fea_in_conv1 = nn.Conv2d(in_channels=num_channels, out_channels=base_channel, kernel_size=3, stride=1,
+        self.fea_in_conv1 = nn.Conv2d(in_channels=num_channels, out_channels=num_filter, kernel_size=3, stride=1,
                                       padding=1, bias=True)
-        self.fea_in_conv2 = nn.Conv2d(in_channels=base_channel, out_channels=base_channel, kernel_size=3, stride=1,
+        self.fea_in_conv2 = nn.Conv2d(in_channels=num_filter, out_channels=num_filter, kernel_size=3, stride=1,
                                       padding=1, bias=True)
         # recursive
-        self.recursive_conv = nn.Conv2d(in_channels=base_channel, out_channels=base_channel, kernel_size=3, stride=1,
+        self.recursive_conv = nn.Conv2d(in_channels=num_filter, out_channels=num_filter, kernel_size=3, stride=1,
                                         padding=1, bias=True)
         # reconstruct
-        self.reconstruct_conv1 = nn.Conv2d(in_channels=base_channel, out_channels=base_channel, kernel_size=3,
+        self.reconstruct_conv1 = nn.Conv2d(in_channels=num_filter, out_channels=num_filter, kernel_size=3,
                                            stride=1, padding=1, bias=True)
-        self.reconstruct_conv2 = nn.Conv2d(in_channels=base_channel, out_channels=out_channels, kernel_size=3,
+        self.reconstruct_conv2 = nn.Conv2d(in_channels=num_filter, out_channels=out_channels, kernel_size=3,
                                            stride=1, padding=1, bias=True)
 
         # ensemble

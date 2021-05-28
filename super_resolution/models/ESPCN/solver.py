@@ -17,8 +17,11 @@ from collections import OrderedDict
 class ESPCNBasic(object):
     def __init__(self, config, device=None):
         super(ESPCNBasic, self).__init__()
+
+        # hardware
         self.CUDA = torch.cuda.is_available()
         self.device = device
+
         # model configuration
         self.model = None
         self.color_space = config.color_space
@@ -33,17 +36,8 @@ class ESPCNBasic(object):
         self.checkpoint_name = "{}.pth".format(self.model_name)
         self.best_quality = 0
         self.start_epoch = 1
+        self.epochs = config.epochs
         self.checkpoint_interval = config.checkpoint_interval
-
-        # parameters
-        self.scheduler_gamma = config.scheduler_gamma
-        self.scheduler_min_lr = config.scheduler_min_lr
-        self.scheduler_factor = config.scheduler_factor
-        self.scheduler_threshold = config.scheduler_threshold
-        self.scheduler_patience = config.scheduler_patience
-        self.momentum = config.momentum
-        self.weight_decay = config.weight_decay
-        self.milestones = config.milestones
 
         # logger configuration
         _, _, _, log_dir = get_platform_path()
@@ -103,12 +97,13 @@ class ESPCNTester(ESPCNBasic):
         # resolve configuration
         self.output = data_dir + config.output
         self.test_loader = test_loader
-        self.criterion = torch.nn.MSELoss()
+        self.criterion = None
 
     def build_model(self):
         self.model = ESPCN(num_channels=self.num_channels,
                            upscale_factor=self.upscale_factor[0],
                            num_filter=self.num_filter).to(self.device)
+        self.criterion = torch.nn.MSELoss()
         self.load_model()
         if self.CUDA:
             cudnn.benchmark = True
@@ -141,19 +136,22 @@ class ESPCNTrainer(ESPCNBasic):
     def __init__(self, config, train_loader=None, test_loader=None, device=None):
         super(ESPCNTrainer, self).__init__(config, device)
 
-        # model configuration
-        self.lr = config.lr
-
-        # checkpoint configuration
-        self.epochs = config.epochs
-
         # parameters configuration
         self.criterion = None
         self.optimizer = None
         self.scheduler = None
         self.seed = config.seed
-        self.metric = 0
+        self.lr = config.lr
+        self.scheduler_gamma = config.scheduler_gamma
+        self.scheduler_min_lr = config.scheduler_min_lr
+        self.scheduler_factor = config.scheduler_factor
+        self.scheduler_threshold = config.scheduler_threshold
+        self.scheduler_patience = config.scheduler_patience
+        self.momentum = config.momentum
+        self.weight_decay = config.weight_decay
+        self.milestones = config.milestones
 
+        # data loader
         self.train_loader = train_loader
         self.test_loader = test_loader
 
@@ -179,15 +177,15 @@ class ESPCNTrainer(ESPCNBasic):
             {'params': self.model.last_part.parameters(), 'lr': self.lr * 0.1}
         ], lr=self.lr)
 
-        self.scheduler = torch.optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=self.milestones,
-                                                              gamma=self.scheduler_gamma)
+        # self.scheduler = torch.optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=self.milestones,
+        #                                                       gamma=self.scheduler_gamma)
 
-        # self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, mode='min',
-        #                                                             factor=self.scheduler_factor,
-        #                                                             patience=self.scheduler_patience,
-        #                                                             min_lr=self.scheduler_min_lr,
-        #                                                             verbose=True,
-        #                                                             threshold=self.scheduler_threshold)
+        self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, mode='min',
+                                                                    factor=self.scheduler_factor,
+                                                                    patience=self.scheduler_patience,
+                                                                    min_lr=self.scheduler_min_lr,
+                                                                    threshold=self.scheduler_threshold,
+                                                                    verbose=True)
 
     def save_model(self, epoch, avg_psnr, name):
         _, _, checkpoint_dir, _ = get_platform_path()
@@ -247,7 +245,7 @@ class ESPCNTrainer(ESPCNBasic):
             print('\n===> Epoch {} starts:'.format(epoch))
             avg_train_loss = self.train()
             avg_psnr, save_input, save_output, save_target = self.test()
-            self.scheduler.step()
+            self.scheduler.step(avg_train_loss)
 
             if not self.distributed or self.local_rank == 0:
 

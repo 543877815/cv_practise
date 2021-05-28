@@ -19,6 +19,8 @@ from torch.nn import functional as F
 class SRCNNBasic(object):
     def __init__(self, config, device=None):
         super(SRCNNBasic, self).__init__()
+
+        # hardware
         self.CUDA = torch.cuda.is_available()
         self.device = device
 
@@ -36,13 +38,8 @@ class SRCNNBasic(object):
         self.checkpoint_name = "{}.pth".format(self.model_name)
         self.best_quality = 0
         self.start_epoch = 1
+        self.epochs = config.epochs
         self.checkpoint_interval = config.checkpoint_interval
-
-        # parameters
-        self.momentum = config.momentum
-        self.scheduler_gamma = config.scheduler_gamma
-        self.weight_decay = config.weight_decay
-        self.milestones = config.milestones
 
         # logger configuration
         _, _, _, log_dir = get_platform_path()
@@ -76,13 +73,13 @@ class SRCNNBasic(object):
         self.logger.info("Start from epoch {}, best PSNR: {}".format(self.start_epoch, self.best_quality))
 
     def convert_BICUBIC(self, img):
-        img_BICUBIC = torch.empty(img.shape[0], img.shape[1], img.shape[2] * self.test_upscale_factor,
-                                  img.shape[3] * self.test_upscale_factor)
+        img_BICUBIC = torch.empty(img.shape[0], img.shape[1], img.shape[2] * self.test_upscaleFactor,
+                                  img.shape[3] * self.test_upscaleFactor)
         for i in range(len(img)):
             x, y = img[i].shape[1:]
             transform = transforms.Compose([
                 transforms.ToPILImage(),
-                transforms.Resize((x * self.test_upscale_factor, y * self.test_upscale_factor),
+                transforms.Resize((x * self.test_upscaleFactor, y * self.test_upscaleFactor),
                                   interpolation=Image.BICUBIC),
                 transforms.ToTensor(),
             ])
@@ -90,7 +87,7 @@ class SRCNNBasic(object):
         return img_BICUBIC
 
     def convert_same(self, img, target):
-        target_new = torch.empty((img.shape))
+        target_new = torch.empty(img.shape)
 
         for i in range(len(img)):
             x, y = img[i].shape[1:]
@@ -108,20 +105,22 @@ class SRCNNBasic(object):
 
 
 class SRCNNTester(SRCNNBasic):
-    def __init__(self, config, test_loader=None, device=None):
+    def __init__(self, config, test_loader=None):
         super(SRCNNTester, self).__init__(config)
         assert (config.resume is True)
 
         data_dir, _, _, _ = get_platform_path()
+
         # resolve configuration
         self.output = data_dir + config.output
         self.test_loader = test_loader
-        self.criterion = torch.nn.MSELoss()
+        self.criterion = None
         self.build_model()
 
     def build_model(self):
         self.model = SRCNN(num_channels=self.num_channels, num_filter=self.num_filter).to(self.device)
         self.load_model()
+        self.criterion = torch.nn.MSELoss()
         if self.CUDA:
             cudnn.benchmark = True
             self.criterion.cuda()
@@ -152,18 +151,18 @@ class SRCNNTrainer(SRCNNBasic):
     def __init__(self, config, train_loader=None, test_loader=None, device=None):
         super(SRCNNTrainer, self).__init__(config, device)
 
-        # model configuration
-        self.lr = config.lr
-
-        # checkpoint configuration
-        self.epochs = config.epochs
-
         # parameters configuration
         self.criterion = None
         self.optimizer = None
         self.scheduler = None
+        self.lr = config.lr
         self.seed = config.seed
+        self.momentum = config.momentum
+        self.scheduler_gamma = config.scheduler_gamma
+        self.weight_decay = config.weight_decay
+        self.milestones = config.milestones
 
+        # data loader
         self.train_loader = train_loader
         self.test_loader = test_loader
 
@@ -263,7 +262,6 @@ class SRCNNTrainer(SRCNNBasic):
             self.scheduler.step()
 
             if not self.distributed or self.local_rank == 0:
-
                 # save to logger
                 self.logger.info(
                     "Epoch [{}/{}]: lr={:.6f} loss={:.6f} PSNR={:.6f}".format(epoch, self.epochs + self.start_epoch,

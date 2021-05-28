@@ -208,21 +208,29 @@ paper: [Real-Time Single Image and Video Super-Resolution Using an Efficient Sub
 
 Dataset prepare: 91-image, ImageNet 50,000 randomly selected images.
 
-for 2x, HR: 34x34, stride: 34, LR: 17x17
+for 2x, HR: 34x34, stride: 28, LR: 17x17
 
-for 3x, HR: 51x51, stride: 51, LR: 17x17
+for 3x, HR: 51x51, stride: 42, LR: 17x17
 
-for 4x, HR: 68x68, stride: 68, LR: 17x17
+for 4x, HR: 68x68, stride: 56, LR: 17x17
+
+**Note**: stride $$(17-\sum mod(f,2))\times r$$  for HR and $$17-\sum mod(f,2)$$
 
 **Dataset prepare**.
-
-stride $$(17-\sum mod(f,2))\times r$$  for HR and $$17-\sum mod(f,2)$$, thus 28 for x2, 42 for x2, 56 for x3 (maybe).
 
 ```bash
 python data_aug.py --number 91 --width 34 --height 34 --stride 28 -uf 2 \
 				   --input /data/data/91-images/data  --single_y --use_h5py \
 				   --output /data/data/super_resolution/data_for_ESPCN/train_x2.h5
 ```
+
+For ImageNet, I only pick:
+
+for 2x, 100 images.
+
+for 3x, 200 images.
+
+for 4x, 300 images.
 
 **Training**. 
 
@@ -240,19 +248,42 @@ python main.py --configs configs/espcn.yaml -r
 
 **Result**:
 
-| Dataset | Scale              | PSNR(91-images/paper/ImageNet/paper)                         | SSIM(91-images/paper/ImageNet/paper)      |
-| ------- | ------------------ | ------------------------------------------------------------ | ----------------------------------------- |
-| Set5    | x2<br />x3<br />x4 | 36.36/-/35.65/-<br />32.32/32.75/31.95/33.00<br />30.66/-/30.14/30.90 | 0.9519/-/0.9459/-<br />0.9013/-/-/-<br /> |
-| Set14   | x2<br />x3<br />x4 | 32.13/-/31.79<br />28.94/29.28/28.76/29.42<br />27.43/-/27.23/27.73 | 0.9032/-/0.8978/<br />0.8129/-/-/<br />   |
-| BSD200  | x2<br />x3<br />x4 | 31.08/-/30.88/-<br />28.16/28.55/28.04/28.52<br />26.93/-/26.77/27.06 | 0.8836/-/0.8796/<br />0.7789/-/-/         |
+| Dataset | Scale              | PSNR(91-images/paper/ImageNet/paper)                         | SSIM(91-images/paper/ImageNet/paper)               |
+| ------- | ------------------ | ------------------------------------------------------------ | -------------------------------------------------- |
+| Set5    | x2<br />x3<br />x4 | 36.44/-/35.65/-<br />32.45/32.55/32.28/33.00<br />30.07/-/30.20/30.90 | 0.9522/-/0.9459/-<br />0.9036/-/-/-<br />0.8483    |
+| Set14   | x2<br />x3<br />x4 | 32.15/-/31.79<br />29.00/29.08/28.76/29.42<br />27.11/-/27.23/27.73 | 0.9037/-/0.8978/<br />0.8147/-/-/<br />0.7396/-/-/ |
+| BSD200  | x2<br />x3<br />x4 | 31.13/-/30.88/-<br />28.20/28.26/28.04/28.52<br />26.71/-/26.77/27.06 | 0.8846/-/0.8796/<br />0.7806/-/-/<br />0.7032/-/-/ |
 
 ### DRCN(2016)
 
 paper: [Deeply-Recursive Convolutional Network for Image Super-Resolution（CVPR）](https://arxiv.org/abs/1511.04491)
 
-Dataset prepare: 91-image, 41x41, stride: 21, flip: 0 1, rotation: 0 90 180 270, uf: 2/3/4, single model
+Dataset prepare: 91-image, 41x41, stride: 21, flip: 0 1, rotation: 0 90 180 270, upscaleFactor: 2 3 4, single model, scales: 1.0 0.7 0.5
 
-scales 1.0 0.7 0.5
+**Dataset prepare**.
+
+```bash
+python data_aug.py --number 91 --width 41 --height 41 --stride 21 -uf 2 3 4 \
+				   --rotations 0 90 180 270 --scales 1.0 0.7 0.5 --use_bicubic \
+				   --input /data/data/91-images/data  --single_y --use_h5py \
+				   --output /data/data/super_resolution/data_for_DRCN/train.h5
+```
+
+**Training**.
+
+```bash
+python -m torch.distributed.launch --nproc_per_node=2 main.py --configs configs/drcn.yaml
+python main.py --configs configs/drcn.yaml
+```
+
+**Resume**.
+
+```bash
+python -m torch.distributed.launch --nproc_per_node=2 main.py --configs configs/drcn.yaml -r
+python main.py --configs configs/drcn.yaml -r
+```
+
+**Result**:
 
 | Dataset  | Scale              | PSNR(91-images/paper)                 | SSIM(91-images/paper)                     |
 | -------- | ------------------ | ------------------------------------- | ----------------------------------------- |
@@ -265,7 +296,32 @@ scales 1.0 0.7 0.5
 
 paper:  [Image super-resolution via deep recursive residual network（CVPR）](https://openaccess.thecvf.com/content_cvpr_2017/papers/Tai_Image_Super-Resolution_via_CVPR_2017_paper.pdf)
 
-Dataset prepare: 91-image, BSD300 train set, 31x31, stride: 21, rotation: 0 90 180 270, flip: 0 1, uf: 2 3 4, single model
+Dataset prepare: 91-image, BSD300 train set, 31x31, stride: 21, rotation: 0 90 180 270, flip: 0 1, upscaleFactor: 2 3 4, single model
+
+**Dataset prepare**.
+
+```bash
+python data_aug.py --number 291 --width 31 --height 31 --stride 28 -uf 2 3 4 \
+				   --rotations 0 90 180 270 --flip 0 1 2 --use_bicubic \
+				   --input /data/data/291-images  --single_y --use_h5py \
+				   --output /data/data/super_resolution/data_for_DRRN/train.h5
+```
+
+**Training**.
+
+```bash
+python -m torch.distributed.launch --nproc_per_node=2 main.py --configs configs/drrn.yaml
+python main.py --configs configs/drrn.yaml
+```
+
+**Resume**.
+
+```bash
+python -m torch.distributed.launch --nproc_per_node=2 main.py --configs configs/drrn.yaml -r
+python main.py --configs configs/drrn.yaml -r
+```
+
+**Result**.
 
 | Dataset  | Scale              | PSNR(291-images/paper)                        | SSIM(91-images/paper)                               |
 | -------- | ------------------ | --------------------------------------------- | --------------------------------------------------- |

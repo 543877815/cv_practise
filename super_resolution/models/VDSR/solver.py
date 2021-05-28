@@ -38,13 +38,8 @@ class VSDRBasic(object):
         self.checkpoint_name = "{}.pth".format(self.model_name)
         self.best_quality = 0
         self.start_epoch = 1
+        self.epochs = config.epochs
         self.checkpoint_interval = config.checkpoint_interval
-
-        # parameters
-        self.momentum = config.momentum
-        self.scheduler_gamma = config.scheduler_gamma
-        self.weight_decay = config.weight_decay
-        self.milestones = config.milestones
 
         # logger configuration
         _, _, _, log_dir = get_platform_path()
@@ -105,12 +100,13 @@ class VDSRTester(VSDRBasic):
         # resolve configuration
         self.output = data_dir + config.output
         self.test_loader = test_loader
-        self.criterion = torch.nn.MSELoss(reduction='sum')
+        self.criterion = None
         self.build_model()
 
     def build_model(self):
         self.model = VDSR(num_channels=self.num_channels, num_filter=self.num_filter,
                           num_residuals=self.num_residuals).to(self.device)
+        self.criterion = torch.nn.MSELoss(reduction='sum')
         self.load_model()
         if self.CUDA:
             cudnn.benchmark = True
@@ -143,21 +139,21 @@ class VDSRTrainer(VSDRBasic):
     def __init__(self, config, train_loader=None, test_loader=None, device=None):
         super(VDSRTrainer, self).__init__(config, device)
 
-        # model configuration
-        self.lr = config.lr
-
-        # checkpoint configuration
-        self.epochs = config.epochs
-
         # parameters configuration
         self.criterion = None
         self.optimizer = None
         self.scheduler = None
+        self.lr = config.lr
         self.seed = config.seed
+        self.clip = config.clip
+        self.momentum = config.momentum
+        self.scheduler_gamma = config.scheduler_gamma
+        self.weight_decay = config.weight_decay
+        self.milestones = config.milestones
 
+        # data loader
         self.train_loader = train_loader
         self.test_loader = test_loader
-        self.clip = config.clip
 
         # model init
         self.build_model()
