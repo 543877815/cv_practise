@@ -58,7 +58,7 @@ class VAE(nn.Module):
             eps = torch.cuda.FloatTensor(std.size()).normal_()
         else:
             eps = torch.FloatTensor(std.size()).normal_()
-        eps = Variable(eps)
+        eps = Variable(eps)  # 设置为可调参
         return eps.mul(std).add_(mu)
 
     def decode(self, z):

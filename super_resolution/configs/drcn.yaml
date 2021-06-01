@@ -1,13 +1,13 @@
 # hardware
-gpu: [ 0, 1 ]
-distributed: True
+gpu: [ 3 ]
+distributed: False
 address: '127.0.0.1'
 port: '23456'
 # model configuration
 model: "DRCN"
 num_channels: 1
-num_recursions: 16
-num_filter: 64
+num_recursions: 9
+num_filter: 96
 # dataset
 dataset: "customize"
 color_space: 'YCbCr'
@@ -22,6 +22,10 @@ buildRawData: True
 platform: linux
 force_rebuild: False
 seed: 123
+#python data_aug.py --number 1 --width 41 --height 41 --stride 21 -uf 2 3 4 \
+#				   --rotations 0 90 180 270 --scales 1.0 0.7 0.5 --use_bicubic \
+#				   --input /data/lifengjun/data/91-image/HR  --single_y --use_h5py \
+#				   --output /data/lifengjun/data/super_resolution/data_for_DRCN/test.h5
 data_flist:
   windows:
     origin_HR_dir: "F:\\cache\\data\\291-image\\HR"
@@ -33,9 +37,9 @@ data_flist:
     origin_HR_dir: "/data/data/291-images"
     train_HR_dir: "/data/data/super_resolution/data_for_DRCN/HR_train"
     train_LR_dir: "/data/data/super_resolution/data_for_DRCN/LR_train"
-    test_HR_dir: "/data/data/Set5/HR_x2/"
-    test_LR_dir: "/data/data/Set5/LR_x2/"
-    h5py_input: "/data/data/super_resolution/data_for_DRCN/train.h5"
+    test_HR_dir: "/data/lifengjun/data/Set5/HR_x2/"
+    test_LR_dir: "/data/lifengjun/data/Set5/LR_x2/"
+    h5py_input: "/data/lifengjun/data/super_resolution/data_for_DRCN/test.h5"
 # experiment
 lr: 0.01
 training_batch_size: 64

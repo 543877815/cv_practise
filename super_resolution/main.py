@@ -124,10 +124,10 @@ def get_trainer(config, train_loader, test_loader, device=None):
         model = DRRNTrainer(config, train_loader, test_loader, device)
     elif model_name.lower() == 'lapsrn':
         # model = LapSRNTrainer(config, train_loader, test_loader)
-        pass
+        model = None
     elif model_name.lower() == 'lapsrn-gan':
         # model = LapSRN_GANTrainer(config, train_loader, test_loader)
-        pass
+        model = None
     elif model_name.lower() == 'edsr':
         model = None
     else:

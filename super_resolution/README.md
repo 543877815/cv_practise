@@ -206,31 +206,33 @@ python main.py --configs configs/vdsr.yaml -r
 
 paper: [Real-Time Single Image and Video Super-Resolution Using an Efficient Sub-Pixel Convolutional Neural Network（CVPR)](https://arxiv.org/abs/1609.05158)
 
-Dataset prepare: 91-image, ImageNet 50,000 randomly selected images.
+Dataset prepare: 91-image：
 
-for 2x, HR: 34x34, stride: 28, LR: 17x17
+For 2x, HR: 34x34, stride: 28, LR: 17x17
 
-for 3x, HR: 51x51, stride: 42, LR: 17x17
+For 3x, HR: 51x51, stride: 42, LR: 17x17
 
-for 4x, HR: 68x68, stride: 56, LR: 17x17
+For 4x, HR: 68x68, stride: 56, LR: 17x17
 
 **Note**: stride $$(17-\sum mod(f,2))\times r$$  for HR and $$17-\sum mod(f,2)$$
 
 **Dataset prepare**.
 
 ```bash
-python data_aug.py --number 91 --width 34 --height 34 --stride 28 -uf 2 \
-				   --input /data/data/91-images/data  --single_y --use_h5py \
-				   --output /data/data/super_resolution/data_for_ESPCN/train_x2.h5
+python data_aug.py --number 1000 --width 68 --height 68 --stride 56 -uf 4 \
+				   --input /data/data/ImageNet_val/  --single_y --use_h5py \
+				   --output /data/data/super_resolution/data_for_ESPCN/train_x4.h5
 ```
 
-For ImageNet, I only pick:
+The paper use ImageNet 50,000 randomly selected images. 
 
-for 2x, 100 images.
+For 2x, 100 images.
 
-for 3x, 200 images.
+For 3x, 3000 images.
 
-for 4x, 300 images.
+For 4x, 5000 images.
+
+Both scales have around 300,000 patches of images.
 
 **Training**. 
 
@@ -248,11 +250,11 @@ python main.py --configs configs/espcn.yaml -r
 
 **Result**:
 
-| Dataset | Scale              | PSNR(91-images/paper/ImageNet/paper)                         | SSIM(91-images/paper/ImageNet/paper)               |
-| ------- | ------------------ | ------------------------------------------------------------ | -------------------------------------------------- |
-| Set5    | x2<br />x3<br />x4 | 36.44/-/35.65/-<br />32.45/32.55/32.28/33.00<br />30.07/-/30.20/30.90 | 0.9522/-/0.9459/-<br />0.9036/-/-/-<br />0.8483    |
-| Set14   | x2<br />x3<br />x4 | 32.15/-/31.79<br />29.00/29.08/28.76/29.42<br />27.11/-/27.23/27.73 | 0.9037/-/0.8978/<br />0.8147/-/-/<br />0.7396/-/-/ |
-| BSD200  | x2<br />x3<br />x4 | 31.13/-/30.88/-<br />28.20/28.26/28.04/28.52<br />26.71/-/26.77/27.06 | 0.8846/-/0.8796/<br />0.7806/-/-/<br />0.7032/-/-/ |
+| Dataset | Scale              | PSNR(91-images/paper/ImageNet/paper)                         | SSIM(91-images/paper/ImageNet/paper)                         |
+| ------- | ------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| Set5    | x2<br />x3<br />x4 | 36.44/-/35.65/-<br />32.45/32.55/32.66/33.00<br />30.07/-/30.30/30.90 | 0.9522/-/0.9459/-<br />0.9036/-/0.9078/-<br />0.8483/-/0.8558/- |
+| Set14   | x2<br />x3<br />x4 | 32.15/-/31.79/-<br />29.00/29.08/29.21/29.42<br />27.11/-/27.35/27.73 | 0.9037/-/0.8978/-<br />0.8147/-/0.8196/-<br />0.7396/-/07474/- |
+| BSD200  | x2<br />x3<br />x4 | 31.13/-/30.88/-<br />28.20/28.26/28.36/28.52<br />26.71/-/26.82/27.06 | 0.8846/-/0.8796/-<br />0.7806/-/0.7851/-<br />0.7032/-/0.7086/- |
 
 ### DRCN(2016)
 
@@ -296,7 +298,7 @@ python main.py --configs configs/drcn.yaml -r
 
 paper:  [Image super-resolution via deep recursive residual network（CVPR）](https://openaccess.thecvf.com/content_cvpr_2017/papers/Tai_Image_Super-Resolution_via_CVPR_2017_paper.pdf)
 
-Dataset prepare: 91-image, BSD300 train set, 31x31, stride: 21, rotation: 0 90 180 270, flip: 0 1, upscaleFactor: 2 3 4, single model
+Dataset prepare: 91-image and BSD300 train set, 31x31, stride: 21, rotation: 0 90 180 270, flip: 0 1, upscaleFactor: 2 3 4, single model
 
 **Dataset prepare**.
 
@@ -325,10 +327,10 @@ python main.py --configs configs/drrn.yaml -r
 
 | Dataset  | Scale              | PSNR(291-images/paper)                        | SSIM(91-images/paper)                               |
 | -------- | ------------------ | --------------------------------------------- | --------------------------------------------------- |
-| Set5     | x2<br />x3<br />x4 | 37.52/37.74<br />33.74/34.03<br />31.34/31.68 | 0.9577/0.9591<br />0.9219/0.9244<br />0.8836/0.8888 |
-| Set14    | x2<br />x3<br />x4 | 32.87/33.23<br />29.77/29.96<br />28.01/28.21 | 0.9109/0.9136<br />0.8314/0.8349<br />0.7672/0.7720 |
-| BSD100   | x2<br />x3<br />x4 | 31.78/32.05<br />28.79/28.95<br />27.25/27.38 | 0.8940/0.8973<br />0.7966/0.8004<br />0.7241/0.7284 |
-| Urban100 | x2<br />x3<br />x4 | 30.04/31.23<br />27.45/27.53<br />25.15/25.44 | 0.9168/0.9188<br />0.8382/0.8378<br />0.7522/0.7638 |
+| Set5     | x2<br />x3<br />x4 | 37.68/37.74<br />34.05/34.03<br />31.69/31.68 | 0.9586/0.9591<br />0.9248/0.9244<br />0.8890/0.8888 |
+| Set14    | x2<br />x3<br />x4 | 33.04/33.23<br />29.87/29.96<br />28.16/28.21 | 0.9125/0.9136<br />0.8343/0.8349<br />0.7718/0.7720 |
+| BSD100   | x2<br />x3<br />x4 | 31.97/32.05<br />28.92/28.95<br />27.37/27.38 | 0.8962/0.8973<br />0.8000/0.8004<br />0.7283/0.7284 |
+| Urban100 | x2<br />x3<br />x4 | 31.49/31.23<br />27.66/27.53<br />25.48/25.44 | 0.9219/0.9188<br />0.8459/0.8378<br />0.7647/0.7638 |
 
 ### LapSRN(2016)
 
