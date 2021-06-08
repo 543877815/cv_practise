@@ -24,7 +24,7 @@ class SRCNNBasic(object):
         self.CUDA = torch.cuda.is_available()
         self.device = device
 
-        # model configuration
+        # models configuration
         self.model = None
         self.num_filter = config.num_filter
         self.color_space = config.color_space
@@ -166,7 +166,7 @@ class SRCNNTrainer(SRCNNBasic):
         self.train_loader = train_loader
         self.test_loader = test_loader
 
-        # model init
+        # models init
         self.build_model()
 
     def build_model(self):
@@ -186,9 +186,9 @@ class SRCNNTrainer(SRCNNBasic):
 
         # faster than SGD
         # self.optimizer = torch.optim.Adam([
-        #     {'params': self.model.conv1.parameters()},
-        #     {'params': self.model.conv2.parameters()},
-        #     {'params': self.model.conv3.parameters(), 'lr': self.lr * 0.1}
+        #     {'params': self.models.conv1.parameters()},
+        #     {'params': self.models.conv2.parameters()},
+        #     {'params': self.models.conv3.parameters(), 'lr': self.lr * 0.1}
         # ], lr=self.lr)
 
         self.optimizer = torch.optim.SGD([
@@ -268,12 +268,12 @@ class SRCNNTrainer(SRCNNBasic):
                                                                               self.optimizer.param_groups[0]['lr'],
                                                                               avg_train_loss, avg_psnr))
 
-                # save best model
+                # save best models
                 if avg_psnr > self.best_quality:
                     self.best_quality = avg_psnr
                     self.save_model(epoch, avg_psnr, self.checkpoint_name)
 
-                # save interval model
+                # save interval models
                 if epoch % self.checkpoint_interval == 0:
                     name = self.checkpoint_name.replace('.pth', '_{}.pth'.format(epoch))
                     self.save_model(epoch, avg_psnr, name)

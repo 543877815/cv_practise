@@ -1,6 +1,6 @@
 # hardware
 gpu: [ 0 ]
-# model configuration
+# models configuration
 model: "VDSR"
 num_channels: 1
 num_residuals: 18

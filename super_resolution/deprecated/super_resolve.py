@@ -26,10 +26,10 @@ if __name__ == '__main__':
     parser.add_argument('--color', type=str, default='RGB', help='color space to use')
     parser.add_argument('--num_channels', type=int, default=1, help='number of channel')
 
-    # model configuration
+    # models configuration
     parser.add_argument('--resume', '-r', type=bool, default=True, help='resume from checkpoint')
-    parser.add_argument('--model', '-m', type=str, default='srcnn',
-                        help='model checkpoint file used for super resolution')
+    parser.add_argument('--models', '-m', type=str, default='srcnn',
+                        help='models checkpoint file used for super resolution')
     parser.add_argument('--upscaleFactor', '-uf', type=int, default=3, help='super resolution upscale factor')
     args = parser.parse_args()
 
@@ -54,7 +54,7 @@ if __name__ == '__main__':
     test_loader = DataLoader(dataset=test_set, batch_size=1, shuffle=False)
 
     # ===========================================================
-    # model import & setting
+    # models import & setting
     # ===========================================================
     if args.model.lower() == 'srcnn':
         Tester = SRCNNTester(config=args, test_loader=test_loader)
@@ -65,7 +65,7 @@ if __name__ == '__main__':
     elif args.model.lower() == 'espcn':
         Tester = ESPCNTester(config=args, test_loader=test_loader)
     else:
-        raise Exception("the model does not exist")
+        raise Exception("the models does not exist")
 
     # ===========================================================
     # output and save image

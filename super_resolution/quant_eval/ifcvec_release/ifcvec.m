@@ -60,7 +60,7 @@ function ifc=ifcvec(imorg,imdist);
 %Advanced Usage:
 %   Users may want to modify the parameters in the code. 
 %   (1) MxM is the block size that denotes the size of a vector used in the
-%   GSM model.
+%   GSM models.
 %   (2) subbands included in the computation
 %========================================================================
 

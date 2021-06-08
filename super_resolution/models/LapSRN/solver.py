@@ -24,7 +24,7 @@ class LapSRNBasic(object):
         if device is None:
             self.device = torch.device("cuda" if (config.use_cuda and self.CUDA) else "cpu")
 
-        # model configuration
+        # models configuration
         self.model = None
         self.color_space = config.color
         self.num_channels = config.num_channels
@@ -129,7 +129,7 @@ class LapSRNTrainer(LapSRNBasic):
     def __init__(self, config, train_loader=None, test_loader=None, device=None):
         super(LapSRNTrainer, self).__init__(config, device)
 
-        # model configuration
+        # models configuration
         self.lr = config.lr
 
         # checkpoint configuration

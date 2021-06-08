@@ -25,7 +25,7 @@ class DRCNBasic(object):
         self.CUDA = torch.cuda.is_available()
         self.device = device
 
-        # model configuration
+        # models configuration
         self.model = None
         self.color_space = config.color_space
         self.num_filter = config.num_filter
@@ -172,8 +172,6 @@ class DRCNTrainer(DRCNBasic):
         self.clip = config.clip
         self.loss_alpha = config.loss_alpha
         self.loss_beta = config.loss_beta
-        # self.loss_beta, self.num_recursions = 0.001, 1
-        # self.loss_beta, self.num_recursions = 0.0000005, 9
         self.loss_alpha_zero_epoch = config.loss_alpha_zero_epoch
         self.loss_alpha_decay = self.loss_alpha / self.loss_alpha_zero_epoch
 
@@ -181,7 +179,7 @@ class DRCNTrainer(DRCNBasic):
         self.train_loader = train_loader
         self.test_loader = test_loader
 
-        # model init
+        # models init
         self.build_model()
 
     def build_model(self):
@@ -224,35 +222,34 @@ class DRCNTrainer(DRCNBasic):
         train_loss2 = 0
         train_loss1 = 0
         train_loss = 0
+
         for index, (img, target) in enumerate(self.train_loader):
             assert img.shape == target.shape, 'the shape of input is not equal to the shape of output'
             img, target = img.to(self.device), target.to(self.device)
-
             target_d, output = self.model(img)
 
             loss1 = 0
-            for i in range(self.num_recursions + 1):
-                loss1 += self.criterion(target_d[:, i, :, :].unsqueeze(1), target) / (self.num_recursions + 1)
+            for i in range(self.num_recursions):
+                loss1 = loss1 + self.criterion(target_d[i], target)
 
+            # loss1 /= self.num_recursions
             loss2 = self.criterion(output, target)
-
             # regularization
             reg_term = 0
             for theta in self.model.parameters():
-                reg_term += torch.mean(torch.sum(theta ** 2))
-
-            loss = self.loss_alpha * loss1 + (1 - self.loss_alpha) * loss2 + reg_term * self.loss_beta
+                reg_term = reg_term + torch.mean(torch.sum(theta ** 2))
+            loss = self.loss_alpha * loss1 + (1 - self.loss_alpha) * loss2 + self.loss_beta * reg_term
             self.optimizer.zero_grad()
             loss.backward()
             self.optimizer.step()
-
-            train_reg += self.loss_beta * reg_term.item()
             train_loss2 += loss2.item()
             train_loss1 += loss1.item()
             train_loss += loss.item()
-
             if not self.distributed or self.local_rank == 0:
-                progress_bar(index, len(self.train_loader), 'Loss: %.4f' % (train_loss / (index + 1)))
+                progress_bar(index, len(self.train_loader),
+                             'loss1: {}, loss2: {}, total loss: {}'.format((train_loss1 / (index + 1)),
+                                                                           (train_loss2 / (index + 1)),
+                                                                           (train_loss / (index + 1))))
 
         avg_train_loss = train_loss / len(self.train_loader)
         print("    Average Loss: {:.4f}".format(avg_train_loss))
@@ -271,7 +268,6 @@ class DRCNTrainer(DRCNBasic):
                 img, target = img.to(self.device), target.to(self.device)
                 _, output = self.model(img)
                 output = output.clamp(0.0, 1.0)
-
                 loss = self.criterion(output, target)
                 test_loss += loss.item()
                 psnr += self.psrn(loss.item())
@@ -300,12 +296,12 @@ class DRCNTrainer(DRCNBasic):
                                                                               self.optimizer.param_groups[0]['lr'],
                                                                               avg_train_loss, avg_psnr))
 
-                # save best model
+                # save best models
                 if avg_psnr > self.best_quality:
                     self.best_quality = avg_psnr
                     self.save_model(epoch, avg_psnr, self.checkpoint_name)
 
-                # save interval model
+                # save interval models
                 if epoch % self.checkpoint_interval == 0:
                     name = self.checkpoint_name.replace('.pth', '_{}.pth'.format(epoch))
                     self.save_model(epoch, avg_psnr, name)

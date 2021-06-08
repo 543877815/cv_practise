@@ -8,7 +8,7 @@ parser.add_argument('--configs', '-c', dest="filename", metavar='FILE', help='pa
 parser.add_argument('--config_priority', default='yaml', choices=('args', 'yaml'),
                     help='optimizer to use (args | yaml )')
 parser.add_argument('--use_relative', default=False, action="store_true",
-                    help='whether to use relative path to for data/model/checkpoint/log')
+                    help='whether to use relative path to for data/models/checkpoint/log')
 parser.add_argument('--preprocess', default=False, action="store_true", help='whether to use data preprocessing')
 
 # distributed configuration
@@ -36,7 +36,7 @@ parser.add_argument('--seed', type=int, default=123, help='random seed to use')
 
 # models configuration
 parser.add_argument('--upscaleFactor', '-uf', type=int, default=3, help='super resolution upscale factor')
-parser.add_argument('--model', '-m', type=str, default='srcnn', help='models that going to use')
+parser.add_argument('--models', '-m', type=str, default='srcnn', help='models that going to use')
 parser.add_argument('--resume', '-r', action='store_true', help='resume from checkpoint')
 
 # data configuration

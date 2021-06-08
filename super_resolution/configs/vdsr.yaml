@@ -3,7 +3,7 @@ gpu: [ 0, 1 ]
 distributed: True
 address: '127.0.0.1'
 port: '23456'
-# model configuration
+# models configuration
 model: "VDSR"
 num_channels: 1
 num_residuals: 20

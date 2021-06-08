@@ -6,8 +6,6 @@ sys.path.append(os.path.abspath('../'))
 from torchvision.transforms import transforms
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
-from torch.nn.parallel import DistributedDataParallel
-import torch.multiprocessing as mp
 import torch.distributed as dist
 from dataset.dataset import *
 import torch
@@ -19,23 +17,7 @@ from super_resolution.models.DRRN.solver import DRRNTrainer
 from super_resolution.models.DRCN.solver import DRCNTrainer
 from attrdict import AttrDict
 from options import args
-import yaml
-
-
-def get_config(args):
-    with open(args.filename, 'r') as file:
-        try:
-            config = yaml.safe_load(file)
-            for arg in vars(args):
-                if args.config_priority == 'args':
-                    config[arg] = getattr(args, arg)
-                elif arg not in config.keys():
-                    config[arg] = getattr(args, arg)
-            config = AttrDict(config)
-        except yaml.YAMLError as exc:
-            config = None
-            print(exc)
-    return config
+from utils import get_config
 
 
 def get_dataset(config):
@@ -108,7 +90,7 @@ def get_dataset(config):
 
 
 def get_trainer(config, train_loader, test_loader, device=None):
-    # load model
+    # load models
     model_name = config.model
     if model_name.lower() == 'srcnn':
         model = SRCNNTrainer(config, train_loader, test_loader, device)
@@ -123,15 +105,15 @@ def get_trainer(config, train_loader, test_loader, device=None):
     elif model_name.lower() == 'drrn':
         model = DRRNTrainer(config, train_loader, test_loader, device)
     elif model_name.lower() == 'lapsrn':
-        # model = LapSRNTrainer(config, train_loader, test_loader)
+        # models = LapSRNTrainer(config, train_loader, test_loader)
         model = None
     elif model_name.lower() == 'lapsrn-gan':
-        # model = LapSRN_GANTrainer(config, train_loader, test_loader)
+        # models = LapSRN_GANTrainer(config, train_loader, test_loader)
         model = None
     elif model_name.lower() == 'edsr':
         model = None
     else:
-        raise Exception("the model does not exist, model only support [srcnn, fsrcnn, "
+        raise Exception("the models does not exist, models only support [srcnn, fsrcnn, "
                         "vdsr, espcn, drcn, drrn, lapsrn, lapsrn-gan, edsr]")
     return model
 
@@ -163,7 +145,7 @@ def main():
                               pin_memory=True, num_workers=configs.num_workers, drop_last=False, sampler=sampler)
     test_loader = DataLoader(dataset=test_set, batch_size=configs.test_batch_size, shuffle=False)
 
-    # get model
+    # get models
     trainer = get_trainer(configs, train_loader, test_loader, device)
     if configs.distributed and len(configs.gpu) > 1:
         # print(args.rank, args.world_size, args.local_rank, configs.gpu)
@@ -174,7 +156,6 @@ def main():
         trainer.model = torch.nn.parallel.DistributedDataParallel(trainer.model, output_device=args.local_rank,
                                                                   device_ids=[args.local_rank])
     trainer.run()
-    # mp.spawn(run_distributed, nprocs=len(args.gpu), args=(args,))
 
 
 if __name__ == '__main__':

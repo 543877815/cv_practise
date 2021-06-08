@@ -13,6 +13,8 @@ import logging
 import torch
 import datetime
 import matplotlib
+import yaml
+from attrdict import AttrDict
 
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -26,18 +28,34 @@ LAST_T = time.time()
 BEGIN_T = LAST_T
 
 
+def get_config(args):
+    with open(args.filename, 'r') as file:
+        try:
+            config = yaml.safe_load(file)
+            for arg in vars(args):
+                if args.config_priority == 'args':
+                    config[arg] = getattr(args, arg)
+                elif arg not in config.keys():
+                    config[arg] = getattr(args, arg)
+            config = AttrDict(config)
+        except yaml.YAMLError as exc:
+            config = None
+            print(exc)
+    return config
+
+
 def get_platform_path(config=None):
     system = platform.system()
     data_dir, model_dir, checkpoint_dir, log_dir, dirs = '', '', '', '', []
     if config and config.use_relative:
         checkpoint_dir = 'checkpoint/'
-        model_dir = 'model/'
+        model_dir = 'models/'
         log_dir = 'log/'
     else:
         if system == 'Windows':
             drive, common_dir = 'F', 'cache'
             data_dir = '{}:/{}/data'.format(drive, common_dir)
-            model_dir = '{}:/{}/model'.format(drive, common_dir)
+            model_dir = '{}:/{}/models'.format(drive, common_dir)
             checkpoint_dir = '{}:/{}/checkpoint'.format(drive, common_dir)
             log_dir = '{}:/{}/log'.format(drive, common_dir)
             dirs = [data_dir, model_dir, checkpoint_dir, log_dir]
@@ -45,7 +63,7 @@ def get_platform_path(config=None):
         elif system == 'Linux':
             common_dir = '/data'
             data_dir = '{}/data'.format(common_dir)
-            model_dir = '{}/model'.format(common_dir)
+            model_dir = '{}/models'.format(common_dir)
             checkpoint_dir = '{}/checkpoint'.format(common_dir)
             log_dir = '{}/log'.format(common_dir)
             dirs = [data_dir, model_dir, checkpoint_dir, log_dir]
@@ -327,7 +345,7 @@ class checkpoint():
             args.load = ''
 
         os.makedirs(self.dir, exist_ok=True)
-        os.makedirs(self.get_path('model'), exist_ok=True)
+        os.makedirs(self.get_path('models'), exist_ok=True)
         for d in args.data_test:
             os.makedirs(self.get_path('results-{}'.format(d)), exist_ok=True)
 
@@ -345,7 +363,7 @@ class checkpoint():
         return os.path.join(self.dir, *subdir)
 
     def save(self, trainer, epoch, is_best=False):
-        trainer.model.save(self.get_path('model'), epoch, is_best=is_best)
+        trainer.model.save(self.get_path('models'), epoch, is_best=is_best)
         trainer.loss.save(self.dir)
         trainer.loss.plot_loss(self.dir, epoch)
 

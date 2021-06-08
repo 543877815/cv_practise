@@ -11,6 +11,10 @@ from utils import get_platform_path, is_image_file
 import h5py
 from utils import rgb2ycbcr
 
+# python data_aug.py --input /data/lifengjun/celeb-inpainting_dataset/celeba-train-256/ \
+#                    --output /data/lifengjun/super-resolution_dataset/celeba_x64.h5 \
+#                    --use_h5py --width 256 --height 256 --use_bicubic -uf 64 --number 27000
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Pytorch super resolution data augmentation')
 
@@ -30,8 +34,9 @@ if __name__ == '__main__':
     parser.add_argument('--width', type=int, default=41, help='width of crop image')
     parser.add_argument('--height', type=int, default=41, help='height of crop image')
     parser.add_argument('--stride', type=int, default=41, help='stride of crop image')
-    parser.add_argument('--use_bicubic', action='store_true',
-                        help='whether to use Bicubic Interpolation after downsampling')
+    parser.add_argument('--upsampling', type=str, default='bicubic',
+                        choices=['bicubic', 'bilinear', 'nearest', 'antialias'],
+                        help='whether to use Bicubic Interpolation after upsampling')
     parser.add_argument('--upscaleFactor', '-uf', dest='uf', nargs='+', default='2',
                         help='super resolution upscale factor')
     parser.add_argument('--scales', dest='scales', nargs='+', default='1', help='scale for data augmentation')
@@ -44,6 +49,13 @@ if __name__ == '__main__':
     args.scales = [float(x) for x in args.scales]
     args.rotations = [float(x) for x in args.rotations]
     args.flips = [int(x) for x in args.flips]
+    interpolation = {
+        'bicubic': Image.BICUBIC,
+        'bilinear': Image.BILINEAR,
+        'nearest': Image.NEAREST,
+        'antialias': Image.ANTIALIAS
+    }
+
     print(args)
     if args.output_HR is not None and not os.path.exists(args.output_HR):
         os.mkdir(args.output_HR)
@@ -79,10 +91,10 @@ if __name__ == '__main__':
                 img = img.resize((scale_x, scale_y), Image.BICUBIC)
 
                 # 降质
-                img_LR = img.resize((scale_x // uf, scale_y // uf), Image.BICUBIC)
+                img_LR = img.resize((scale_x // uf, scale_y // uf), interpolation[args.upsampling])
                 # 上采样为同一个大小
-                if args.use_bicubic:
-                    img_LR = img_LR.resize((scale_x, scale_y), Image.BICUBIC)
+                if args.upsampling:
+                    img_LR = img_LR.resize((scale_x, scale_y), interpolation[args.upsampling])
                 # 翻转
                 for flip in args.flips:
                     if flip == 1:
@@ -118,7 +130,7 @@ if __name__ == '__main__':
                                     (x1 + args.padding, y1 + args.padding, x2 - args.padding, y2 - args.padding))
 
                                 # process LR image
-                                if args.use_bicubic:
+                                if args.upsampling:
                                     sub_img_LR = img_LR.crop((x1, y1, x2, y2))
                                 else:
                                     assert x1 % uf == 0, 'the image width is no divisible by {}'.format(uf)

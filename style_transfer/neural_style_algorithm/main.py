@@ -54,7 +54,7 @@ def get_style_model_and_losses(cnn, normalization_mean, normalization_std,
 
         model.add_module(name, layer)
 
-        # 将 ContentLoss 和 StyleLoss 整合到 model 中
+        # 将 ContentLoss 和 StyleLoss 整合到 models 中
         if name in content_layers:
             # add content loss:
             target = model(content_img).detach()
@@ -84,7 +84,7 @@ def run_style_transfer(model, normalization_mean, normalization_std,
                        content_layers, epochs=300,
                        style_weight=1000000, content_weight=10):
     """Run the style transfer."""
-    print('Building the style transfer model..')
+    print('Building the style transfer models..')
     model, style_losses, content_losses = get_style_model_and_losses(model, normalization_mean, normalization_std,
                                                                      style_img, content_img, style_layers,
                                                                      content_layers)
@@ -171,7 +171,7 @@ if __name__ == '__main__':
 
     assert style_img.size() == content_img.size(), "we need to import style and content image of the same size"
 
-    # model
+    # models
     model = models.vgg19(pretrained=True).features.to(device).eval()
 
     cnn_normalization_mean = torch.tensor([0.485, 0.456, 0.406]).to(device)

@@ -3,7 +3,7 @@ gpu: [0]
 distributed: False
 address: '127.0.0.1'
 port: '23456'
-# model
+# models
 model: "SRCNN"
 num_filter: 64
 num_channels: 1

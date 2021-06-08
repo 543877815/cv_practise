@@ -22,7 +22,7 @@ class ESPCNBasic(object):
         self.CUDA = torch.cuda.is_available()
         self.device = device
 
-        # model configuration
+        # models configuration
         self.model = None
         self.color_space = config.color_space
         self.num_channels = config.num_channels
@@ -155,7 +155,7 @@ class ESPCNTrainer(ESPCNBasic):
         self.train_loader = train_loader
         self.test_loader = test_loader
 
-        # model init
+        # models init
         self.build_model()
 
     def build_model(self):
@@ -255,12 +255,12 @@ class ESPCNTrainer(ESPCNBasic):
                                                                               self.optimizer.param_groups[0]['lr'],
                                                                               avg_train_loss, avg_psnr))
 
-                # save best model
+                # save best models
                 if avg_psnr > self.best_quality:
                     self.best_quality = avg_psnr
                     self.save_model(epoch, avg_psnr, self.checkpoint_name)
 
-                # save interval model
+                # save interval models
                 if epoch % self.checkpoint_interval == 0:
                     name = self.checkpoint_name.replace('.pth', '_{}.pth'.format(epoch))
                     self.save_model(epoch, avg_psnr, name)

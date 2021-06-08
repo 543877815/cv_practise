@@ -87,7 +87,7 @@ paper:
 **Dataset prepare**: for 9-5-5, 91-image, train: 33x33, test: 21x21, stride: 14, for 9-1-5; for train 33x33, test: 17x17, for 9-5-5), see source code on http://mmlab.ie.cuhk.edu.hk/projects/SRCNN.html.
 
 ```bash
-python data_aug.py --number 91 --use_bicubic --width 33 --height 33 --stride 14 -uf 2 \
+python data_aug.py --number 91 --upsampling bicubic --width 33 --height 33 --stride 14 -uf 2 \
                    --input F:\\cache\\data\\91-image\\HR --single_y --use_h5py \
                    --output F:\cache\data\data_for_SRCNN\\train_x2.h5
 ```
@@ -173,7 +173,7 @@ paper: [Accurate Image Super-Resolution Using Very Deep Convolutional Networksï¼
 **Dataset prepare**. 91-image and Bsd300 training set, height:41, width:41, stride:41, scale: 1.0 0.7 0.5, rotation: 0 90 180 270, flip: 0 1 2 3, upscaleFactor: 2 3 4, single model, y channel in YCrCb space only.:
 
 ```bash
-python data_aug.py --number 291 --use_bicubic --width 41 --height 41 --stride 41 \
+python data_aug.py --number 291 --upsampling --width 41 --height 41 --stride 41 \
 				   -uf 2 3 4 --scales 1.0 0.7 0.5 --rotations 0 90 180 270 --flips 0 1 2 3 \
 				   --input /data/data/291-images/  --single_y --use_h5py \
 				   --output /data/data/super_resolution/data_for_VDSR/train.h5
@@ -252,9 +252,9 @@ python main.py --configs configs/espcn.yaml -r
 
 | Dataset | Scale              | PSNR(91-images/paper/ImageNet/paper)                         | SSIM(91-images/paper/ImageNet/paper)                         |
 | ------- | ------------------ | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| Set5    | x2<br />x3<br />x4 | 36.44/-/35.65/-<br />32.45/32.55/32.66/33.00<br />30.07/-/30.30/30.90 | 0.9522/-/0.9459/-<br />0.9036/-/0.9078/-<br />0.8483/-/0.8558/- |
-| Set14   | x2<br />x3<br />x4 | 32.15/-/31.79/-<br />29.00/29.08/29.21/29.42<br />27.11/-/27.35/27.73 | 0.9037/-/0.8978/-<br />0.8147/-/0.8196/-<br />0.7396/-/07474/- |
-| BSD200  | x2<br />x3<br />x4 | 31.13/-/30.88/-<br />28.20/28.26/28.36/28.52<br />26.71/-/26.82/27.06 | 0.8846/-/0.8796/-<br />0.7806/-/0.7851/-<br />0.7032/-/0.7086/- |
+| Set5    | x2<br />x3<br />x4 | 36.44/-/36.45/-<br />32.45/32.55/32.66/33.00<br />30.07/-/30.30/30.90 | 0.9522/-/0.9525/-<br />0.9036/-/0.9078/-<br />0.8483/-/0.8558/- |
+| Set14   | x2<br />x3<br />x4 | 32.15/-/32.22/-<br />29.00/29.08/29.21/29.42<br />27.11/-/27.35/27.73 | 0.9037/-/0.9047/-<br />0.8147/-/0.8196/-<br />0.7396/-/07474/- |
+| BSD200  | x2<br />x3<br />x4 | 31.13/-/31.22/-<br />28.20/28.26/28.36/28.52<br />26.71/-/26.82/27.06 | 0.8846/-/0.8863/-<br />0.7806/-/0.7851/-<br />0.7032/-/0.7086/- |
 
 ### DRCN(2016)
 
@@ -265,10 +265,10 @@ Dataset prepare: 91-image, 41x41, stride: 21, flip: 0 1, rotation: 0 90 180 270,
 **Dataset prepare**.
 
 ```bash
-python data_aug.py --number 91 --width 41 --height 41 --stride 21 -uf 2 3 4 \
-				   --rotations 0 90 180 270 --scales 1.0 0.7 0.5 --use_bicubic \
+python data_aug.py --number 91 --width 41 --height 41 --stride 21 -uf 2 \
+				   --rotations 0 90 180 270 --scales 1.0 0.7 0.5 --upsampling bicubic \
 				   --input /data/data/91-images/data  --single_y --use_h5py \
-				   --output /data/data/super_resolution/data_for_DRCN/train.h5
+				   --output /data/data/super_resolution/data_for_DRCN/train_x2.h5
 ```
 
 **Training**.
@@ -304,7 +304,7 @@ Dataset prepare: 91-image and BSD300 train set, 31x31, stride: 21, rotation: 0 9
 
 ```bash
 python data_aug.py --number 291 --width 31 --height 31 --stride 28 -uf 2 3 4 \
-				   --rotations 0 90 180 270 --flip 0 1 2 --use_bicubic \
+				   --rotations 0 90 180 270 --flip 0 1 2 --upsampling \
 				   --input /data/data/291-images  --single_y --use_h5py \
 				   --output /data/data/super_resolution/data_for_DRRN/train.h5
 ```

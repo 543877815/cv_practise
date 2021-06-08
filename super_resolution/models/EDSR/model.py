@@ -75,7 +75,7 @@ class EDSR(nn.Module):
                 except Exception:
                     if name.find('tail') == -1:
                         raise RuntimeError('While copying the parameter named {}, '
-                                           'whose dimensions in the model are {} and '
+                                           'whose dimensions in the models are {} and '
                                            'whose dimensions in the checkpoint are {}.'
                                            .format(name, own_state[name].size(), param.size()))
             elif strict:
