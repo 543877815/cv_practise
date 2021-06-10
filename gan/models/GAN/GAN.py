@@ -7,6 +7,7 @@ from utils import get_platform_path
 from .model import Generator, Discriminator
 import torch.backends.cudnn as cudnn
 from torchvision.utils import save_image
+from gan.common import FloatTensor as Tensor
 
 
 class GAN(object):
@@ -41,10 +42,13 @@ class GAN(object):
         # checkpoint
         self.sample_interval = config.sample_interval
 
+        # build model
+        self.build_model()
+
     def build_model(self):
-        self.generator = Generator(latent_dim=self.latent_dim, img_shape=self.img_size).to(self.device)
+        self.generator = Generator(latent_dim=self.latent_dim, img_size=self.img_size).to(self.device)
         self.optimizer_G = torch.optim.Adam(self.generator.parameters(), lr=self.lr, betas=(self.beta1, self.beta2))
-        self.discriminator = Discriminator(img_shape=self.img_size).to(self.device)
+        self.discriminator = Discriminator(img_size=self.img_size).to(self.device)
         self.optimizer_D = torch.optim.Adam(self.discriminator.parameters(), lr=self.lr, betas=(self.beta1, self.beta2))
         self.criterion = torch.nn.BCELoss()  # 交叉熵
 
@@ -53,12 +57,12 @@ class GAN(object):
         if self.CUDA:
             torch.cuda.manual_seed(self.seed)
             cudnn.benchmark = True
+            self.generator.cuda()
+            self.discriminator.cuda()
             self.criterion.cuda()
 
     def train(self):
-        self.build_model()
         data_dir, _, _, _ = get_platform_path()
-        Tensor = torch.cuda.FloatTensor if self.CUDA else torch.FloatTensor
         for epoch in range(self.epochs):
             for i, (imgs, _) in enumerate(self.dataloader):
 

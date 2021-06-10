@@ -13,29 +13,36 @@ class WGAN(object):
     def __init__(self, config, dataloader=None, device=None):
         super(WGAN, self).__init__()
 
+        # hardware
         self.CUDA = torch.cuda.is_available()
-        if device is None:
-            self.device = torch.device("cuda" if (config.use_cuda and self.CUDA) else "cpu")
+        self.device = device
 
         # data configuration
         self.dataloader = dataloader
-        self.epochs = config.epoch
-        self.lr = config.lr
-        self.clip_value = config.clip_value
-        self.n_critic = config.n_critic
 
         # models configuration
         self.latent_dim = config.latent_dim
         self.img_size = (config.channels, config.img_size, config.img_size)
-        self.channels = config.channels
-        self.sample_interval = config.sample_interval
         self.model_name = config.model
+        self.channels = config.channels
+
+        # experiment configuration
+        self.epochs = config.epoch
+        self.lr = config.lr
+        self.clip_value = config.clip_value
+        self.n_critic = config.n_critic
+        self.sample_interval = config.sample_interval
         self.generator = None
         self.optimizer_G = None
         self.discriminator = None
         self.optimizer_D = None
-
         self.seed = 123
+
+        # checkpoint
+        self.sample_interval = config.sample_interval
+
+        # build model
+        self.build_model()
 
     def build_model(self):
         self.generator = Generator(latent_dim=self.latent_dim, img_size=self.img_size).to(self.device)

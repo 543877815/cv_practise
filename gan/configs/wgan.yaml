@@ -4,14 +4,13 @@ distributed: False
 address: '127.0.0.1'
 port: '23456'
 # models configuration
-model: "infogan"
-latent_dim: 62  # dimensionality of the latent space
-code_dim: 2     # latent code
-n_classes: 10   # number of classes for dataset
-channels: 1     # number of image channels
+model: "wgan"
+latent_dim: 100
 # dataset
 dataset: "mnist"
+channels: 1
 img_size: 32
+n_classes: 10
 seed: 123
 num_workers: 8
 platform: windows
@@ -28,5 +27,7 @@ batch_size: 64
 lr: 0.0002
 beta1: 0.5
 beta2: 0.999
+clip_value: 0.01  # lower and upper clip value for disc. weights
+n_critic: 5       # number of training steps for discriminator per iter
 # checkpoint
 sample_interval: 400

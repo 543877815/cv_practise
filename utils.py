@@ -49,13 +49,13 @@ def get_platform_path(config=None):
     data_dir, model_dir, checkpoint_dir, log_dir, dirs = '', '', '', '', []
     if config and config.use_relative:
         checkpoint_dir = 'checkpoint/'
-        model_dir = 'models/'
+        model_dir = 'model/'
         log_dir = 'log/'
     else:
         if system == 'Windows':
             drive, common_dir = 'F', 'cache'
             data_dir = '{}:/{}/data'.format(drive, common_dir)
-            model_dir = '{}:/{}/models'.format(drive, common_dir)
+            model_dir = '{}:/{}/model'.format(drive, common_dir)
             checkpoint_dir = '{}:/{}/checkpoint'.format(drive, common_dir)
             log_dir = '{}:/{}/log'.format(drive, common_dir)
             dirs = [data_dir, model_dir, checkpoint_dir, log_dir]
@@ -63,7 +63,7 @@ def get_platform_path(config=None):
         elif system == 'Linux':
             common_dir = '/data'
             data_dir = '{}/data'.format(common_dir)
-            model_dir = '{}/models'.format(common_dir)
+            model_dir = '{}/model'.format(common_dir)
             checkpoint_dir = '{}/checkpoint'.format(common_dir)
             log_dir = '{}/log'.format(common_dir)
             dirs = [data_dir, model_dir, checkpoint_dir, log_dir]

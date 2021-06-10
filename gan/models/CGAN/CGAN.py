@@ -6,7 +6,7 @@ from .model import Generator, Discriminator
 import torch.backends.cudnn as cudnn
 from torchvision.utils import save_image
 import os
-
+from gan.common import FloatTensor, LongTensor
 
 class CGAN(object):
     def __init__(self, config, dataloader=None, device=None):
@@ -28,7 +28,7 @@ class CGAN(object):
         # experiment configuration
         self.epochs = config.epoch
         self.lr = config.lr
-        self.beta1 = config.beta1
+        self.beta1 = config.beta1e
         self.beta2 = config.beta2
         self.generator = None
         self.optimizer_G = None
@@ -40,11 +40,13 @@ class CGAN(object):
         # checkpoint
         self.sample_interval = config.sample_interval
 
+        # build model
+        self.build_model()
+
     def build_model(self):
-        self.generator = Generator(n_classes=self.n_classes, latent_dim=self.latent_dim, img_shape=self.img_size).to(
-            self.device)
+        self.generator = Generator(n_classes=self.n_classes, latent_dim=self.latent_dim, img_size=self.img_size)
         self.optimizer_G = torch.optim.Adam(self.generator.parameters(), lr=self.lr, betas=(self.beta1, self.beta2))
-        self.discriminator = Discriminator(n_classes=self.n_classes, img_shape=self.img_size).to(self.device)
+        self.discriminator = Discriminator(n_classes=self.n_classes, img_size=self.img_size)
         self.optimizer_D = torch.optim.Adam(self.discriminator.parameters(), lr=self.lr, betas=(self.beta1, self.beta2))
         self.criterion = torch.nn.MSELoss()
 
@@ -53,17 +55,14 @@ class CGAN(object):
         if self.CUDA:
             torch.cuda.manual_seed(self.seed)
             cudnn.benchmark = True
+            self.generator.cuda()
+            self.discriminator.cuda()
             self.criterion.cuda()
 
     def train(self):
-        self.build_model()
-        data_dir, _, _, _ = get_platform_path()
-        FloatTensor = torch.cuda.FloatTensor if self.CUDA else torch.FloatTensor
-        LongTensor = torch.cuda.LongTensor if self.CUDA else torch.LongTensor
         # ----------
         #  Training
         # ----------
-
         for epoch in range(self.epochs):
             for i, (imgs, labels) in enumerate(self.dataloader):
 

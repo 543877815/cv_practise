@@ -2,11 +2,7 @@ import torch
 import numpy as np
 from torch.autograd import Variable
 import torch.nn as nn
-
-cuda = True if torch.cuda.is_available() else False
-FloatTensor = torch.cuda.FloatTensor if cuda else torch.FloatTensor
-LongTensor = torch.cuda.LongTensor if cuda else torch.LongTensor
-
+from gan.common import LongTensor, FloatTensor
 
 def weights_init_normal(m):
     classname = m.__class__.__name__
@@ -17,33 +13,25 @@ def weights_init_normal(m):
         torch.nn.init.constant_(m.bias.data, 0.0)
 
 
-def to_categorical(y, num_columns):
-    """Returns one-hot encoded Variable"""
-    y_cat = np.zeros((y.shape[0], num_columns))
-    y_cat[range(y.shape[0]), y] = 1.0
-
-    return Variable(FloatTensor(y_cat))
-
-
 class Generator(nn.Module):
     def __init__(self, latent_dim, n_classes, code_dim, img_size, channels):
         super(Generator, self).__init__()
-        input_dim = latent_dim + n_classes + code_dim
+        input_dim = latent_dim + n_classes + code_dim                              # 62 + 10 + 2 = 74
 
-        self.init_size = img_size // 4  # Initial size before upsampling
-        self.l1 = nn.Sequential(nn.Linear(input_dim, 128 * self.init_size ** 2))
+        self.init_size = img_size // 4  # Initial size before upsampling           # 8
+        self.l1 = nn.Sequential(nn.Linear(input_dim, 128 * self.init_size ** 2))   # [batch_size, 128 * 8 * 8]
 
         self.conv_blocks = nn.Sequential(
-            nn.BatchNorm2d(128),
-            nn.Upsample(scale_factor=2),
-            nn.Conv2d(128, 128, 3, stride=1, padding=1),
+            nn.BatchNorm2d(128),                                                   # [batch_size, 128, 8, 8]
+            nn.Upsample(scale_factor=2),                                           # [batch_size, 128, 16, 16]
+            nn.Conv2d(128, 128, 3, stride=1, padding=1),                           # [batch_size, 128, 16, 16]
             nn.BatchNorm2d(128, 0.8),
             nn.LeakyReLU(0.2, inplace=True),
-            nn.Upsample(scale_factor=2),
-            nn.Conv2d(128, 64, 3, stride=1, padding=1),
+            nn.Upsample(scale_factor=2),                                           # [batch_size, 128, 32, 32]
+            nn.Conv2d(128, 64, 3, stride=1, padding=1),                            # [batch_size, 64, 32, 32]
             nn.BatchNorm2d(64, 0.8),
             nn.LeakyReLU(0.2, inplace=True),
-            nn.Conv2d(64, channels, 3, stride=1, padding=1),
+            nn.Conv2d(64, channels, 3, stride=1, padding=1),                       # [batch_size, 1, 32, 32]
             nn.Tanh(),
         )
 
@@ -67,19 +55,19 @@ class Discriminator(nn.Module):
             return block
 
         self.conv_blocks = nn.Sequential(
-            *discriminator_block(channels, 16, bn=False),
-            *discriminator_block(16, 32),
-            *discriminator_block(32, 64),
-            *discriminator_block(64, 128),
+            *discriminator_block(channels, 16, bn=False),                       # [batch_size, 16, 32, 32]
+            *discriminator_block(16, 32),                                       # [batch_size, 32, 16, 16]
+            *discriminator_block(32, 64),                                       # [batch_size, 64, 8, 8]
+            *discriminator_block(64, 128),                                      # [batch_size, 128, 4, 4]
         )
 
         # The height and width of downsampled image
-        ds_size = img_size // 2 ** 4
+        ds_size = img_size // 2 ** 4                                            # 32 / (2 ^ 4) = 2
 
         # Output layers
-        self.adv_layer = nn.Sequential(nn.Linear(128 * ds_size ** 2, 1))
-        self.aux_layer = nn.Sequential(nn.Linear(128 * ds_size ** 2, n_classes), nn.Softmax())
-        self.latent_layer = nn.Sequential(nn.Linear(128 * ds_size ** 2, code_dim))
+        self.adv_layer = nn.Sequential(nn.Linear(128 * ds_size ** 2, 1))                        # [batch_size, 1]
+        self.aux_layer = nn.Sequential(nn.Linear(128 * ds_size ** 2, n_classes), nn.Softmax())  # [batch_size, 10]
+        self.latent_layer = nn.Sequential(nn.Linear(128 * ds_size ** 2, code_dim))              # [batch_size, 2]
 
     def forward(self, img):
         out = self.conv_blocks(img)

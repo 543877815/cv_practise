@@ -12,6 +12,7 @@ from gan.models.WGAN.WGAN import WGAN
 from gan.models.DCGAN.DCGAN import DCGAN
 from gan.models.CGAN.CGAN import CGAN
 from gan.models.RaGAN import RaGAN
+from gan.models.InfoGAN import InfoGAN
 from options import args
 from utils import get_config
 from attrdict import AttrDict
@@ -45,6 +46,8 @@ def get_trainer(config, dataloader, device=None):
         model = DCGAN(config=config, dataloader=dataloader, device=device)
     elif configs.model.lower() == 'cgan':
         model = CGAN(config=config, dataloader=dataloader, device=device)
+    elif configs.model.lower() == 'infogan':
+        model = InfoGAN(config=config, dataloader=dataloader, device=device)
     elif configs.model.lower() == 'ragan':
         model = RaGAN(config=config, dataloader=dataloader, device=device)
     else:

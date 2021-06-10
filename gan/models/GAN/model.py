@@ -3,9 +3,9 @@ import numpy as np
 
 
 class Generator(nn.Module):
-    def __init__(self, latent_dim, img_shape):
+    def __init__(self, latent_dim, img_size):
         super(Generator, self).__init__()
-        self.img_shape = img_shape
+        self.img_shape = img_size
 
         def block(in_feat, out_feat, normalize=True):
             layers = [nn.Linear(in_feat, out_feat)]
@@ -19,7 +19,7 @@ class Generator(nn.Module):
             *block(128, 256),
             *block(256, 512),
             *block(512, 1024),
-            nn.Linear(1024, int(np.prod(img_shape))),  # [batch_size, 1, 28, 28]
+            nn.Linear(1024, int(np.prod(img_size))),  # [batch_size, 1, 28, 28]
             nn.Tanh()
         )
 
@@ -30,10 +30,10 @@ class Generator(nn.Module):
 
 
 class Discriminator(nn.Module):
-    def __init__(self, img_shape):
+    def __init__(self, img_size):
         super(Discriminator, self).__init__()
         self.model = nn.Sequential(
-            nn.Linear(int(np.prod(img_shape)), 512),  # 连乘
+            nn.Linear(int(np.prod(img_size)), 512),  # 连乘
             nn.LeakyReLU(0.2, inplace=True),
             nn.Linear(512, 256),
             nn.LeakyReLU(0.2, inplace=True),

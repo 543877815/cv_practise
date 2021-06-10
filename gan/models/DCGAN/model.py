@@ -16,7 +16,7 @@ class Generator(nn.Module):
         super(Generator, self).__init__()
 
         self.init_size = img_size // 4                   # 32 // 4 = 8
-        self.l1 = nn.Sequential(nn.Linear(latent_dim, 128 * self.init_size ** 2))  # [100, 128 * 16]
+        self.l1 = nn.Sequential(nn.Linear(latent_dim, 128 * self.init_size ** 2))  # [100, 128 * 8 * 8]
 
         self.conv_blocks = nn.Sequential(
             nn.BatchNorm2d(128),                                            # [batch_size, 128, 8, 8] 2D里面做归一化
@@ -25,10 +25,10 @@ class Generator(nn.Module):
             nn.BatchNorm2d(128, 0.8),                                       # [batch_size, 128, 16, 16]
             nn.LeakyReLU(0.2, inplace=True),
             nn.Upsample(scale_factor=2),                                    # [batch_size, 128, 32, 32]
-            nn.Conv2d(128, 64, 3, stride=1, padding=1),                     # [batch_size, 128, 32, 32]
+            nn.Conv2d(128, 64, 3, stride=1, padding=1),                     # [batch_size, 64, 32, 32]
             nn.BatchNorm2d(64, 0.8),                                        # 0.8 is momentum
             nn.LeakyReLU(0.2, inplace=True),
-            nn.Conv2d(64, channels, 3, stride=1, padding=1),
+            nn.Conv2d(64, channels, 3, stride=1, padding=1),                # [batch_size, 1, 32, 32]
             nn.Tanh(),
         )
 
@@ -50,9 +50,9 @@ class Discriminator(nn.Module):
             return block
 
         self.model = nn.Sequential(
-            *discriminator_block(channels, 16, bn=False),
-            *discriminator_block(16, 32),
-            *discriminator_block(32, 64),
+            *discriminator_block(channels, 16, bn=False),       # [batch_size, 16, 16, 16]
+            *discriminator_block(16, 32),                       # [batch_size, 32, 8, 8]
+            *discriminator_block(32, 64),                       # [batch_size, 64, 4, 4]
             *discriminator_block(64, 128),
         )
 
