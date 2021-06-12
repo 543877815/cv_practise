@@ -285,7 +285,7 @@ python -m torch.distributed.launch --nproc_per_node=2 main.py --configs configs/
 python main.py --configs configs/drcn.yaml -r
 ```
 
-**Result**:
+**Result**(DK how to train):
 
 | Dataset  | Scale              | PSNR(91-images/paper)                 | SSIM(91-images/paper)                     |
 | -------- | ------------------ | ------------------------------------- | ----------------------------------------- |
@@ -304,7 +304,7 @@ Dataset prepare: 91-image and BSD300 train set, 31x31, stride: 21, rotation: 0 9
 
 ```bash
 python data_aug.py --number 291 --width 31 --height 31 --stride 28 -uf 2 3 4 \
-				   --rotations 0 90 180 270 --flip 0 1 2 --upsampling \
+				   --rotations 0 90 180 270 --flip 0 1 2 --upsampling bicubic \
 				   --input /data/data/291-images  --single_y --use_h5py \
 				   --output /data/data/super_resolution/data_for_DRRN/train.h5
 ```
@@ -333,6 +333,19 @@ python main.py --configs configs/drrn.yaml -r
 | Urban100 | x2<br />x3<br />x4 | 31.49/31.23<br />27.66/27.53<br />25.48/25.44 | 0.9219/0.9188<br />0.8459/0.8378<br />0.7647/0.7638 |
 
 ### LapSRN(2016)
+
+
+
+### RDN(2017)
+
+**Dataset prepare**.
+
+```
+python data_aug.py --number 800 --width 32 --height 32 --stride 32 -uf 2 \
+				   --rotations 0 90 --flip 0 1 2 --upsampling bicubic \
+				   --input /data/data/DIV2K/DIV2K/DIV2K_train_HR  --single_y --use_h5py \
+				   --output /data/data/super_resolution/data_for_RDN/train.h5
+```
 
 
 

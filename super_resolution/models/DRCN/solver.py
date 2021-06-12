@@ -28,7 +28,7 @@ class DRCNBasic(object):
         # models configuration
         self.model = None
         self.color_space = config.color_space
-        self.num_filter = config.num_filter
+        self.num_filter = config.num_features
         self.num_recursions = config.num_recursions
         self.num_channels = config.num_channels
         self.upscale_factor = config.upscaleFactor

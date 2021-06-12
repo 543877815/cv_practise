@@ -13,6 +13,7 @@ from gan.models.DCGAN.DCGAN import DCGAN
 from gan.models.CGAN.CGAN import CGAN
 from gan.models.RaGAN import RaGAN
 from gan.models.InfoGAN import InfoGAN
+from gan.models.LSGAN import LSGAN
 from options import args
 from utils import get_config
 from attrdict import AttrDict
@@ -50,6 +51,8 @@ def get_trainer(config, dataloader, device=None):
         model = InfoGAN(config=config, dataloader=dataloader, device=device)
     elif configs.model.lower() == 'ragan':
         model = RaGAN(config=config, dataloader=dataloader, device=device)
+    elif configs.model.lower() == 'lsgan':
+        model = LSGAN(config=config, dataloader=dataloader, device=device)
     else:
         raise Exception("the models does not exist")
 

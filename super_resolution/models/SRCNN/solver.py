@@ -26,7 +26,7 @@ class SRCNNBasic(object):
 
         # models configuration
         self.model = None
-        self.num_filter = config.num_filter
+        self.num_filter = config.num_features
         self.color_space = config.color_space
         self.num_channels = config.num_channels
         self.upscale_factor = config.upscaleFactor

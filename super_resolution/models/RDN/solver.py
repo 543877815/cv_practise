@@ -6,7 +6,7 @@ import random
 import torch
 import torch.backends.cudnn as cudnn
 import os
-from .model import VDSR
+from .model import RDN
 from utils import progress_bar, get_platform_path, get_logger, shave
 from torchvision.transforms import transforms
 from PIL import Image
@@ -17,18 +17,20 @@ from torch.nn import functional as F
 from collections import OrderedDict
 
 
-class VSDRBasic(object):
+class RDNBasic(object):
     def __init__(self, config, device=None):
-        super(VSDRBasic, self).__init__()
+        super(RDNBasic, self).__init__()
         self.CUDA = torch.cuda.is_available()
         self.device = device
 
         # models configuration
         self.model = None
         self.color_space = config.color_space
-        self.num_filter = config.num_features
-        self.num_residuals = config.num_residuals
+        self.num_features = config.num_features
+        self.growth_rate = config.growth_rate
         self.num_channels = config.num_channels
+        self.num_blocks = config.num_blocks
+        self.num_layers = config.num_layers
         self.upscale_factor = config.upscaleFactor
         self.test_upscaleFactor = config.test_upscaleFactor
         self.model_name = "{}-{}x".format(config.model, self.upscale_factor)
@@ -92,9 +94,9 @@ class VSDRBasic(object):
         return 10 * log10(1 / mse)
 
 
-class VDSRTester(VSDRBasic):
+class RDNTester(RDNBasic):
     def __init__(self, config, test_loader=None):
-        super(VDSRTester, self).__init__(config)
+        super(RDNTester, self).__init__(config)
         assert (config.resume is True)
         data_dir, _, _, _ = get_platform_path()
         # resolve configuration
@@ -104,8 +106,9 @@ class VDSRTester(VSDRBasic):
         self.build_model()
 
     def build_model(self):
-        self.model = VDSR(num_channels=self.num_channels, num_filter=self.num_filter,
-                          num_residuals=self.num_residuals).to(self.device)
+        self.model = RDN(num_channels=self.num_channels, scale_factor=self.upscale_factor[0],
+                         num_features=self.num_features, growth_rate=self.growth_rate, num_blocks=self.num_blocks,
+                         num_layers=self.num_layers).to(self.device)
         self.criterion = torch.nn.MSELoss(reduction='sum')
         self.load_model()
         if self.CUDA:
@@ -135,21 +138,15 @@ class VDSRTester(VSDRBasic):
                 print('==> {} is saved to {}'.format(output_name, self.output))
 
 
-class VDSRTrainer(VSDRBasic):
+class RDNTrainer(RDNBasic):
     def __init__(self, config, train_loader=None, test_loader=None, device=None):
-        super(VDSRTrainer, self).__init__(config, device)
+        super(RDNTrainer, self).__init__(config, device)
 
         # parameters configuration
         self.criterion = None
         self.optimizer = None
-        self.scheduler = None
         self.lr = config.lr
         self.seed = config.seed
-        self.clip = config.clip
-        self.momentum = config.momentum
-        self.scheduler_gamma = config.scheduler_gamma
-        self.weight_decay = config.weight_decay
-        self.milestones = config.milestones
 
         # data loader
         self.train_loader = train_loader
@@ -159,14 +156,13 @@ class VDSRTrainer(VSDRBasic):
         self.build_model()
 
     def build_model(self):
-        self.model = VDSR(num_channels=self.num_channels, num_filter=self.num_filter,
-                          num_residuals=self.num_residuals).to(self.device)
+        self.model = RDN(num_channels=self.num_channels, scale_factor=self.upscale_factor[0],
+                         num_features=self.num_features, growth_rate=self.growth_rate, num_blocks=self.num_blocks,
+                         num_layers=self.num_layers).to(self.device)
         if self.resume:
             self.load_model()
-        # else:
-        #     self.models.weight_init()
 
-        self.criterion = torch.nn.MSELoss(reduction='sum')
+        self.criterion = torch.nn.L1Loss()
         torch.manual_seed(self.seed)
 
         if self.CUDA:
@@ -174,10 +170,7 @@ class VDSRTrainer(VSDRBasic):
             cudnn.benchmark = True
             self.criterion.cuda()
 
-        self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.lr, momentum=self.weight_decay,
-                                         weight_decay=self.weight_decay)
-        self.scheduler = torch.optim.lr_scheduler.MultiStepLR(self.optimizer, milestones=self.milestones,
-                                                              gamma=self.scheduler_gamma)
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr)
 
     def save_model(self, epoch, avg_psnr, name):
         _, _, checkpoint_dir, _ = get_platform_path()
@@ -190,17 +183,18 @@ class VDSRTrainer(VSDRBasic):
         torch.save(state, model_out_path)
         self.logger.info("checkpoint saved to {}".format(model_out_path))
 
-    def train(self):
+    def train(self, epoch):
         self.model.train()
         train_loss = 0
         for index, (img, target) in enumerate(self.train_loader):
+            for param_group in self.optimizer.param_groups:
+                param_group['lr'] = self.lr * (0.1 ** (epoch // int(self.epochs * 0.8)))
             assert img.shape == target.shape, 'the shape of input is not equal to the shape of output'
             img, target = img.to(self.device), target.to(self.device)
             output = self.model(img)
             loss = self.criterion(output, target)
             self.optimizer.zero_grad()
             loss.backward()
-            nn.utils.clip_grad_norm_(self.model.parameters(), self.clip)
             self.optimizer.step()
             train_loss += loss.item()
             if not self.distributed or self.local_rank == 0:
@@ -238,9 +232,8 @@ class VDSRTrainer(VSDRBasic):
     def run(self):
         for epoch in range(self.start_epoch, self.epochs + self.start_epoch):
             print('\n===> Epoch {} starts:'.format(epoch))
-            avg_train_loss = self.train()
+            avg_train_loss = self.train(epoch)
             avg_psnr, save_input, save_output, save_target = self.test()
-            self.scheduler.step()
 
             if not self.distributed or self.local_rank == 0:
 

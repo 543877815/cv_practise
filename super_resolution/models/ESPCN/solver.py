@@ -26,7 +26,7 @@ class ESPCNBasic(object):
         self.model = None
         self.color_space = config.color_space
         self.num_channels = config.num_channels
-        self.num_filter = config.num_filter
+        self.num_filter = config.num_features
         self.upscale_factor = config.upscaleFactor
         self.test_upscaleFactor = config.test_upscaleFactor
         self.model_name = "{}-{}x".format(config.model, self.upscale_factor)

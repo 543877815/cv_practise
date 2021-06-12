@@ -1,0 +1,59 @@
+# hardware
+gpu: [ 0, 1 ]
+distributed: True
+address: '127.0.0.1'
+port: '23456'
+# models configuration
+model: "RDN"
+num_channels: 3
+num_features: 64
+growth_rate: 64
+num_blocks: 16
+num_layers: 8
+# dataset
+dataset: "customize"
+color_space: 'RGB'
+img_size: 32
+upscaleFactor: [ 2 ]
+test_upscaleFactor: 2
+scales: [ 1.0 ]
+rotations: [ 0, 90 ]
+flips: [ 0, 1, 2 ]
+use_h5py: True
+buildRawData: True
+platform: linux
+force_rebuild: False
+seed: 123
+data_flist:
+  windows:
+    origin_HR_dir: "F:\\cache\\data\\291-image\\HR"
+    train_HR_dir: "F:\\cache\\data\\291-image\\HR_train"
+    train_LR_dir: "F:\\cache\\data\\291-image\\LR_train"
+    test_HR_dir: "F:\\cache\\data\\Set5,Set14\\set5_HR\\3"
+    test_LR_dir: "F:\\cache\\data\\Set5,Set14\\set5_LR\\3"
+  linux:
+    origin_HR_dir: "/data/data/291-images"
+    train_HR_dir: "/data/data/super_resolution/data_for_VDSR/HR_train"
+    train_LR_dir: "/data/data/super_resolution/data_for_VDSR/LR_train"
+    test_HR_dir: "/data/data/Set5/HR_x2/"
+    test_LR_dir: "/data/data/Set5/LR_x2/"
+    h5py_input: "/data/data/super_resolution/data_for_VDSR/train.h5"
+# experiment
+lr: 0.0001
+training_batch_size: 16
+test_batch_size: 1
+momentum: 0.9
+weight_decay: 0.0001
+scheduler_gamma: 0.1
+epochs: 100
+milestones: [ 50, 70, 80, 90 ]
+# checkpoint
+checkpoint_interval: 1
+checkpoint_dir: "checkpoints/"
+# visualization
+tensorboard_log_dir: "runs/vdsr"
+tensorboard_image_interval: 1
+tensorboard_image_sample: 10
+tensorboard_image_size: [ 256, 256 ]
+tensorboard_draw_model: True
+tensorboard_input: [ 64, 1, 41, 41 ]

@@ -4,15 +4,15 @@ from torch.autograd import Variable
 import numpy as np
 
 from utils import get_platform_path
-from .model import Generator, Discriminator
+from .model import Generator, Discriminator, weights_init_normal
 import torch.backends.cudnn as cudnn
 from torchvision.utils import save_image
 from gan.common import FloatTensor as Tensor
 
 
-class GAN(object):
+class LSGAN(object):
     def __init__(self, config, dataloader=None, device=None):
-        super(GAN, self).__init__()
+        super(LSGAN, self).__init__()
 
         # hardware
         self.CUDA = torch.cuda.is_available()
@@ -23,7 +23,7 @@ class GAN(object):
 
         # models configuration
         self.latent_dim = config.latent_dim
-        self.img_size = (config.channels, config.img_size, config.img_size)
+        self.img_size = config.img_size
         self.channels = config.channels
         self.model_name = config.model
 
@@ -46,12 +46,14 @@ class GAN(object):
         self.build_model()
 
     def build_model(self):
-        self.generator = Generator(latent_dim=self.latent_dim, img_size=self.img_size)
+        self.generator = Generator(latent_dim=self.latent_dim, img_size=self.img_size, channels=self.channels)
         self.optimizer_G = torch.optim.Adam(self.generator.parameters(), lr=self.lr, betas=(self.beta1, self.beta2))
-        self.discriminator = Discriminator(img_size=self.img_size)
+        self.discriminator = Discriminator(img_size=self.img_size, channels=self.channels)
         self.optimizer_D = torch.optim.Adam(self.discriminator.parameters(), lr=self.lr, betas=(self.beta1, self.beta2))
-        self.criterion = torch.nn.BCELoss()  # 交叉熵
-
+        # !!! Minimizes MSE instead of BCE
+        self.criterion = torch.nn.MSELoss()  # 最小均方误差
+        self.generator.apply(weights_init_normal)
+        self.discriminator.apply(weights_init_normal)
         torch.manual_seed(self.seed)
 
         if self.CUDA:
