@@ -15,7 +15,8 @@ class DenseLayer(nn.Module):
 class RDB(nn.Module):
     def __init__(self, in_channels, growth_rate, num_layers):
         super(RDB, self).__init__()
-        self.layers = nn.Sequential(*[DenseLayer(in_channels + growth_rate * i, growth_rate) for i in range(num_layers)])
+        self.layers = nn.Sequential(
+            *[DenseLayer(in_channels + growth_rate * i, growth_rate) for i in range(num_layers)])
 
         # local feature fusion
         self.lff = nn.Conv2d(in_channels + growth_rate * num_layers, growth_rate, kernel_size=1)
@@ -25,12 +26,12 @@ class RDB(nn.Module):
 
 
 class RDN(nn.Module):
-    def __init__(self, scale_factor, num_channels, num_features, growth_rate, num_blocks, num_layers):
+    def __init__(self, scale_factor=2, num_channels=43, num_features=64, growth_rate=64, num_blocks=16, num_layers=8):
         super(RDN, self).__init__()
         self.G0 = num_features  # 64
-        self.G = growth_rate    # 64
-        self.D = num_blocks     # 16
-        self.C = num_layers     # 8
+        self.G = growth_rate  # 64
+        self.D = num_blocks  # 16
+        self.C = num_layers  # 8
 
         # shallow feature extraction
         self.sfe1 = nn.Conv2d(num_channels, num_features, kernel_size=3, padding=3 // 2)

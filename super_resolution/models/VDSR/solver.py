@@ -148,8 +148,8 @@ class VDSRTrainer(VSDRBasic):
         self.clip = config.clip
         self.momentum = config.momentum
         self.scheduler_gamma = config.scheduler_gamma
-        self.weight_decay = config.weight_decay
         self.milestones = config.milestones
+        self.weight_decay = config.weight_decay
 
         # data loader
         self.train_loader = train_loader

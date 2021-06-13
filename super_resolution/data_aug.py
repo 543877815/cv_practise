@@ -37,6 +37,7 @@ if __name__ == '__main__':
     parser.add_argument('--upsampling', type=str, default='bicubic',
                         choices=['bicubic', 'bilinear', 'nearest', 'antialias'],
                         help='whether to use Bicubic Interpolation after upsampling')
+    parser.add_argument('--same_size', action='store_true', help='whether the HR and LR are the same size')
     parser.add_argument('--upscaleFactor', '-uf', dest='uf', nargs='+', default='2',
                         help='super resolution upscale factor')
     parser.add_argument('--scales', dest='scales', nargs='+', default='1', help='scale for data augmentation')
@@ -93,7 +94,7 @@ if __name__ == '__main__':
                 # 降质
                 img_LR = img.resize((scale_x // uf, scale_y // uf), interpolation[args.upsampling])
                 # 上采样为同一个大小
-                if args.upsampling:
+                if args.upsampling and args.same_size:
                     img_LR = img_LR.resize((scale_x, scale_y), interpolation[args.upsampling])
                 # 翻转
                 for flip in args.flips:
@@ -130,7 +131,7 @@ if __name__ == '__main__':
                                     (x1 + args.padding, y1 + args.padding, x2 - args.padding, y2 - args.padding))
 
                                 # process LR image
-                                if args.upsampling:
+                                if args.upsampling and args.same_size:
                                     sub_img_LR = img_LR.crop((x1, y1, x2, y2))
                                 else:
                                     assert x1 % uf == 0, 'the image width is no divisible by {}'.format(uf)

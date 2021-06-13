@@ -15,6 +15,7 @@ from super_resolution.models.VDSR.solver import VDSRTrainer
 from super_resolution.models.ESPCN.solver import ESPCNTrainer
 from super_resolution.models.DRRN.solver import DRRNTrainer
 from super_resolution.models.DRCN.solver import DRCNTrainer
+from super_resolution.models.RDN.solver import RDNTrainer
 from attrdict import AttrDict
 from options import args
 from utils import get_config
@@ -73,7 +74,7 @@ def get_dataset(config):
             elif dataset.lower() == 'manga109':
                 train_LR_dir, train_HR_dir = Manga109(config)
             elif dataset.lower() == 'div2k':
-                data_dir = DIV2K() + '/HR'
+                train_LR_dir, train_HR_dir = DIV2K(config)
             elif dataset.lower() == 'celeb':
                 pass
             else:
@@ -104,6 +105,8 @@ def get_trainer(config, train_loader, test_loader, device=None):
         model = DRCNTrainer(config, train_loader, test_loader, device)
     elif model_name.lower() == 'drrn':
         model = DRRNTrainer(config, train_loader, test_loader, device)
+    elif model_name.lower() == 'rdn':
+        model = RDNTrainer(config, train_loader, test_loader, device)
     elif model_name.lower() == 'lapsrn':
         # models = LapSRNTrainer(config, train_loader, test_loader)
         model = None

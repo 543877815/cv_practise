@@ -7,13 +7,18 @@ from utils import get_platform_path, is_image_file, rgb2ycbcr
 from six.moves import urllib
 import torch.utils.data as data
 from PIL import Image
+from PIL.PngImagePlugin import PngImageFile
 import numpy as np
 from tqdm import tqdm
 import torch
 
 
 class DatasetFromTwoFolder(data.Dataset):
-    def __init__(self, LR_dir, HR_dir, train=False, config=None, transform=None, target_transform=None):
+    """
+        Using this function, we must assure the size of HR are divide even by the size of LR, respectively.
+    """
+
+    def __init__(self, LR_dir: str, HR_dir: str, train=False, config=None, transform=None, target_transform=None):
         super(DatasetFromTwoFolder, self).__init__()
 
         LR_filenames = os.listdir(LR_dir)
@@ -32,6 +37,7 @@ class DatasetFromTwoFolder(data.Dataset):
     def __getitem__(self, item):
         img = self.load_img(self.LR_image_filenames[item])
         target = self.load_img(self.HR_image_filenames[item])
+        img, target = self.augment(LR_img=img, HR_img=target)
         if self.transform:
             img = self.transform(img)
         if self.target_transform:
@@ -43,25 +49,48 @@ class DatasetFromTwoFolder(data.Dataset):
     def __len__(self):
         return len(self.LR_image_filenames)
 
-    def get_patch(self, LR_img, HR_img):
+    # TODO test this function
+    def augment(self, LR_img: PngImageFile, HR_img: PngImageFile) -> [PngImageFile, PngImageFile]:
+        # flip
+        flip_index = random.randint(0, len(self.config.flips) - 1)
+        flip_type = self.config.flips[flip_index]
+        if flip_type == 1:
+            LR_img = LR_img.transpose(Image.FLIP_LEFT_RIGHT)
+            HR_img = HR_img.transpose(Image.FLIP_LEFT_RIGHT)
+        elif flip_type == 2:
+            LR_img = LR_img.transpose(Image.FLIP_TOP_BOTTOM)
+            HR_img = HR_img.transpose(Image.FLIP_TOP_BOTTOM)
+        elif flip_index == 3:
+            LR_img = LR_img.transpose(Image.FLIP_LEFT_RIGHT)
+            HR_img = HR_img.transpose(Image.FLIP_LEFT_RIGHT)
+            LR_img = LR_img.transpose(Image.FLIP_TOP_BOTTOM)
+            HR_img = HR_img.transpose(Image.FLIP_TOP_BOTTOM)
+        # rotation
+        rotation_index = random.randint(0, len(self.config.rotations) - 1)
+        angle = self.config.rotations[rotation_index]
+        LR_img = LR_img.rotate(angle, expand=True)
+        HR_img = HR_img.rotate(angle, expand=True)
+        return LR_img, HR_img
+
+    def get_patch(self, LR_img: torch.Tensor, HR_img: torch.Tensor) -> [torch.Tensor, torch.Tensor]:
+        # TODO support multiple upscaleFactor
+        scale_factor_index = random.randint(0, len(self.config.upscaleFactor) - 1)
+        scale_factor_type = self.config.upscaleFactor[scale_factor_index]
+        upscaleFactor = scale_factor_type
         height, width = HR_img.shape[1], HR_img.shape[2]
         size = self.config.img_size
-
         if self.config.use_bicubic:
             tp = size
             ip = size
         else:
             tp = size
-            ip = tp // self.config.upscaleFactor
-
+            ip = tp // upscaleFactor
         ix = random.randrange(0, width - ip + 1)
         iy = random.randrange(0, height - ip + 1)
-
         if self.config.use_bicubic:
             tx, ty = ix, iy
         else:
-            tx, ty = self.config.upscaleFactor * ix, self.config.upscaleFactor * iy
-
+            tx, ty = upscaleFactor * ix, upscaleFactor * iy
         return LR_img[:, iy:iy + ip, ix:ix + ip], HR_img[:, ty: ty + tp, tx:tx + tp]
 
     def load_img(self, filepath):
@@ -154,81 +183,6 @@ class DatasetFromH5py(data.Dataset):
                     target_x4 = self.target_transform(target_x4)
                     target_x8 = self.target_transform(target_x8)
                 return img, target_x2, target_x4, target_x8
-
-    def __len__(self):
-        with h5py.File(self.h5_file, 'r') as f:
-            return len(f['lr'])
-
-
-class TrainDataset(torch.utils.data.Dataset):
-    def __init__(self, h5_file, patch_size, scale):
-        super(TrainDataset, self).__init__()
-        self.h5_file = h5_file
-        self.patch_size = patch_size
-        self.scale = scale
-
-    @staticmethod
-    def random_crop(lr, hr, size, scale):
-        lr_left = random.randint(0, lr.shape[1] - size)
-        lr_right = lr_left + size
-        lr_top = random.randint(0, lr.shape[0] - size)
-        lr_bottom = lr_top + size
-        hr_left = lr_left * scale
-        hr_right = lr_right * scale
-        hr_top = lr_top * scale
-        hr_bottom = lr_bottom * scale
-        lr = lr[lr_top:lr_bottom, lr_left:lr_right]
-        hr = hr[hr_top:hr_bottom, hr_left:hr_right]
-        return lr, hr
-
-    @staticmethod
-    def random_horizontal_flip(lr, hr):
-        if random.random() < 0.5:
-            lr = lr[:, ::-1, :].copy()
-            hr = hr[:, ::-1, :].copy()
-        return lr, hr
-
-    @staticmethod
-    def random_vertical_flip(lr, hr):
-        if random.random() < 0.5:
-            lr = lr[::-1, :, :].copy()
-            hr = hr[::-1, :, :].copy()
-        return lr, hr
-
-    @staticmethod
-    def random_rotate_90(lr, hr):
-        if random.random() < 0.5:
-            lr = np.rot90(lr, axes=(1, 0)).copy()
-            hr = np.rot90(hr, axes=(1, 0)).copy()
-        return lr, hr
-
-    def __getitem__(self, idx):
-        with h5py.File(self.h5_file, 'r') as f:
-            lr = f['lr'][str(idx)][::]
-            hr = f['hr'][str(idx)][::]
-            lr, hr = self.random_crop(lr, hr, self.patch_size, self.scale)
-            lr, hr = self.random_horizontal_flip(lr, hr)
-            lr, hr = self.random_vertical_flip(lr, hr)
-            lr, hr = self.random_rotate_90(lr, hr)
-            lr = lr.astype(np.float32).transpose([2, 0, 1]) / 255.0
-            hr = hr.astype(np.float32).transpose([2, 0, 1]) / 255.0
-            return lr, hr
-
-    def __len__(self):
-        with h5py.File(self.h5_file, 'r') as f:
-            return len(f['lr'])
-
-
-class EvalDataset(torch.utils.data.Dataset):
-    def __init__(self, h5_file):
-        super(EvalDataset, self).__init__()
-        self.h5_file = h5_file
-
-    def __getitem__(self, idx):
-        with h5py.File(self.h5_file, 'r') as f:
-            lr = f['lr'][str(idx)][::].astype(np.float32).transpose([2, 0, 1]) / 255.0
-            hr = f['hr'][str(idx)][::].astype(np.float32).transpose([2, 0, 1]) / 255.0
-            return lr, hr
 
     def __len__(self):
         with h5py.File(self.h5_file, 'r') as f:
@@ -470,7 +424,7 @@ def Manga109(config):
     return train_LR_dir, train_HR_dir
 
 
-def DIV2K():
+def DIV2K(config):
     # data/models/checkpoint in different platform
     data_dir, _, _, _ = get_platform_path()
     data_dir = os.path.join(data_dir, "DIV2K")
@@ -487,6 +441,8 @@ def DIV2K():
         with tarfile.open(file_path) as tar:
             for item in tar:
                 tar.extract(item, data_dir)
-
         os.remove(file_path)
-    return data_dir
+    # TODO: test
+    train_LR_dir = os.path.join(data_dir, 'DIV2K_train_LR_bicubic', "X{}".format(config.upscaleFactor)),
+    train_HR_dir = os.path.join(data_dir, 'DIV2K_train_HR')
+    return train_LR_dir, train_HR_dir

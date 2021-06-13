@@ -4,16 +4,16 @@ distributed: True
 address: '127.0.0.1'
 port: '23456'
 # models configuration
-model: "RDN"
-num_channels: 3
-num_features: 64
-growth_rate: 64
-num_blocks: 16
-num_layers: 8
+model: "EDSR"
+n_colors: 3
+n_feats: 64         # 256 for paper
+n_resblocks: 16     # 32 for paper
+res_scale: 1        # 0.1 for paper
 # dataset
 dataset: "customize"
 color_space: 'RGB'
-img_size: 32  # size of LR is 32
+rgb_range: 255
+img_size: 48  # size of LR is 48
 upscaleFactor: [ 2 ]
 test_upscaleFactor: 2
 scales: [ 1.0 ]
@@ -40,12 +40,13 @@ data_flist:
     h5py_input: "/data/data/super_resolution/data_for_RDN/train.h5"
 # experiment
 lr: 0.0001
+eps: 1e-8
+beta1: 0.9
+beta2: 0.999
 training_batch_size: 16
 test_batch_size: 1
-clip: 0
 epochs: 100
-scheduler_gamma: 0.5
-milestones: [ 200, 400, 600, 800 ]  # 200
+milestones: [ 50, 70, 80, 90 ]
 # checkpoint
 checkpoint_interval: 1
 checkpoint_dir: "checkpoints/"
