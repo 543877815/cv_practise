@@ -14,9 +14,12 @@ from gan.models.CGAN.CGAN import CGAN
 from gan.models.RaGAN import RaGAN
 from gan.models.InfoGAN import InfoGAN
 from gan.models.LSGAN import LSGAN
+from gan.models.EBGAN import EBGAN
+from gan.models.SRGAN import SRGAN
 from options import args
 from utils import get_config
 from attrdict import AttrDict
+from common import ImageDataset
 
 
 def get_dataset(config):
@@ -32,8 +35,18 @@ def get_dataset(config):
             transforms.Normalize([0.5], [0.5])
         ])
         train_set = torchvision.datasets.MNIST(root=train_dir, train=True, download=True, transform=transform_train)
+    elif config.dataset.lower() == 'cifar10':
+        transform_train = transforms.Compose([
+            transforms.Resize(config.img_size),
+            transforms.ToTensor(),
+            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+        ])
+        train_set = torchvision.datasets.CIFAR10(root=train_dir, train=True, download=True, transform=transform_train)
+    elif config.dataset.lower() == 'celeba':
+        train_set = ImageDataset(train_dir, hr_shape=(config.hr_height, config.hr_width),
+                                 upscale_factor=config.upscale_factor)
     else:
-        raise Exception("the dataset does not exist")
+        raise Exception("the dataset does not support currently!")
 
     return train_set
 
@@ -53,6 +66,10 @@ def get_trainer(config, dataloader, device=None):
         model = RaGAN(config=config, dataloader=dataloader, device=device)
     elif configs.model.lower() == 'lsgan':
         model = LSGAN(config=config, dataloader=dataloader, device=device)
+    elif configs.model.lower() == 'ebgan':
+        model = EBGAN(config=config, dataloader=dataloader, device=device)
+    elif configs.model.lower() == 'srgan':
+        model = SRGAN(config=config, dataloader=dataloader, device=device)
     else:
         raise Exception("the models does not exist")
 
@@ -62,7 +79,7 @@ def get_trainer(config, dataloader, device=None):
 if __name__ == '__main__':
     # get configuration
     configs = get_config(args)
-    img_shape = (args.channels, args.img_size, args.img_size)
+    print(configs)
 
     # detect device
     print("CUDA Available: ", torch.cuda.is_available())
@@ -85,11 +102,11 @@ if __name__ == '__main__':
 
     dataloader = torch.utils.data.DataLoader(
         dataset=train_set,
-        batch_size=args.batch_size,
+        batch_size=configs.batch_size,
         shuffle=sampler is None,
         num_workers=args.num_workers,
         sampler=sampler,
-        drop_last=False, )
+        drop_last=False)
 
     # models
     trainer = get_trainer(configs, dataloader, device)

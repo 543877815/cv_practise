@@ -1,4 +1,3 @@
-import torch
 import glob
 import random
 import os
@@ -8,11 +7,6 @@ import torch
 from torch.utils.data import Dataset
 from PIL import Image
 import torchvision.transforms as transforms
-
-cuda = True if torch.cuda.is_available() else False
-
-FloatTensor = torch.cuda.FloatTensor if cuda else torch.FloatTensor
-LongTensor = torch.cuda.LongTensor if cuda else torch.LongTensor
 
 # Normalization parameters for pre-trained PyTorch models
 mean = np.array([0.485, 0.456, 0.406])

@@ -4,7 +4,7 @@ from torch.autograd import Variable
 import numpy as np
 
 from utils import get_platform_path
-from .model import Generator, Discriminator
+from .model import Generator, Discriminator, weights_init
 import torch.backends.cudnn as cudnn
 from torchvision.utils import save_image
 
@@ -46,8 +46,10 @@ class WGAN(object):
 
     def build_model(self):
         self.generator = Generator(latent_dim=self.latent_dim, img_size=self.img_size).to(self.device)
+        self.generator.apply(weights_init)
         self.optimizer_G = torch.optim.RMSprop(self.generator.parameters(), lr=self.lr)
         self.discriminator = Discriminator(latent_dim=self.latent_dim, img_size=self.img_size).to(self.device)
+        self.discriminator.apply(weights_init)
         self.optimizer_D = torch.optim.RMSprop(self.discriminator.parameters(), lr=self.lr)
 
         torch.manual_seed(self.seed)

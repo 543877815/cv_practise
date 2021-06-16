@@ -1,0 +1,38 @@
+# hardware
+gpu: [ 0 ]
+distributed: False
+address: '127.0.0.1'
+port: '23456'
+# models configuration
+model: "srgan"
+upscale_factor: 4
+channels: 3
+n_residual_blocks: 16
+# dataset
+dataset: "celeba"
+hr_height: 256
+hr_width: 256
+seed: 123
+num_workers: 4
+platform: windows
+data_flist:
+  windows:
+    train_dir: F:\CelebA\Img\img_align_celeba_png.7z\img_align_celeba_png
+    test_dir: F:\CelebA\Img\img_align_celeba_png.7z\img_align_celeba_png
+  linux:
+    train_dir: /data/data/lifengjun/mnist
+    test_dir: /data/data/lifengjun/mnist
+# experiment
+start_epoch: 0
+epochs: 200
+batch_size: 4
+lr: 0.0002
+beta1: 0.5
+beta2: 0.999
+decay_epoch: 100
+# checkpoint
+sample_interval: 100
+checkpoint_interval: 1
+resume: False
+generator_checkpoint: ''
+discriminator_checkpoint: ''
