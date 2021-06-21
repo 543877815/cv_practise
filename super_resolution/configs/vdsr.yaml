@@ -1,6 +1,6 @@
 # hardware
-gpu: [ 0, 1 ]
-distributed: True
+gpu: [ 0 ]
+distributed: False
 address: '127.0.0.1'
 port: '23456'
 # models configuration
@@ -35,7 +35,7 @@ data_flist:
     train_LR_dir: "/data/data/super_resolution/data_for_VDSR/LR_train"
     test_HR_dir: "/data/data/Set5/HR_x2/"
     test_LR_dir: "/data/data/Set5/LR_x2/"
-    h5py_input: "/data/data/super_resolution/data_for_VDSR/train.h5"
+    h5py_input: "/data/data/super_resolution/data_for_VDSR/train_nearest.h5"
 # experiment
 lr: 0.1
 training_batch_size: 64

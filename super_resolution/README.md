@@ -63,7 +63,7 @@ test_HR_dir: path_to_test_HR
 test_LR_dir: path_to_test_LR
 ```
 
-This method will generate whole image using with augmentation, and then crop patch correspondingly during training.
+This method will **generate whole image using with augmentation**, and then crop patch correspondingly during training.
 
 ## Methods
 
@@ -88,7 +88,7 @@ paper:
 
 ```bash
 python data_aug.py --number 91 --upsampling bicubic --width 33 --height 33 --stride 14 -uf 2 \
-                   --input F:\\cache\\data\\91-image\\HR --single_y --use_h5py \
+                   --input F:\\cache\\data\\91-image\\HR --single_y --use_h5py --same_size \
                    --output F:\cache\data\data_for_SRCNN\\train_x2.h5
 ```
 
@@ -173,10 +173,10 @@ paper: [Accurate Image Super-Resolution Using Very Deep Convolutional Networksï¼
 **Dataset prepare**. 91-image and Bsd300 training set, height:41, width:41, stride:41, scale: 1.0 0.7 0.5, rotation: 0 90 180 270, flip: 0 1 2 3, upscaleFactor: 2 3 4, single model, y channel in YCrCb space only.:
 
 ```bash
-python data_aug.py --number 291 --upsampling --width 41 --height 41 --stride 41 \
+python data_aug.py --number 291 --upsampling nearest --width 41 --height 41 --stride 41 \
 				   -uf 2 3 4 --scales 1.0 0.7 0.5 --rotations 0 90 180 270 --flips 0 1 2 3 \
-				   --input /data/data/291-images/  --single_y --use_h5py \
-				   --output /data/data/super_resolution/data_for_VDSR/train.h5
+				   --input /data/data/291-images/  --single_y --use_h5py --same_size \
+				   --output /data/data/super_resolution/data_for_VDSR/train_nearest.h5
 ```
 
 **Training**. 

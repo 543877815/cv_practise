@@ -4,10 +4,11 @@ distributed: False
 address: '127.0.0.1'
 port: '23456'
 # models configuration
-model: "srgan"
+model: "esrgan"
 upscale_factor: 4
 channels: 3
-n_residual_blocks: 16
+filters: 64
+residual_blocks: 16
 # dataset
 dataset: "celeba"
 hr_height: 256
@@ -29,6 +30,10 @@ batch_size: 4
 lr: 0.0002
 beta1: 0.5
 beta2: 0.999
+decay_epoch: 100
+warmup_batches: 500   # number of batches with pixel-wise loss only
+lambda_adv: 5e-3      # adversarial loss weight
+lambda_pixel: 1e-2    # pixel-wise loss weight
 # checkpoint
 sample_interval: 100
 checkpoint_interval: 1

@@ -34,7 +34,7 @@ if __name__ == '__main__':
     parser.add_argument('--width', type=int, default=41, help='width of crop image')
     parser.add_argument('--height', type=int, default=41, help='height of crop image')
     parser.add_argument('--stride', type=int, default=41, help='stride of crop image')
-    parser.add_argument('--upsampling', type=str, default='bicubic',
+    parser.add_argument('--upsampling', type=str, default='bicubic', nargs='+',
                         choices=['bicubic', 'bilinear', 'nearest', 'antialias'],
                         help='whether to use Bicubic Interpolation after upsampling')
     parser.add_argument('--same_size', action='store_true', help='whether the HR and LR are the same size')
@@ -91,80 +91,81 @@ if __name__ == '__main__':
                 scale_y = scale_y - (scale_y % uf)
                 img = img.resize((scale_x, scale_y), Image.BICUBIC)
 
-                # 降质
-                img_LR = img.resize((scale_x // uf, scale_y // uf), interpolation[args.upsampling])
-                # 上采样为同一个大小
-                if args.upsampling and args.same_size:
-                    img_LR = img_LR.resize((scale_x, scale_y), interpolation[args.upsampling])
-                # 翻转
-                for flip in args.flips:
-                    if flip == 1:
-                        img_LR = img_LR.transpose(Image.FLIP_LEFT_RIGHT)
-                        img = img.transpose(Image.FLIP_LEFT_RIGHT)
-                    elif flip == 2:
-                        img_LR = img_LR.transpose(Image.FLIP_TOP_BOTTOM)
-                        img = img.transpose(Image.FLIP_TOP_BOTTOM)
-                    elif flip == 3:
-                        img_LR = img_LR.transpose(Image.FLIP_LEFT_RIGHT)
-                        img_LR = img_LR.transpose(Image.FLIP_TOP_BOTTOM)
-                        img = img.transpose(Image.FLIP_LEFT_RIGHT)
-                        img = img.transpose(Image.FLIP_TOP_BOTTOM)
-                    # 旋转
-                    for angle in args.rotations:
-                        img_LR = img_LR.rotate(angle, expand=True)
-                        img = img.rotate(angle, expand=True)
-                        for i in range(int(floor(scale_x / args.stride))):
-                            for j in range(int(floor(scale_y / args.stride))):
-                                x1 = i * args.stride
-                                x2 = x1 + args.width
-                                y1 = j * args.stride
-                                y2 = y1 + args.height
-                                if x2 > scale_x:
-                                    x2 = scale_x
-                                    x1 = scale_x - args.width
-                                    continue
-                                if y2 > scale_y:
-                                    y2 = scale_y
-                                    y1 = scale_y - args.height
-                                    continue
-                                sub_img = img.crop(
-                                    (x1 + args.padding, y1 + args.padding, x2 - args.padding, y2 - args.padding))
+                for upsampling in args.upsampling:
+                    # 降质
+                    img_LR = img.resize((scale_x // uf, scale_y // uf), interpolation[upsampling])
+                    # 上采样为同一个大小
+                    if args.same_size:
+                        img_LR = img_LR.resize((scale_x, scale_y), interpolation[upsampling])
+                    # 翻转
+                    for flip in args.flips:
+                        if flip == 1:
+                            img_LR = img_LR.transpose(Image.FLIP_LEFT_RIGHT)
+                            img = img.transpose(Image.FLIP_LEFT_RIGHT)
+                        elif flip == 2:
+                            img_LR = img_LR.transpose(Image.FLIP_TOP_BOTTOM)
+                            img = img.transpose(Image.FLIP_TOP_BOTTOM)
+                        elif flip == 3:
+                            img_LR = img_LR.transpose(Image.FLIP_LEFT_RIGHT)
+                            img_LR = img_LR.transpose(Image.FLIP_TOP_BOTTOM)
+                            img = img.transpose(Image.FLIP_LEFT_RIGHT)
+                            img = img.transpose(Image.FLIP_TOP_BOTTOM)
+                        # 旋转
+                        for angle in args.rotations:
+                            img_LR = img_LR.rotate(angle, expand=True)
+                            img = img.rotate(angle, expand=True)
+                            for i in range(int(floor(scale_x / args.stride))):
+                                for j in range(int(floor(scale_y / args.stride))):
+                                    x1 = i * args.stride
+                                    x2 = x1 + args.width
+                                    y1 = j * args.stride
+                                    y2 = y1 + args.height
+                                    if x2 > scale_x:
+                                        x2 = scale_x
+                                        x1 = scale_x - args.width
+                                        continue
+                                    if y2 > scale_y:
+                                        y2 = scale_y
+                                        y1 = scale_y - args.height
+                                        continue
+                                    sub_img = img.crop(
+                                        (x1 + args.padding, y1 + args.padding, x2 - args.padding, y2 - args.padding))
 
-                                # process LR image
-                                if args.upsampling and args.same_size:
-                                    sub_img_LR = img_LR.crop((x1, y1, x2, y2))
-                                else:
-                                    assert x1 % uf == 0, 'the image width is no divisible by {}'.format(uf)
-                                    assert x2 % uf == 0, 'the image width is no divisible by {}'.format(uf)
-                                    assert y1 % uf == 0, 'the image height is no divisible by {}'.format(uf)
-                                    assert y2 % uf == 0, 'the image height is no divisible by {}'.format(uf)
-                                    sub_img_LR = img_LR.crop((x1 / uf, y1 / uf,
-                                                              x2 / uf, y2 / uf))
-                                if args.use_h5py:
-                                    if args.single_y:
-                                        sub_img = np.array(sub_img, dtype=np.uint8)
-                                        sub_img_LR = np.array(np.array(sub_img_LR, dtype=np.uint8))
-                                        if sub_img.shape[2] == 3:
-                                            sub_img = rgb2ycbcr(sub_img)
-                                            sub_img_LR = rgb2ycbcr(sub_img_LR)
-                                            sub_img = sub_img[:, :, 0]
-                                            sub_img_LR = sub_img_LR[:, :, 0]
-                                        else:
-                                            sub_img = sub_img
-                                            sub_img_LR = sub_img_LR
+                                    # process LR image
+                                    if args.same_size:
+                                        sub_img_LR = img_LR.crop((x1, y1, x2, y2))
                                     else:
-                                        sub_img = np.array(sub_img).astype(np.uint8)
-                                        sub_img_LR = np.array(sub_img_LR).astype(np.uint8)
-                                    hr_patches.append(sub_img)
-                                    lr_patches.append(sub_img_LR)
-                                else:
-                                    # save HR image
-                                    sub_img.save(
-                                        "{}/{}_{}_x{}.png".format(args.output_HR, os.path.basename(file_path), id, uf))
-                                    # save LR image
-                                    sub_img_LR.save(
-                                        "{}/{}_{}_x{}.png".format(args.output_LR, os.path.basename(file_path), id, uf))
-                                id = id + 1
+                                        assert x1 % uf == 0, 'the image width is no divisible by {}'.format(uf)
+                                        assert x2 % uf == 0, 'the image width is no divisible by {}'.format(uf)
+                                        assert y1 % uf == 0, 'the image height is no divisible by {}'.format(uf)
+                                        assert y2 % uf == 0, 'the image height is no divisible by {}'.format(uf)
+                                        sub_img_LR = img_LR.crop((x1 / uf, y1 / uf,
+                                                                  x2 / uf, y2 / uf))
+                                    if args.use_h5py:
+                                        if args.single_y:
+                                            sub_img = np.array(sub_img, dtype=np.uint8)
+                                            sub_img_LR = np.array(np.array(sub_img_LR, dtype=np.uint8))
+                                            if sub_img.shape[2] == 3:
+                                                sub_img = rgb2ycbcr(sub_img)
+                                                sub_img_LR = rgb2ycbcr(sub_img_LR)
+                                                sub_img = sub_img[:, :, 0]
+                                                sub_img_LR = sub_img_LR[:, :, 0]
+                                            else:
+                                                sub_img = sub_img
+                                                sub_img_LR = sub_img_LR
+                                        else:
+                                            sub_img = np.array(sub_img).astype(np.uint8)
+                                            sub_img_LR = np.array(sub_img_LR).astype(np.uint8)
+                                        hr_patches.append(sub_img)
+                                        lr_patches.append(sub_img_LR)
+                                    else:
+                                        # save HR image
+                                        sub_img.save(
+                                            "{}/{}_{}_x{}.png".format(args.output_HR, os.path.basename(file_path), id, uf))
+                                        # save LR image
+                                        sub_img_LR.save(
+                                            "{}/{}_{}_x{}.png".format(args.output_LR, os.path.basename(file_path), id, uf))
+                                    id = id + 1
     if args.use_h5py:
         try:
             h5_file = h5py.File(args.output, 'w')
