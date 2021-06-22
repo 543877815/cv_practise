@@ -4,6 +4,10 @@ from math import sqrt
 from torch.nn import functional as F
 
 
+class Classifier(nn.Module):
+    def __init__(self):
+        pass
+
 class Conv_ReLU_Block(nn.Module):
     def __init__(self):
         super(Conv_ReLU_Block, self).__init__()

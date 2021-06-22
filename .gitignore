@@ -3,3 +3,5 @@
 mail/*
 *.pth
 *.0
+*.pyc
+#/super_resolution/experiment/*

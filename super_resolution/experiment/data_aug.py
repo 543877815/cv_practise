@@ -1,6 +1,8 @@
 import sys
 import os
+sys.path.insert(0, os.path.abspath('../models/'))
 sys.path.insert(0, os.path.abspath('../'))
+sys.path.insert(0, os.path.abspath('../../'))
 
 import argparse
 from math import floor
@@ -73,6 +75,7 @@ if __name__ == '__main__':
 
     hr_patches = []
     lr_patches = []
+    indexes = []
 
     print("===> {} images".format(len(image_filenames)))
 
@@ -91,7 +94,7 @@ if __name__ == '__main__':
                 scale_y = scale_y - (scale_y % uf)
                 img = img.resize((scale_x, scale_y), Image.BICUBIC)
 
-                for upsampling in args.upsampling:
+                for upsampling_type, upsampling in enumerate(args.upsampling):
                     # 降质
                     img_LR = img.resize((scale_x // uf, scale_y // uf), interpolation[upsampling])
                     # 上采样为同一个大小
@@ -158,6 +161,7 @@ if __name__ == '__main__':
                                             sub_img_LR = np.array(sub_img_LR).astype(np.uint8)
                                         hr_patches.append(sub_img)
                                         lr_patches.append(sub_img_LR)
+                                        indexes.append(upsampling_type)
                                     else:
                                         # save HR image
                                         sub_img.save(
@@ -173,19 +177,25 @@ if __name__ == '__main__':
             h5_file = h5py.File(args.output, 'w')
             hr_patches = np.array(hr_patches)
             lr_patches = np.array(lr_patches)
+            indexes = np.array(indexes)
             # shuffle using same seed
             np.random.seed(args.seed)
             np.random.shuffle(hr_patches)
             np.random.seed(args.seed)
             np.random.shuffle(lr_patches)
+            np.random.seed(args.seed)
+            np.random.shuffle(indexes)
             print("===> {} patches".format(len(hr_patches)))
 
             hr = h5_file.create_dataset('hr', data=hr_patches)
             lr = h5_file.create_dataset('lr', data=lr_patches)
+            index = h5_file.create_dataset('index', data=indexes)
 
             for arg in vars(args):
                 hr.attrs[arg] = str(getattr(args, arg))
                 lr.attrs[arg] = str(getattr(args, arg))
+                index.attrs[arg] = str(getattr(args, arg))
+
 
             h5_file.close()
 

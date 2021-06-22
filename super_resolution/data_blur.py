@@ -1,10 +1,11 @@
 import sys
 import os
+
 sys.path.insert(0, os.path.abspath('../'))
 
 import argparse
 from math import floor
-from PIL import Image
+from PIL import Image, ImageFilter
 from tqdm import tqdm
 import numpy as np
 from utils import get_platform_path, is_image_file, rgb2ycbcr
@@ -37,7 +38,8 @@ if __name__ == '__main__':
                         choices=['bicubic', 'bilinear', 'nearest', 'antialias'],
                         help='whether to use Bicubic Interpolation after degradation')
     parser.add_argument('--kernel_size', type=int, default=1, dest='kernel size for blur kernel')
-    parser.add_argument('--same_size', action='store_true', help='whether the HR and LR are the same size')
+    parser.add_argument('--same_size', default=True, action='store_true',
+                        help='whether the HR and LR are the same size')
     parser.add_argument('--upscaleFactor', '-uf', dest='uf', nargs='+', default='2',
                         help='super resolution upscale factor')
     parser.add_argument('--scales', dest='scales', nargs='+', default='1', help='scale for data augmentation')
@@ -93,10 +95,11 @@ if __name__ == '__main__':
 
                 for upsampling in args.upsampling:
                     # 降质
-                    img_LR = img.resize((scale_x // uf, scale_y // uf), interpolation[upsampling])
+                    # img_LR = img.resize((scale_x // uf, scale_y // uf), interpolation[upsampling])
                     # 上采样为同一个大小
-                    if args.same_size:
-                        img_LR = img_LR.resize((scale_x, scale_y), interpolation[upsampling])
+                    # if args.same_size:
+                        # img_LR = img_LR.resize((scale_x, scale_y), interpolation[upsampling])
+                    img_LR = img.filter(ImageFilter.GaussianBlur(3))
                     # 翻转
                     for flip in args.flips:
                         if flip == 1:
