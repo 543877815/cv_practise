@@ -175,10 +175,10 @@ paper: [Accurate Image Super-Resolution Using Very Deep Convolutional Networksï¼
 **Dataset prepare**. 91-image and Bsd300 training set, height:41, width:41, stride:41, scale: 1.0 0.7 0.5, rotation: 0 90 180 270, flip: 0 1 2 3, upscaleFactor: 2 3 4, single model, y channel in YCrCb space only.:
 
 ```bash
-python data_aug.py --number 291 --upsampling nearest bicubic --width 41 --height 41 --stride 41 \
+python data_aug.py --number 291 --upsampling nearest --width 41 --height 41 --stride 41 \
 				   -uf 2 3 4 --scales 1.0 0.7 0.5 --rotations 0 90 180 270 --flips 0 1 2 3 \
-				   --input /data/data/291-images/  --single_y --use_h5py --same_size \
-				   --output /data/data/super_resolution/data_for_VDSR/train_nearest.h5
+				   --input /data/data/291-images/  --use_h5py --same_size \
+				   --output /data/data/super_resolution/data_for_VDSR/train_nearest_index.h5
 ```
 
 **Training**. 

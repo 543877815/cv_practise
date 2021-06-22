@@ -2,7 +2,7 @@
 import sys
 import os
 
-sys.path.append(os.path.abspath('../'))
+sys.path.insert(0, os.path.abspath('../'))
 from torchvision.transforms import transforms
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
@@ -93,27 +93,27 @@ def get_dataset(config):
 def get_trainer(config, train_loader, test_loader, device=None):
     # load models
     model_name = config.model
-    if model_name.lower() == 'srcnn':
+    if model_name.lower().startswith('srcnn'):
         model = SRCNNTrainer(config, train_loader, test_loader, device)
-    elif model_name.lower() == 'fsrcnn':
+    elif model_name.lower().startswith('fsrcnn'):
         model = FSRCNNTrainer(config, train_loader, test_loader, device)
-    elif model_name.lower() == 'vdsr':
+    elif model_name.lower().startswith('vdsr'):
         model = VDSRTrainer(config, train_loader, test_loader, device)
-    elif model_name.lower() == 'espcn':
+    elif model_name.lower().startswith('espcn'):
         model = ESPCNTrainer(config, train_loader, test_loader, device)
-    elif model_name.lower() == 'drcn':
+    elif model_name.lower().startswith('drcn'):
         model = DRCNTrainer(config, train_loader, test_loader, device)
-    elif model_name.lower() == 'drrn':
+    elif model_name.lower().startswith('drrn'):
         model = DRRNTrainer(config, train_loader, test_loader, device)
-    elif model_name.lower() == 'rdn':
+    elif model_name.lower().startswith('rdn'):
         model = RDNTrainer(config, train_loader, test_loader, device)
-    elif model_name.lower() == 'lapsrn':
+    elif model_name.lower().startswith('lapsrn'):
         # models = LapSRNTrainer(config, train_loader, test_loader)
         model = None
-    elif model_name.lower() == 'lapsrn-gan':
+    elif model_name.lower().startswith('lapsrn-gan'):
         # models = LapSRN_GANTrainer(config, train_loader, test_loader)
         model = None
-    elif model_name.lower() == 'edsr':
+    elif model_name.lower().startswith('edsr'):
         model = None
     else:
         raise Exception("the models does not exist, models only support [srcnn, fsrcnn, "

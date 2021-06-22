@@ -1,11 +1,11 @@
 # hardware
-gpu: [ 0 ]
+gpu: [ 4 ]
 distributed: False
 address: '127.0.0.1'
 port: '23456'
 # models configuration
-model: "VDSR"
-num_channels: 1
+model: "VDSR-bicubic_nearest-rgb"
+num_channels: 3
 num_residuals: 20
 num_filter: 64
 # dataset
@@ -21,6 +21,8 @@ use_h5py: True
 buildRawData: True
 platform: linux
 force_rebuild: False
+data_range: 800
+repeat: 1
 seed: 123
 data_flist:
   windows:
@@ -35,7 +37,7 @@ data_flist:
     train_LR_dir: "/data/data/super_resolution/data_for_VDSR/LR_train"
     test_HR_dir: "/data/data/Set5/HR_x2/"
     test_LR_dir: "/data/data/Set5/LR_x2/"
-    h5py_input: "/data/data/super_resolution/data_for_VDSR/train_nearest.h5"
+    h5py_input: "/data/data/super_resolution/data_for_VDSR/train_bicubic_nearest_rgb.h5"
 # experiment
 lr: 0.1
 training_batch_size: 64
