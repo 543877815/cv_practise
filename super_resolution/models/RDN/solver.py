@@ -190,7 +190,6 @@ class RDNTrainer(RDNBasic):
             param_group['lr'] = self.lr * (0.1 ** (epoch // int(self.epochs * 0.8)))
         train_loss = 0
         for index, (img, target) in enumerate(self.train_loader):
-
             img, target = img.to(self.device), target.to(self.device)
             output = self.model(img)
             loss = self.criterion(output, target)
