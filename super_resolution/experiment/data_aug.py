@@ -6,7 +6,7 @@ sys.path.insert(0, os.path.abspath('../../'))
 
 import argparse
 from math import floor
-from PIL import Image
+from PIL import Image, ImageFilter
 from tqdm import tqdm
 import numpy as np
 from utils import get_platform_path, is_image_file, rgb2ycbcr
@@ -100,6 +100,7 @@ if __name__ == '__main__':
                     # 上采样为同一个大小
                     if args.same_size:
                         img_LR = img_LR.resize((scale_x, scale_y), interpolation[upsampling])
+                    # img_LR = img.filter(ImageFilter.GaussianBlur(3))
                     # 翻转
                     for flip in args.flips:
                         if flip == 1:

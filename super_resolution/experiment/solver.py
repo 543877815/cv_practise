@@ -1,13 +1,17 @@
 # reference:
 # https://github.com/icpm/super-resolution
 # https://github.com/twtygqyy/pytorch-vdsr
+import sys
+import os
+sys.path.insert(0, os.path.abspath('../'))
+sys.path.insert(0, os.path.abspath('../../'))
 from math import log10
 import random
 import torch
 import torch.backends.cudnn as cudnn
 import os
-from .model import VDSR
-from utils import progress_bar, get_platform_path, get_logger, shave
+from super_resolution.experiment.VDSR import VDSR, ResNet, BasicBlock, mapping
+from utils import progress_bar, get_platform_path, get_logger, shave, to_categorical
 from torchvision.transforms import transforms
 from PIL import Image
 from torchvision import utils as vutils
@@ -15,6 +19,8 @@ from torch.utils.tensorboard import SummaryWriter
 import torch.nn as nn
 from torch.nn import functional as F
 from collections import OrderedDict
+import numpy as np
+from torch.autograd import Variable
 
 
 class VSDRBasic(object):
@@ -25,10 +31,14 @@ class VSDRBasic(object):
 
         # models configuration
         self.model = None
+        self.classifier = None
+        self.mapping = None
         self.color_space = config.color_space
-        self.num_filter = config.num_features
+        self.num_filter = config.num_filter
+        self.num_classes = config.num_classes
         self.num_residuals = config.num_residuals
         self.num_channels = config.num_channels
+        self.add_channels = config.add_channels
         self.upscale_factor = config.upscaleFactor
         self.test_upscaleFactor = config.test_upscaleFactor
         self.model_name = "{}-{}x".format(config.model, self.upscale_factor)
@@ -141,6 +151,7 @@ class VDSRTrainer(VSDRBasic):
 
         # parameters configuration
         self.criterion = None
+        self.infoLoss = None
         self.optimizer = None
         self.scheduler = None
         self.lr = config.lr
@@ -159,20 +170,24 @@ class VDSRTrainer(VSDRBasic):
         self.build_model()
 
     def build_model(self):
-        self.model = VDSR(num_channels=self.num_channels, num_filter=self.num_filter,
+        self.model = VDSR(num_channels=self.num_channels + self.add_channels, num_filter=self.num_filter,
                           num_residuals=self.num_residuals).to(self.device)
+        self.classifier = ResNet(BasicBlock, [1, 1, 1, 1], num_classes=self.num_classes).to(self.device)
+        self.mapping = mapping(add_channels=self.add_channels, num_classes=self.num_classes).to(self.device)
         if self.resume:
             self.load_model()
         # else:
         #     self.models.weight_init()
 
         self.criterion = torch.nn.MSELoss(reduction='sum')
+        self.infoLoss = torch.nn.CrossEntropyLoss()  # 离散损失
         torch.manual_seed(self.seed)
 
         if self.CUDA:
             torch.cuda.manual_seed(self.seed)
             cudnn.benchmark = True
             self.criterion.cuda()
+            self.infoLoss.cuda()
 
         self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.lr, momentum=self.weight_decay,
                                          weight_decay=self.weight_decay)
@@ -190,14 +205,33 @@ class VDSRTrainer(VSDRBasic):
         torch.save(state, model_out_path)
         self.logger.info("checkpoint saved to {}".format(model_out_path))
 
+    def to_categorical(self, y, num_columns):
+        y_cat = np.zeros((y.shape[0], num_columns))
+        y_cat[range(y.shape[0]), y] = 1.0
+        return Variable(torch.FloatTensor(y_cat))
+
     def train(self):
         self.model.train()
         train_loss = 0
-        for index, (img, target) in enumerate(self.train_loader):
+        for index, (label, img, target) in enumerate(self.train_loader):
+
+            label = self.to_categorical(y=label.numpy(), num_columns=self.num_classes).to(self.device)
+            code = self.mapping(label)
+            batch_size, channel, width, height = img.shape
+            code = code.reshape([batch_size, self.add_channels, 1, 1])
+            add_feature = code.repeat(1, 1, width, height)
+
             assert img.shape == target.shape, 'the shape of input is not equal to the shape of output'
             img, target = img.to(self.device), target.to(self.device)
-            output = self.model(img)
-            loss = self.criterion(output, target)
+
+            output = self.model(img, add_feature)
+
+            resume_code = self.classifier(output)
+            loss1 = self.infoLoss(resume_code.long(), label.long())
+            loss2 = self.criterion(output, target)
+
+            print(loss1, loss2)
+            loss = loss1 + loss2
             self.optimizer.zero_grad()
             loss.backward()
             nn.utils.clip_grad_norm_(self.model.parameters(), self.clip)

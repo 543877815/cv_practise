@@ -1,7 +1,6 @@
 import hashlib
 import os
 import platform
-
 import cv2
 import math
 import imageio
@@ -15,6 +14,7 @@ import datetime
 import matplotlib
 import yaml
 from attrdict import AttrDict
+from torch.autograd import Variable
 
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -22,6 +22,10 @@ from multiprocessing import Process
 from multiprocessing import Queue
 import torch.optim as optim
 import torch.optim.lr_scheduler as lrs
+
+cuda = True if torch.cuda.is_available() else False
+FloatTensor = torch.cuda.FloatTensor if cuda else torch.FloatTensor
+LongTensor = torch.cuda.LongTensor if cuda else torch.LongTensor
 
 TOTAL_BAR_LENGTH = 80
 LAST_T = time.time()
@@ -300,6 +304,15 @@ def SSIM_index(pred, gt):
 # TODO: IFC
 def IFC(pred, gt):
     pass
+
+
+"""Returns one-hot encoded Variable"""
+
+
+def to_categorical(y, num_columns):
+    y_cat = np.zeros((y.shape[0], num_columns))
+    y_cat[range(y.shape[0]), y] = 1.0
+    return Variable(FloatTensor(y_cat))
 
 
 def get_logger(filename, verbosity=1, name=None):

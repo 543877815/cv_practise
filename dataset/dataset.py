@@ -21,10 +21,13 @@ class DatasetFromTwoFolder(data.Dataset):
     def __init__(self, LR_dir: str, HR_dir: str, train=False, config=None, transform=None, target_transform=None):
         super(DatasetFromTwoFolder, self).__init__()
 
-        LR_filenames = os.listdir(LR_dir)[:config.data_range]
-        HR_filenames = os.listdir(HR_dir)[:config.data_range]
+        LR_filenames = os.listdir(LR_dir)
+        HR_filenames = os.listdir(HR_dir)
         LR_filenames.sort(key=lambda x: x[:-4])
         HR_filenames.sort(key=lambda x: x[:-4])
+
+        LR_filenames = LR_filenames[:config.data_range]
+        HR_filenames = HR_filenames[:config.data_range]
 
         self.LR_image_filenames = [os.path.join(LR_dir, x) for x in LR_filenames if is_image_file(x)]
         self.HR_image_filenames = [os.path.join(HR_dir, x) for x in HR_filenames if is_image_file(x)]

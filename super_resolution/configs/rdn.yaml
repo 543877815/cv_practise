@@ -1,5 +1,5 @@
 # hardware
-gpu: [ 0 ]
+gpu: [ 4 ]
 distributed: False
 address: '127.0.0.1'
 port: '23456'
@@ -22,11 +22,11 @@ flips: [ 0, 1, 2 ]
 use_h5py: False
 same_size: False
 buildRawData: False
-platform: windows
 force_rebuild: False
 data_range: 800
 repeat: 200
 seed: 123
+platform: linux
 data_flist:
   windows:
     origin_HR_dir: "F:\\cache\\data\\291-image\\HR"
@@ -36,8 +36,8 @@ data_flist:
     test_LR_dir: "F:\\cache\\data\\Set5,Set14\\set5_LR\\2"
   linux:
     origin_HR_dir: "/data/data/291-images"
-    train_HR_dir: "/data/data/DIV2K/DIV2K/DIV2K_train_LR_bicubic/X2"
-    train_LR_dir: "/data/data/DIV2K/DIV2K/DIV2K_train_HR"
+    train_HR_dir: "/data/data/DIV2K/DIV2K/DIV2K_train_HR"
+    train_LR_dir: "/data/data/DIV2K/DIV2K/DIV2K_train_LR_bicubic/X2"
     test_HR_dir: "/data/data/Set5,Set14/set5_HR/2/"
     test_LR_dir: "/data/data/Set5,Set14/set5_LR/2/"
     h5py_input: "/data/data/super_resolution/data_for_RDN/train.h5"
@@ -53,9 +53,9 @@ milestones: [ 200, 400, 600, 800 ]  # 200
 checkpoint_interval: 1
 checkpoint_dir: "checkpoints/"
 # visualization
-tensorboard_log_dir: "runs/vdsr"
+tensorboard_log_dir: "runs/rdn"
 tensorboard_image_interval: 1
 tensorboard_image_sample: 10
 tensorboard_image_size: [ 256, 256 ]
 tensorboard_draw_model: True
-tensorboard_input: [ 64, 1, 41, 41 ]
+tensorboard_input: [ 64, 3, 32, 32 ]
