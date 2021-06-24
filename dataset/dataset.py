@@ -26,17 +26,20 @@ class DatasetFromTwoFolder(data.Dataset):
         LR_filenames.sort(key=lambda x: x[:-4])
         HR_filenames.sort(key=lambda x: x[:-4])
 
+        LR_filenames = LR_filenames[:config.data_range]
+        HR_filenames = HR_filenames[:config.data_range]
+
         self.LR_image_filenames = [os.path.join(LR_dir, x) for x in LR_filenames if is_image_file(x)]
         self.HR_image_filenames = [os.path.join(HR_dir, x) for x in HR_filenames if is_image_file(x)]
         self.config = config
         self.train = train
-
+        self.repeat = config.repeat or 1
         self.transform = transform
         self.target_transform = target_transform
 
     def __getitem__(self, item):
-        img = self.load_img(self.LR_image_filenames[item])
-        target = self.load_img(self.HR_image_filenames[item])
+        img = self.load_img(self.LR_image_filenames[item // self.repeat])
+        target = self.load_img(self.HR_image_filenames[item // self.repeat])
         img, target = self.augment(LR_img=img, HR_img=target)
         if self.transform:
             img = self.transform(img)
@@ -47,7 +50,10 @@ class DatasetFromTwoFolder(data.Dataset):
         return img, target
 
     def __len__(self):
-        return len(self.LR_image_filenames)
+        if self.train:
+            return len(self.LR_image_filenames) * self.repeat
+        else:
+            return len(self.LR_image_filenames)
 
     # TODO test this function
     def augment(self, LR_img: PngImageFile, HR_img: PngImageFile) -> [PngImageFile, PngImageFile]:
@@ -77,21 +83,21 @@ class DatasetFromTwoFolder(data.Dataset):
         scale_factor_index = random.randint(0, len(self.config.upscaleFactor) - 1)
         scale_factor_type = self.config.upscaleFactor[scale_factor_index]
         upscaleFactor = scale_factor_type
-        height, width = HR_img.shape[1], HR_img.shape[2]
+        width, height = LR_img.shape[1], LR_img.shape[2]
         size = self.config.img_size
-        if self.config.use_bicubic:
+        if self.config.same_size:
             tp = size
             ip = size
         else:
             tp = size
-            ip = tp // upscaleFactor
+            ip = size // upscaleFactor
         ix = random.randrange(0, width - ip + 1)
         iy = random.randrange(0, height - ip + 1)
-        if self.config.use_bicubic:
+        if self.config.same_size:
             tx, ty = ix, iy
         else:
             tx, ty = upscaleFactor * ix, upscaleFactor * iy
-        return LR_img[:, iy:iy + ip, ix:ix + ip], HR_img[:, ty: ty + tp, tx:tx + tp]
+        return LR_img[:, ix:ix + ip, iy:iy + ip], HR_img[:, tx:tx + tp, ty: ty + tp]
 
     def load_img(self, filepath):
         img = Image.open(filepath)
@@ -214,7 +220,7 @@ def buildRawData(origin_HR_dir, train_HR_dir, train_LR_dir, config):
                 scale_y = scale_y - (scale_y % upscaleFactor)
                 img_HR_scale = img_HR_scale.resize((scale_x, scale_y), Image.BICUBIC)
                 img_LR = img_HR_scale.resize((scale_x // upscaleFactor, scale_y // upscaleFactor), Image.BICUBIC)
-                if config.use_bicubic:
+                if config.same_size:
                     img_LR = img_LR.resize((scale_x, scale_y), Image.BICUBIC)
                 # avoid size too low
                 if img_LR.size[0] < config.img_size:

@@ -3,3 +3,4 @@
 mail/*
 *.pth
 *.0
+*.pyc

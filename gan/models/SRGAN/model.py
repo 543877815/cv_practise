@@ -1,6 +1,7 @@
 import torch.nn as nn
 import torch
 from torchvision.models import vgg19
+import math
 
 
 class FeatureExtractor(nn.Module):
@@ -29,7 +30,7 @@ class ResidualBlock(nn.Module):
 
 
 class GeneratorResNet(nn.Module):
-    def __init__(self, in_channels=3, out_channels=3, n_residual_blocks=16):
+    def __init__(self, in_channels=3, out_channels=3, n_residual_blocks=16, upscale_factor=4):
         super(GeneratorResNet, self).__init__()
 
         # First layer
@@ -46,7 +47,7 @@ class GeneratorResNet(nn.Module):
 
         # Upsampling layers
         upsampling = []
-        for out_features in range(2):
+        for out_features in range(int(math.log(upscale_factor, 2))):
             upsampling += [
                 # nn.Upsample(scale_factor=2),
                 nn.Conv2d(64, 256, 3, 1, 1),
@@ -60,12 +61,12 @@ class GeneratorResNet(nn.Module):
         self.conv3 = nn.Sequential(nn.Conv2d(64, out_channels, kernel_size=9, stride=1, padding=4), nn.Tanh())
 
     def forward(self, x):
-        out1 = self.conv1(x)
-        out = self.res_blocks(out1)
-        out2 = self.conv2(out)
-        out = torch.add(out1, out2)
-        out = self.upsampling(out)
-        out = self.conv3(out)
+        out1 = self.conv1(x)  # [batch_size, 64, height, width]
+        out = self.res_blocks(out1)  # [batch_size, 64, height, width]
+        out2 = self.conv2(out)  # [batch_size, 64, height, width]
+        out = torch.add(out1, out2)  # [batch_size, 256, height, width]
+        out = self.upsampling(out)  # [batch_size, 256, height * 4, width * 4]
+        out = self.conv3(out)  # [batch_size, 3, height * 4, width * 4]
         return out
 
 
@@ -75,8 +76,8 @@ class Discriminator(nn.Module):
 
         self.input_shape = input_shape
         in_channels, in_height, in_width = self.input_shape
-        patch_h, patch_w = int(in_height / 2 ** 4), int(in_width / 2 ** 4)
-        self.output_shape = (1, patch_h, patch_w)
+        patch_h, patch_w = int(in_height / 2 ** 4), int(in_width / 2 ** 4)  # [16, 16]
+        self.output_shape = (1, patch_h, patch_w)  # [1, 16, 16]
 
         def discriminator_block(in_filters, out_filters, first_block=False):
             layers = []

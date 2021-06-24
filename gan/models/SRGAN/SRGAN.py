@@ -58,12 +58,12 @@ class SRGAN(object):
 
     def build_model(self):
         self.generator = GeneratorResNet(in_channels=self.channels, out_channels=self.channels,
-                                         n_residual_blocks=self.n_residual_blocks)
+                                         n_residual_blocks=self.n_residual_blocks, upscale_factor=self.upscale_factor)
         self.optimizer_G = torch.optim.Adam(self.generator.parameters(), lr=self.lr, betas=(self.beta1, self.beta2))
         self.discriminator = Discriminator(input_shape=(self.channels, *self.hr_shape), )
         self.optimizer_D = torch.optim.Adam(self.discriminator.parameters(), lr=self.lr, betas=(self.beta1, self.beta2))
-        self.criterion_GAN = torch.nn.MSELoss()  # Reconstruction loss of AE
-        self.criterion_content = torch.nn.L1Loss()  # Reconstruction loss of AE
+        self.criterion_GAN = torch.nn.MSELoss()  #\
+        self.criterion_content = torch.nn.L1Loss()
         self.feature_extractor = FeatureExtractor()
 
         torch.manual_seed(self.seed)
@@ -80,14 +80,6 @@ class SRGAN(object):
         if self.resume:
             self.generator.load_state_dict(torch.load(self.generator_checkpoint))
             self.discriminator.load_state_dict(torch.load(self.discriminator_checkpoint))
-
-    def pullaway_loss(self, embeddings):
-        norm = torch.sqrt(torch.sum(embeddings ** 2, -1, keepdim=True))
-        normalized_emb = embeddings / norm
-        similarity = torch.matmul(normalized_emb, normalized_emb.transpose(1, 0))
-        batch_size = embeddings.size(0)
-        loss_pt = (torch.sum(similarity) - batch_size) / (batch_size * (batch_size - 1))
-        return loss_pt
 
     def train(self):
         data_dir, _, checkpoint_dir, _ = get_platform_path()
@@ -114,6 +106,7 @@ class SRGAN(object):
                 gen_hr = self.generator(imgs_lr)
 
                 # Adversarial loss
+                print(self.discriminator(gen_hr).shape, valid.shape)
                 loss_GAN = self.criterion_GAN(self.discriminator(gen_hr), valid)
 
                 # Content loss
@@ -159,9 +152,10 @@ class SRGAN(object):
                     if not os.path.exists(save_dir):
                         os.mkdir(save_dir)
                     imgs_lr = nn.functional.interpolate(imgs_lr, scale_factor=self.upscale_factor)
-                    gen_hr = make_grid(gen_hr, nrow=1, normalize=True)
-                    imgs_lr = make_grid(imgs_lr, nrow=1, normalize=True)
-                    img_grid = torch.cat((imgs_lr, gen_hr), -1)
+                    gen_hr = make_grid(gen_hr[:4], nrow=1, normalize=True)
+                    imgs_lr = make_grid(imgs_lr[:4], nrow=1, normalize=True)
+                    imgs_hr = make_grid(imgs_hr[:4], nrow=1, normalize=True)
+                    img_grid = torch.cat((imgs_lr, gen_hr, imgs_hr), -1)
                     save_image(img_grid, "{}/{}.png".format(save_dir, batches_done), normalize=False)
 
             if self.checkpoint_interval != -1 and epoch % self.checkpoint_interval == 0:

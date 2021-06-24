@@ -29,10 +29,9 @@ batch_size: 4
 lr: 0.0002
 beta1: 0.5
 beta2: 0.999
-decay_epoch: 100
 # checkpoint
 sample_interval: 100
 checkpoint_interval: 1
 resume: False
-generator_checkpoint: ''
-discriminator_checkpoint: ''
+generator_checkpoint: 'F:\cache\checkpoint\srgan\generator_8.pth'
+discriminator_checkpoint: 'F:\cache\checkpoint\srgan\discriminator_8.pth'

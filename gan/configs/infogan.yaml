@@ -8,9 +8,9 @@ model: "infogan"
 latent_dim: 62  # dimensionality of the latent space
 code_dim: 2     # latent code
 n_classes: 10   # number of classes for dataset
-channels: 1     # number of image channels
+channels: 3     # number of image channels
 # dataset
-dataset: "mnist"
+dataset: "cifar10"
 img_size: 32
 seed: 123
 num_workers: 8

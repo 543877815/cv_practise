@@ -1,6 +1,6 @@
 # hardware
-gpu: [ 0, 1 ]
-distributed: True
+gpu: [ 4 ]
+distributed: False
 address: '127.0.0.1'
 port: '23456'
 # models configuration
@@ -13,28 +13,31 @@ num_layers: 8
 # dataset
 dataset: "customize"
 color_space: 'RGB'
-img_size: 32  # size of LR is 32
+img_size: 64  # size of LR is 32
 upscaleFactor: [ 2 ]
 test_upscaleFactor: 2
 scales: [ 1.0 ]
 rotations: [ 0, 90 ]
 flips: [ 0, 1, 2 ]
-use_h5py: True
+use_h5py: False
+same_size: False
 buildRawData: False
-platform: linux
 force_rebuild: False
+data_range: 800
+repeat: 200
 seed: 123
+platform: linux
 data_flist:
   windows:
     origin_HR_dir: "F:\\cache\\data\\291-image\\HR"
-    train_HR_dir: "F:\\cache\\data\\291-image\\HR_train"
-    train_LR_dir: "F:\\cache\\data\\291-image\\LR_train"
+    train_HR_dir: "F:\\cache\\data\\DIV2K\\DIV2K\\DIV2K_train_HR"
+    train_LR_dir: "F:\\cache\\data\\DIV2K\\DIV2K\\DIV2K_train_LR_bicubic\\X2"
     test_HR_dir: "F:\\cache\\data\\Set5,Set14\\set5_HR\\2"
     test_LR_dir: "F:\\cache\\data\\Set5,Set14\\set5_LR\\2"
   linux:
     origin_HR_dir: "/data/data/291-images"
-    train_HR_dir: "/data/data/DIV2K/DIV2K/DIV2K_train_LR_bicubic/X2"
-    train_LR_dir: "/data/data/DIV2K/DIV2K/DIV2K_train_HR"
+    train_HR_dir: "/data/data/DIV2K/DIV2K/DIV2K_train_HR"
+    train_LR_dir: "/data/data/DIV2K/DIV2K/DIV2K_train_LR_bicubic/X2"
     test_HR_dir: "/data/data/Set5,Set14/set5_HR/2/"
     test_LR_dir: "/data/data/Set5,Set14/set5_LR/2/"
     h5py_input: "/data/data/super_resolution/data_for_RDN/train.h5"
@@ -50,9 +53,9 @@ milestones: [ 200, 400, 600, 800 ]  # 200
 checkpoint_interval: 1
 checkpoint_dir: "checkpoints/"
 # visualization
-tensorboard_log_dir: "runs/vdsr"
+tensorboard_log_dir: "runs/rdn"
 tensorboard_image_interval: 1
 tensorboard_image_sample: 10
 tensorboard_image_size: [ 256, 256 ]
 tensorboard_draw_model: True
-tensorboard_input: [ 64, 1, 41, 41 ]
+tensorboard_input: [ 64, 3, 32, 32 ]

@@ -16,6 +16,9 @@ from gan.models.InfoGAN import InfoGAN
 from gan.models.LSGAN import LSGAN
 from gan.models.EBGAN import EBGAN
 from gan.models.SRGAN import SRGAN
+from gan.models.ESRGAN import ESRGAN
+from gan.models.BEGAN import BEGAN
+from gan.models.ACGAN import ACGAN
 from options import args
 from utils import get_config
 from attrdict import AttrDict
@@ -70,6 +73,12 @@ def get_trainer(config, dataloader, device=None):
         model = EBGAN(config=config, dataloader=dataloader, device=device)
     elif configs.model.lower() == 'srgan':
         model = SRGAN(config=config, dataloader=dataloader, device=device)
+    elif configs.model.lower() == 'esrgan':
+        model = ESRGAN(config=config, dataloader=dataloader, device=device)
+    elif configs.model.lower() == 'began':
+        model = BEGAN(config=config, dataloader=dataloader, device=device)
+    elif configs.model.lower() == 'acgan':
+        model = ACGAN(config=config, dataloader=dataloader, device=device)
     else:
         raise Exception("the models does not exist")
 

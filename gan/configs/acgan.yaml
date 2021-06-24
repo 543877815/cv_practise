@@ -1,0 +1,31 @@
+# hardware
+gpu: [ 0 ]
+distributed: False
+address: '127.0.0.1'
+port: '23456'
+# models configuration
+model: "acgan"
+latent_dim: 100
+# dataset
+dataset: "mnist"
+img_size: 32
+channels: 1
+n_classes: 10
+seed: 123
+num_workers: 8
+platform: windows
+data_flist:
+  windows:
+    train_dir: F:\\cache\\data
+    test_dir: F:\\cache\\data
+  linux:
+    train_dir: /data/data/lifengjun/mnist
+    test_dir: /data/data/lifengjun/mnist
+# experiment
+epochs: 200
+batch_size: 64
+lr: 0.0002
+beta1: 0.5
+beta2: 0.999
+# checkpoint
+sample_interval: 400
