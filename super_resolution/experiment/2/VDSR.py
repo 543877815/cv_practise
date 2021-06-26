@@ -17,8 +17,8 @@ class mapping(nn.Module):
 
         self.model = nn.Sequential(
             *block(num_classes, add_channels, normalize=False),
-            *block(add_channels, add_channels),
-            *block(add_channels, add_channels),
+            *block(add_channels, add_channels, normalize=False),
+            *block(add_channels, add_channels, normalize=False),
         )
 
     def forward(self, x):

@@ -147,7 +147,7 @@ def main():
 
     train_loader = DataLoader(dataset=train_set, batch_size=configs.training_batch_size, shuffle=sampler is None,
                               pin_memory=True, num_workers=configs.num_workers, drop_last=False, sampler=sampler)
-    test_loader = DataLoader(dataset=test_set, batch_size=configs.test_batch_size, shuffle=False)
+    test_loader = DataLoader(dataset=test_set, batch_size=configs.test_batch_size, shuffle=False, drop_last=True)
 
     # get models
     trainer = get_trainer(configs, train_loader, test_loader, device)

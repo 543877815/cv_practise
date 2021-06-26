@@ -213,24 +213,25 @@ class VDSRTrainer(VSDRBasic):
         self.model.train()
         train_loss = 0
         for index, (label, img, target) in enumerate(self.train_loader):
-
-            label = self.to_categorical(y=label.numpy(), num_columns=self.num_classes).to(self.device)
-            code = self.mapping(label)
+            label_onehot = self.to_categorical(y=label.numpy(), num_columns=self.num_classes).to(self.device)
+            label = label.to(self.device)
+            code = self.mapping(label_onehot)
             batch_size, channel, width, height = img.shape
             code = code.reshape([batch_size, self.add_channels, 1, 1])
             add_feature = code.repeat(1, 1, width, height)
-
             assert img.shape == target.shape, 'the shape of input is not equal to the shape of output'
             img, target = img.to(self.device), target.to(self.device)
-
             output = self.model(img, add_feature)
-
             resume_code = self.classifier(output)
+<<<<<<< HEAD:super_resolution/experiment/2/solver.py
             loss1 = self.infoLoss(resume_code.float(), label.float())
+=======
+            loss1 = self.infoLoss(resume_code, label)
+>>>>>>> 30243a181f8e9eb1653fe42ec6ab4e0046550a23:super_resolution/experiment/solver.py
             loss2 = self.criterion(output, target)
 
-            print(loss1, loss2)
-            loss = loss1 + loss2
+            # print(loss1, loss2)
+            loss = loss1 * 100 + loss2
             self.optimizer.zero_grad()
             loss.backward()
             nn.utils.clip_grad_norm_(self.model.parameters(), self.clip)
@@ -252,8 +253,15 @@ class VDSRTrainer(VSDRBasic):
         with torch.no_grad():
             for index, (img, target) in enumerate(self.test_loader):
                 assert img.shape == target.shape, 'the shape of input is not equal to the shape of output'
+                batch_size, channel, width, height = img.shape
+                label = torch.zeros(batch_size, dtype=torch.int)
+                label_onehot = self.to_categorical(y=label.numpy(), num_columns=self.num_classes).to(self.device)
+                code = self.mapping(label_onehot)
+                batch_size, channel, width, height = img.shape
+                code = code.reshape([batch_size, self.add_channels, 1, 1])
+                add_feature = code.repeat(1, 1, width, height)
                 img, target = img.to(self.device), target.to(self.device)
-                output = self.model(img).clamp(0.0, 1.0)
+                output = self.model(img, add_feature).clamp(0.0, 1.0)
                 output, target = shave(output, target, self.test_upscaleFactor)
                 loss = self.criterion(output, target)
                 psnr += self.psrn(loss.item() / target.shape[2] / target.shape[3])
