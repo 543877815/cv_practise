@@ -2,13 +2,12 @@
 import sys
 import os
 
-sys.path.insert(0, os.path.abspath('../'))
 sys.path.insert(0, os.path.abspath('../../'))
+sys.path.insert(0, os.path.abspath('../../../'))
 
 from torchvision.transforms import transforms
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
-import torch.distributed as dist
 from super_resolution.models.SRCNN.solver import SRCNNTrainer
 from super_resolution.models.FSRCNN.solver import FSRCNNTrainer
 from super_resolution.models.ESPCN.solver import ESPCNTrainer

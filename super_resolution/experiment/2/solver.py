@@ -3,15 +3,14 @@
 # https://github.com/twtygqyy/pytorch-vdsr
 import sys
 import os
-sys.path.insert(0, os.path.abspath('../'))
 sys.path.insert(0, os.path.abspath('../../'))
+sys.path.insert(0, os.path.abspath('../../../'))
 from math import log10
-import random
 import torch
 import torch.backends.cudnn as cudnn
 import os
 from super_resolution.experiment.VDSR import VDSR, ResNet, BasicBlock, mapping
-from utils import progress_bar, get_platform_path, get_logger, shave, to_categorical
+from utils import progress_bar, get_platform_path, get_logger, shave
 from torchvision.transforms import transforms
 from PIL import Image
 from torchvision import utils as vutils
@@ -186,8 +185,8 @@ class VDSRTrainer(VSDRBasic):
         if self.CUDA:
             torch.cuda.manual_seed(self.seed)
             cudnn.benchmark = True
-            self.criterion.cuda()
-            self.infoLoss.cuda()
+            self.criterion.to(self.device)
+            self.infoLoss.to(self.device)
 
         self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.lr, momentum=self.weight_decay,
                                          weight_decay=self.weight_decay)
@@ -227,7 +226,7 @@ class VDSRTrainer(VSDRBasic):
             output = self.model(img, add_feature)
 
             resume_code = self.classifier(output)
-            loss1 = self.infoLoss(resume_code.long(), label.long())
+            loss1 = self.infoLoss(resume_code.float(), label.float())
             loss2 = self.criterion(output, target)
 
             print(loss1, loss2)

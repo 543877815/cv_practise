@@ -1,8 +1,8 @@
 import sys
 import os
-sys.path.insert(0, os.path.abspath('../models/'))
-sys.path.insert(0, os.path.abspath('../'))
+sys.path.insert(0, os.path.abspath('../../models/'))
 sys.path.insert(0, os.path.abspath('../../'))
+sys.path.insert(0, os.path.abspath('../../../'))
 
 import argparse
 from math import floor
@@ -42,7 +42,7 @@ if __name__ == '__main__':
     parser.add_argument('--same_size', action='store_true', help='whether the HR and LR are the same size')
     parser.add_argument('--upscaleFactor', '-uf', dest='uf', nargs='+', default='2',
                         help='super resolution upscale factor')
-    parser.add_argument('--scales', dest='scales', nargs='+', default='1', help='scale for data augmentation')
+    parser.add_argument('--scales', dest='scales', nargs='+', default='first', help='scale for data augmentation')
     parser.add_argument('--rotations', dest='rotations', nargs='+', default='0', help='rotation for data augmentation')
     parser.add_argument('--flips', dest='flips', nargs='+', default='0', help='flip for data augmentation')
     parser.add_argument('--seed', type=int, default=1234, help='shuffle seed for np.random.shuffle')
