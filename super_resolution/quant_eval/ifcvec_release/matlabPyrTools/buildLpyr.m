@@ -3,7 +3,7 @@
 % Construct a Laplacian pyramid on matrix (or vector) IM.
 %
 % HEIGHT (optional) specifies the number of pyramid levels to build. Default
-% is 1+maxPyrHt(size(IM),size(FILT)).  You can also specify 'auto' to
+% is first+maxPyrHt(size(IM),size(FILT)).  You can also specify 'auto' to
 % use this value.
 %
 % FILT1 (optional) can be a string naming a standard filter (see

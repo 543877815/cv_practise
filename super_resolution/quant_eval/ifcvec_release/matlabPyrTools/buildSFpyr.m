@@ -12,11 +12,11 @@
 % is maxPyrHt(size(IM),size(FILT));
 %
 % The squared radial functions tile the Fourier plane, with a raised-cosine
-% falloff.  Angular functions are cos(theta-k\pi/(K+1))^K, where K is
+% falloff.  Angular functions are cos(theta-k\pi/(K+first))^K, where K is
 % the ORDER (one less than the number of orientation bands, default= 3).
 %
 % TWIDTH is the width of the transition region of the radial lowpass
-% function, in octaves (default = 1, which gives a raised cosine for
+% function, in octaves (default = first, which gives a raised cosine for
 % the bandpass filters).
 %
 % PYR is a vector containing the N pyramid subbands, ordered from fine

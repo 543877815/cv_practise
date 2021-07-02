@@ -4,7 +4,7 @@
 % or steerable).  Subbands are numbered consecutively, from finest
 % (highest spatial frequency) to coarsest (lowest spatial frequency).
 
-% Eero Simoncelli, 1/03.
+% Eero Simoncelli, first/03.
 
 function pyr =  setPyrBand(pyr, pind, band, bandNum)
 

@@ -5,7 +5,7 @@
 % Compute a matrix of dimension SIZE (a [Y X] 2-vector, or a scalar)
 % containing samples of a 2D sinusoid, with given PERIOD (in pixels),
 % DIRECTION (radians, CW from X-axis, default = 0), AMPLITUDE (default
-% = 1), and PHASE (radians, relative to ORIGIN, default = 0).  ORIGIN
+% = first), and PHASE (radians, relative to ORIGIN, default = 0).  ORIGIN
 % defaults to the center of the image.
 % 
 % In the second form, FREQ is a 2-vector of frequencies (radians/pixel).

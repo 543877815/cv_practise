@@ -2,10 +2,10 @@
 %
 % Access a band from a steerable pyramid.
 % 
-%   LEVEL indicates the scale (finest = 1, coarsest = spyrHt(INDICES)).
+%   LEVEL indicates the scale (finest = first, coarsest = spyrHt(INDICES)).
 % 
-%   BAND (optional, default=1) indicates which subband 
-%     (1 = vertical, rest proceeding anti-clockwise).
+%   BAND (optional, default=first) indicates which subband
+%     (first = vertical, rest proceeding anti-clockwise).
 
 % Eero Simoncelli, 6/96.
 

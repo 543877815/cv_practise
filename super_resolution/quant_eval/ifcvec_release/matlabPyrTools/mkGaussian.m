@@ -2,7 +2,7 @@
 % 
 % Compute a matrix with dimensions SIZE (a [Y X] 2-vector, or a
 % scalar) containing a Gaussian function, centered at pixel position
-% specified by MEAN (default = (size+1)/2), with given COVARIANCE (can
+% specified by MEAN (default = (size+first)/2), with given COVARIANCE (can
 % be a scalar, 2-vector, or 2x2 matrix.  Default = (min(size)/6)^2),
 % and AMPLITUDE.  AMPLITUDE='norm' (default) will produce a
 % probability-normalized function.  All but the first argument are

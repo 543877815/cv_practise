@@ -8,7 +8,7 @@ import numpy as np
 class MyLinear(nn.Module):
     """Linear layer with equalized learning rate and custom learning rate multiplier."""
 
-    def __init__(self, input_size, output_size, gain=2 ** (0.5), use_wscale=False, lrmul=1, bias=True):
+    def __init__(self, input_size, output_size, gain=2 ** 0.5, use_wscale=False, lrmul=1, bias=True):
         super().__init__()
         he_std = gain * input_size ** (-0.5)  # He init
         # Equalized learning rate and custom learning rate multiplier.
@@ -19,10 +19,10 @@ class MyLinear(nn.Module):
             init_std = he_std / lrmul
             self.w_mul = lrmul
         self.weight = torch.nn.Parameter(
-            torch.randn(output_size, input_size) * init_std)
+            torch.randn(output_size, input_size) * init_std)  # 512 * 16, 512
         if bias:
             self.bias = torch.nn.Parameter(torch.zeros(output_size))
-            self.b_mul = lrmul
+            self.b_mul = lrmul  # 1
         else:
             self.bias = None
 
@@ -60,15 +60,17 @@ class PixelNormLayer(nn.Module):
         self.epsilon = epsilon
 
     def forward(self, x):
+        # torch.rsqrt: Returns a new tensor with the reciprocal of the square-root of each of the elements of input
         return x * torch.rsqrt(torch.mean(x ** 2, dim=1, keepdim=True) + self.epsilon)
 
 
 class StyleMod(nn.Module):
     def __init__(self, latent_size, channels, use_wscale):
         super(StyleMod, self).__init__()
-        self.lin = MyLinear(latent_size,
-                            channels * 2,
-                            gain=1.0, use_wscale=use_wscale)
+        self.lin = MyLinear(latent_size,  # 512
+                            channels * 2,  # 1024
+                            gain=1.0,
+                            use_wscale=use_wscale)
 
     def forward(self, x, latent):
         style = self.lin(latent)  # style => [batch_size, n_channels*2]
@@ -98,12 +100,12 @@ class LayerEpilogue(nn.Module):
         self.top_epi = nn.Sequential(OrderedDict(layers))
         if use_styles:
             self.style_mod = StyleMod(
-                dlatent_size, channels, use_wscale=use_wscale)
+                dlatent_size, channels, use_wscale=use_wscale)  # 512, 512
         else:
             self.style_mod = None
 
     def forward(self, x, dlatents_in_slice=None, noise_in_slice=None):
-        if (self.noise is not None):
+        if self.noise is not None:
             x = self.noise(x, noise=noise_in_slice)
         x = self.top_epi(x)
         if self.style_mod is not None:
@@ -158,9 +160,9 @@ class MyConv2d(nn.Module):
             init_std = he_std / lrmul
             self.w_mul = lrmul
         self.weight = torch.nn.Parameter(torch.randn(
-            output_channels, input_channels, kernel_size, kernel_size) * init_std)
+            output_channels, input_channels, kernel_size, kernel_size) * init_std)  # [512, 512, 3, 3]
         if bias:
-            self.bias = torch.nn.Parameter(torch.zeros(output_channels))
+            self.bias = torch.nn.Parameter(torch.zeros(output_channels))  # 512
             self.b_mul = lrmul
         else:
             self.bias = None
@@ -208,14 +210,22 @@ class InputBlock(nn.Module):
         self.nf = nf
         if self.const_input_layer:
             # called 'const' in tf
-            self.const = nn.Parameter(torch.ones(1, nf, 4, 4))
-            self.bias = nn.Parameter(torch.ones(nf))
+            self.const = nn.Parameter(torch.ones(1, nf, 4, 4))  # (1, 512, 4, 4)
+            self.bias = nn.Parameter(torch.ones(nf))  # (512)
         else:
             # tweak gain to match the official implementation of Progressing GAN
-            self.dense = MyLinear(dlatent_size, nf * 16,
-                                  gain=gain / 4, use_wscale=use_wscale)
-        self.epi1 = LayerEpilogue(nf, dlatent_size, use_wscale, use_noise,
-                                  use_pixel_norm, use_instance_norm, use_styles, activation_layer)
+            self.dense = MyLinear(dlatent_size,  # 512
+                                  nf * 16,  # 512 * 16
+                                  gain=gain / 4,  # sqrt(2) / 4
+                                  use_wscale=use_wscale)  # True
+        self.epi1 = LayerEpilogue(nf,  # 512
+                                  dlatent_size,  # 512
+                                  use_wscale,  # True
+                                  use_noise,  # True
+                                  use_pixel_norm,  # False
+                                  use_instance_norm,  # True
+                                  use_styles,  # True
+                                  activation_layer)  # nn.LeakyReLU(negative_slope=0.2
         self.conv = MyConv2d(nf, nf, 3, gain=gain, use_wscale=use_wscale)
         self.epi2 = LayerEpilogue(nf, dlatent_size, use_wscale, use_noise,
                                   use_pixel_norm, use_instance_norm, use_styles, activation_layer)
@@ -354,16 +364,17 @@ class G_synthesis(nn.Module):
 
         super().__init__()
 
+        # number of feature
         def nf(stage):
-            return min(int(fmap_base / (2.0 ** (stage * fmap_decay))), fmap_max)
+            return min(int(fmap_base / (2.0 ** (stage * fmap_decay))), fmap_max)  # min(8192/(2^i), 512)
 
         self.dlatent_size = dlatent_size
-        resolution_log2 = int(np.log2(resolution))
+        resolution_log2 = int(np.log2(resolution))  # 10 if resolution is 1024
         assert resolution == 2 ** resolution_log2 and resolution >= 4
 
         act, gain = {'relu': (torch.relu, np.sqrt(2)),
                      'lrelu': (nn.LeakyReLU(negative_slope=0.2), np.sqrt(2))}[nonlinearity]
-        num_layers = resolution_log2 * 2 - 2
+        num_layers = resolution_log2 * 2 - 2  # 18
         num_styles = num_layers if use_styles else 1
         torgbs = []
         blocks = []
@@ -395,3 +406,24 @@ class G_synthesis(nn.Module):
                 x = m(x, dlatents_in[:, 2 * i:2 * i + 2], noise_in[2 * i:2 * i + 2])
         rgb = self.torgb(x)
         return rgb
+
+
+"""
+    Out[1]: torch.Size([2, 512, 4, 4])
+    x.shape
+    Out[2]: torch.Size([2, 512, 8, 8])
+    x.shape
+    Out[3]: torch.Size([2, 512, 16, 16])
+    x.shape
+    Out[4]: torch.Size([2, 512, 32, 32])
+    x.shape
+    Out[5]: torch.Size([2, 256, 64, 64])
+    x.shape
+    Out[6]: torch.Size([2, 128, 128, 128])
+    x.shape
+    Out[7]: torch.Size([2, 64, 256, 256])
+    x.shape
+    Out[8]: torch.Size([2, 32, 512, 512])
+    x.shape
+    Out[9]: torch.Size([2, 16, 1024, 1024])
+"""

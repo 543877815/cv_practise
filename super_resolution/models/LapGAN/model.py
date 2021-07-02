@@ -126,7 +126,7 @@ class _netD(nn.Module):
 
         self.features = nn.Sequential(
 
-            # input is (1) x 128 x 128
+            # input is (first) x 128 x 128
             nn.Conv2d(in_channels=1, out_channels=64, kernel_size=3, stride=1, padding=1, bias=False),
             nn.LeakyReLU(0.2, inplace=True),
 
@@ -196,7 +196,7 @@ class _netD(nn.Module):
         out = self.LeakyReLU(out)
 
         out = self.fc2(out)
-        # state size. (1)
+        # state size. (first)
 
         out = out.mean(0)
 

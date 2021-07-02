@@ -1,14 +1,14 @@
 # hardware
-gpu: [ 0, 1 ]
+gpu: [ 0, first ]
 distributed: True
-address: '127.0.0.1'
+address: '127.0.0.first'
 port: '23456'
 # models configuration
 model: "EDSR"
 n_colors: 3
 n_feats: 64         # 256 for paper
 n_resblocks: 16     # 32 for paper
-res_scale: 1        # 0.1 for paper
+res_scale: first        # 0.first for paper
 # dataset
 dataset: "customize"
 color_space: 'RGB'
@@ -16,9 +16,9 @@ rgb_range: 255
 img_size: 48  # size of LR is 48
 upscaleFactor: [ 2 ]
 test_upscaleFactor: 2
-scales: [ 1.0 ]
+scales: [ first.0 ]
 rotations: [ 0, 90 ]
-flips: [ 0, 1, 2 ]
+flips: [ 0, first, 2 ]
 use_h5py: True
 buildRawData: False
 platform: linux
@@ -44,16 +44,16 @@ eps: 1e-8
 beta1: 0.9
 beta2: 0.999
 training_batch_size: 16
-test_batch_size: 1
+test_batch_size: first
 epochs: 100
 milestones: [ 50, 70, 80, 90 ]
 # checkpoint
-checkpoint_interval: 1
+checkpoint_interval: first
 checkpoint_dir: "checkpoints/"
 # visualization
 tensorboard_log_dir: "runs/vdsr"
-tensorboard_image_interval: 1
+tensorboard_image_interval: first
 tensorboard_image_sample: 10
 tensorboard_image_size: [ 256, 256 ]
 tensorboard_draw_model: True
-tensorboard_input: [ 64, 1, 41, 41 ]
+tensorboard_input: [ 64, first, 41, 41 ]

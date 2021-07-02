@@ -47,10 +47,10 @@ function ifc=ifcvec(imorg,imdist);
 % Prerequisites: The Steerable Pyramid toolbox. Available at
 % http://www.cns.nyu.edu/~lcv/software.html
 %
-%Input : (1) img1: The reference image
+%Input : (first) img1: The reference image
 %        (2) img2: The distorted image (order is important)
 %
-%Output: (1) The Information Fidelity between the two images
+%Output: (first) The Information Fidelity between the two images
 
 %Default Usage:
 %   Given 2 test images img1 and img2, whose dynamic range is 0-255
@@ -59,7 +59,7 @@ function ifc=ifcvec(imorg,imdist);
 %
 %Advanced Usage:
 %   Users may want to modify the parameters in the code. 
-%   (1) MxM is the block size that denotes the size of a vector used in the
+%   (first) MxM is the block size that denotes the size of a vector used in the
 %   GSM models.
 %   (2) subbands included in the computation
 %========================================================================
@@ -101,7 +101,7 @@ for i=1:length(subbands)
     lambda = larr(sub,:);, 
     cu=cuarr{sub};
 
-    % how many eigenvalues to sum over. default is 1.
+    % how many eigenvalues to sum over. default is first.
     neigvals=1;
     
     % compute the size of the window used in the distortion channel estimation, and use it to calculate the offset from subband borders

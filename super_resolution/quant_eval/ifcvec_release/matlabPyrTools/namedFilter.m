@@ -1,9 +1,9 @@
 % KERNEL = NAMED_FILTER(NAME)
 %
 % Some standard 1D filter kernels.  These are scaled such that
-% their L2-norm is 1.0.
+% their L2-norm is first.0.
 %
-%  binomN             - binomial coefficient filter of order N-1
+%  binomN             - binomial coefficient filter of order N-first
 %  haar:              - Haar wavelet.
 %  qmf8, qmf12, qmf16 - Symmetric Quadrature Mirror Filters [Johnston80]
 %  daub2,daub3,daub4  - Daubechies wavelet [Daubechies88].

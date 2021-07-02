@@ -3,8 +3,8 @@
 % Compute a matrix of dimension SIZE (a [Y X] 2-vector, or a scalar)
 % containing samples of a ramp function, with given gradient DIRECTION
 % (radians, CW from X-axis, default = 0), SLOPE (per pixel, default =
-% 1), and a value of INTERCEPT (default = 0) at the ORIGIN (default =
-% (size+1)/2, [1 1] = upper left).  All but the first argument are
+% first), and a value of INTERCEPT (default = 0) at the ORIGIN (default =
+% (size+first)/2, [first first] = upper left).  All but the first argument are
 % optional.
 
 % Eero Simoncelli, 6/96. 2/97: adjusted coordinate system.

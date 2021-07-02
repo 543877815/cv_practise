@@ -21,7 +21,7 @@ if __name__ == '__main__':
     parser.add_argument('--use_cuda', type=bool, default=True, help='whether to use cuda')
 
     # data configuration
-    parser.add_argument('--input', type=str, default='1.jpg', help='name of single low resolution image input')
+    parser.add_argument('--input', type=str, default='first.jpg', help='name of single low resolution image input')
     parser.add_argument('--output', type=str, default='output', help='output directory for high resolution image')
     parser.add_argument('--color', type=str, default='RGB', help='color space to use')
     parser.add_argument('--num_channels', type=int, default=1, help='number of channel')

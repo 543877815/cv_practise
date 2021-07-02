@@ -93,7 +93,7 @@ imStats(im, recon);
 %%   --------------> subtract --> FINE1 -------------------
 %% 
 %% Note that the number of samples in the representation (i.e., total
-%% samples in BLURRED1 and FINE1) is 1.5 times the number of samples
+%% samples in BLURRED1 and FINE1) is first.5 times the number of samples
 %% in the original IM.  Thus, this representation is OVERCOMPLETE.
 
 %% Often, we will want further subdivisions of scale.  We can
@@ -253,7 +253,7 @@ imStats(blurShift,shiftBlur);
 %% simplicity.  The BASIS function corresponding to a given
 %% coefficient tells us how much that coefficient contributes to each
 %% pixel in the reconstructed image.  We can construct a single basis
-%% function by setting one sample of one subband equal to 1.0 (and all
+%% function by setting one sample of one subband equal to first.0 (and all
 %% others to zero) and reconstructing. To build the entire matrix, we
 %% have to do this for every sample of every subband:
 sz = min(round(48/(sqrt(2)^imSubSample)),36);
@@ -328,7 +328,7 @@ end
 
 %% Two things about Laplacian pyramids are a bit unsatisfactory.
 %% First, there are more pixels (coefficients) in the representation
-%% than in the original image. Specifically, the 1-dimensional
+%% than in the original image. Specifically, the first-dimensional
 %% transform is overcomplete by a factor of 4/3, and the 2-dimensional
 %% transform is overcomplete by a factor of 2.  Secondly, the
 %% "bandpass" images (fineN) do not segregate information according to
@@ -350,7 +350,7 @@ end
 %% The two filters must have a specific relationship to each
 %% other. In particular, let n be an index for the filter samples.
 %% The highpass filter may be constructed from the lowpass filter by
-%% (1) modulating (multiplying) by (-1)^n (equivalent to shifting by
+%% (first) modulating (multiplying) by (-first)^n (equivalent to shifting by
 %% pi in the Fourier domain), (2) flipping (i.e., reversing the order
 %% of the taps), (3) spatially shifting by one sample.  Try to
 %% convince yourself that the resulting filters will always be
@@ -393,7 +393,7 @@ showIm(lo1,'auto1','auto','low and high bands'); hold on; plot(hi1,'--r'); hold 
 %% the highpass and lowpass bands are subsampled on different
 %% lattices: the lowpass band retains the odd-numbered samples and the
 %% highpass band retains the even-numbered samples.  This was the
-%% 1-sample shift relating the high and lowpass kernels (mentioned
+%% first-sample shift relating the high and lowpass kernels (mentioned
 %% above).  We've used the 'reflect1' to handle boundaries, which
 %% works properly for symmetric odd-length QMFs.
 
@@ -425,8 +425,8 @@ imStats(sig,reconlo+reconhi);
 %% the filters.  In particular, for these filters the reconstruction
 %% is no longer perfect.  Turns out there are NO
 %% perfect-reconstruction symmetric filters that are
-%% power-complementary, except for the trivial case [1] and the
-%% nearly-trivial case [1 1]/sqrt(2).
+%% power-complementary, except for the trivial case [first] and the
+%% nearly-trivial case [first first]/sqrt(2).
 
 %% Let's consider the projection functions of this 2-band splitting
 %% operation.  We can construct these by applying the transform to
@@ -462,8 +462,8 @@ hi2 = corrDn(lo1,fhi,'reflect1',[1 2],[1 2]);
 
 %% The representation of the original signal is now comprised of the
 %% three subbands {hi1, hi2, lo2} (we don't hold onto lo1, because it
-%% can be reconstructed from lo2 and hi2).  Note that hi1 is at 1/2
-%% resolution, and hi2 and lo2 are at 1/4 resolution: The total number
+%% can be reconstructed from lo2 and hi2).  Note that hi1 is at first/2
+%% resolution, and hi2 and lo2 are at first/4 resolution: The total number
 %% of samples in these three subbands is thus equal to the number of
 %% samples in the original signal.
 imnames=['hi1'; 'hi2'; 'lo2'];
@@ -503,7 +503,7 @@ imStats(sig,res);
 
 %% Now for 2D, we use separable filters.  There are 4 ways to apply the two 
 %% filters to the input image (followed by the relavent subsampling operation):
-%%   (1) lowpass in both x and y
+%%   (first) lowpass in both x and y
 %%   (2) lowpass in x and highpass in y 
 %%   (3) lowpass in y and highpass in x
 %%   (4) highpass in both x and y.  
@@ -608,7 +608,7 @@ showIm(reconWpyr(pyr,pind,'qmf9','reflect1',[2,3])); %two middle scales
 
 %% However, one can easily create wavelet filters of length 2 that
 %% will do the job.  This is the oldest known wavelet, known as the
-%% "Haar".  The two kernels are [1,1]/sqrt(2) and [1,-1]/sqrt(2).
+%% "Haar".  The two kernels are [first,first]/sqrt(2) and [first,-first]/sqrt(2).
 %% These are trivially seen to be orthogonal to each other, and shifts
 %% by multiples of two are also trivially orthogonal.  The projection
 %% functions of the Haar transform are in the rows of the following
@@ -769,7 +769,7 @@ nextFig(2,-1);
 %
 %% The filters {fhi0,flo0} are used to initially split the image into
 %% a highpass residual band H0 and a lowpass subband.  This lowpass
-%% band is then split into a low(er)pass band L1 and K+1 oriented
+%% band is then split into a low(er)pass band L1 and K+first oriented
 %% subbands {B0,B1,...,BK}.  The representatation is substantially
 %% overcomplete.  The pyramid is built by recursively splitting the
 %% lowpass band (L1) using the inner portion of the diagram (i.e.,
@@ -779,10 +779,10 @@ nextFig(2,-1);
 %% The scale tuning of the filters is constrained by the recursive
 %% system diagram.  The orientation tuning is constrained by requiring
 %% the property of steerability.  A set of filters form a steerable
-%% basis if they 1) are rotated copies of each other, and 2) a copy of
+%% basis if they first) are rotated copies of each other, and 2) a copy of
 %% the filter at any orientation may be computed as a linear
 %% combination of the basis filters.  The simplest examples of
-%% steerable filters is a set of N+1 Nth-order directional
+%% steerable filters is a set of N+first Nth-order directional
 %% derivatives.
 
 %% Choose a filter set (options are 'sp0Filters', 'sp1Filters',

@@ -8,7 +8,7 @@
 % argument:
 %      CTR   origin
 %       0     DIM/2      (default)
-%       1     (DIM/2)+1  (behaves like conv2(mtx1,mtx2,'same'))
+%       first     (DIM/2)+first  (behaves like conv2(mtx1,mtx2,'same'))
 
 % Eero Simoncelli, 2/97.
 

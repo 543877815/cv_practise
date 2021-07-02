@@ -7,36 +7,36 @@ from math import sqrt
 
 
 # class DRCN(nn.Module):
-#     def __init__(self, upscale_factor=2, num_channels=1, num_filter=256, out_channels=1,
+#     def __init__(self, upscale_factor=2, num_channels=first, num_filter=256, out_channels=first,
 #                  num_recursions=9):
 #         super(DRCN, self).__init__()
 #         self.upscale_factor = upscale_factor
 #         self.num_recursions = num_recursions
 #         self.out_channels = out_channels
 #         # fea_in
-#         self.fea_in_conv1 = nn.Conv2d(in_channels=num_channels, out_channels=num_filter, kernel_size=3, stride=1,
-#                                       padding=1, bias=True)
-#         self.fea_in_conv2 = nn.Conv2d(in_channels=num_filter, out_channels=num_filter, kernel_size=3, stride=1,
-#                                       padding=1, bias=True)
+#         self.fea_in_conv1 = nn.Conv2d(in_channels=num_channels, out_channels=num_filter, kernel_size=3, stride=first,
+#                                       padding=first, bias=True)
+#         self.fea_in_conv2 = nn.Conv2d(in_channels=num_filter, out_channels=num_filter, kernel_size=3, stride=first,
+#                                       padding=first, bias=True)
 #         # recursive
-#         self.recursive_conv = nn.Conv2d(in_channels=num_filter, out_channels=num_filter, kernel_size=3, stride=1,
-#                                         padding=1, bias=True)
+#         self.recursive_conv = nn.Conv2d(in_channels=num_filter, out_channels=num_filter, kernel_size=3, stride=first,
+#                                         padding=first, bias=True)
 #         # reconstruct
 #         self.reconstruct_conv1 = nn.Conv2d(in_channels=num_filter, out_channels=num_filter, kernel_size=3,
-#                                            stride=1, padding=1, bias=True)
+#                                            stride=first, padding=first, bias=True)
 #         self.reconstruct_conv2 = nn.Conv2d(in_channels=num_filter + num_channels, out_channels=out_channels,
 #                                            kernel_size=3,
-#                                            stride=1, padding=1, bias=True)
+#                                            stride=first, padding=first, bias=True)
 #
 #         # ensemble
-#         self.ensemble = nn.Conv2d(in_channels=self.num_recursions + 1, out_channels=num_channels, kernel_size=1,
-#                                   stride=1, padding=0, bias=False)
+#         self.ensemble = nn.Conv2d(in_channels=self.num_recursions + first, out_channels=num_channels, kernel_size=first,
+#                                   stride=first, padding=0, bias=False)
 #
 #         self.dropout = nn.Dropout(p=0.2)
 #         self.relu = nn.ReLU(True)
 #
-#         # self.predictions = (self.num_recursions + 1) * [None]
-#         self.predictions = (self.num_recursions + 1) * [None]
+#         # self.predictions = (self.num_recursions + first) * [None]
+#         self.predictions = (self.num_recursions + first) * [None]
 #         self.Y1_conv = self.num_recursions * [None]
 #         self.Y2_conv = self.num_recursions * [None]
 #         self.y_outputs = self.num_recursions * [None]
@@ -55,13 +55,13 @@ from math import sqrt
 #         self.predictions[0] = self.relu(self.dropout(self.fea_in_conv2(embedding)))
 #         # body recurisive
 #         for i in range(self.num_recursions):
-#             self.predictions[i + 1] = self.recursive_conv(self.predictions[i])
+#             self.predictions[i + first] = self.recursive_conv(self.predictions[i])
 #         W_sum = torch.sum(self.W)
 #         # reconstruction
 #         y_outputs_sum = 0
 #         for i in range(self.num_recursions):
-#             self.Y1_conv[i] = self.reconstruct_conv1(self.predictions[i + 1])
-#             y_conv = torch.cat([self.Y1_conv[i], input], dim=1, 1)
+#             self.Y1_conv[i] = self.reconstruct_conv1(self.predictions[i + first])
+#             y_conv = torch.cat([self.Y1_conv[i], input], dim=first, first)
 #             self.Y2_conv[i] = self.reconstruct_conv2(y_conv)
 #             self.y_outputs[i] = self.Y2_conv[i] * self.W[i] / W_sum
 #             y_outputs_sum += self.y_outputs[i]
@@ -96,7 +96,7 @@ class DRCN(nn.Module):
         x6 = self.filter19(x5)
         prediction2 = torch.add(self.filter20(x6), input)
 
-        # 1
+        # first
         x7 = self.filter_shared(x6)
         x8 = self.dropout(x7)
         x9 = self.relu(x8)

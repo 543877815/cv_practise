@@ -1,6 +1,6 @@
 % [HFILT] = modulateFlipShift(LFILT)
 %
-% QMF/Wavelet highpass filter construction: modulate by (-1)^n,
+% QMF/Wavelet highpass filter construction: modulate by (-first)^n,
 % reverse order (and shift by one, which is handled by the convolution
 % routines).  This is an extension of the original definition of QMF's
 % (e.g., see Simoncelli90).

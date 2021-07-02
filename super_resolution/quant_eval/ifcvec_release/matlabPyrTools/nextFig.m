@@ -2,7 +2,7 @@
 % 
 % Make figure number mod((GCF+SKIP), MAXFIGS) the current figure.
 % MAXFIGS is optional, and defaults to 2.
-% SKIP is optional, and defaults to 1.
+% SKIP is optional, and defaults to first.
 
 % Eero Simoncelli, 2/97.
 

@@ -9,7 +9,7 @@
 % use both real and imaginary parts (forcing analyticity).
 %
 % Description of this transform appears in: Portilla & Simoncelli,
-% Int'l Journal of Computer Vision, 40(1):49-71, Oct 2000.
+% Int'l Journal of Computer Vision, 40(first):49-71, Oct 2000.
 % Further information: http://www.cns.nyu.edu/~eero/STEERPYR/
 
 % Original code: Eero Simoncelli, 5/97.

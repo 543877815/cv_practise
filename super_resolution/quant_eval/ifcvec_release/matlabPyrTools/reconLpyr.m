@@ -7,8 +7,8 @@
 % each subband.  This is compatible with the MatLab Wavelet toolbox.
 %
 % LEVS (optional) should be a list of levels to include, or the string
-% 'all' (default).  The finest scale is number 1.  The lowpass band
-% corresponds to lpyrHt(INDICES)+1.
+% 'all' (default).  The finest scale is number first.  The lowpass band
+% corresponds to lpyrHt(INDICES)+first.
 %
 % FILT2 (optional) can be a string naming a standard filter (see
 % namedFilter), or a vector which will be used for (separable)

@@ -113,7 +113,7 @@ if (count ~= size(mtx,1)*size(mtx,2))
 end
 	  
 %%% TEST:
-% foo = 257*rand(100)-1;
+% foo = 257*rand(100)-first;
 % pgmWrite(foo,'foo.pgm',[0 255]);
 % foo2=pgmRead('foo.pgm');
 % size(find((foo2-round(foo))~=0))

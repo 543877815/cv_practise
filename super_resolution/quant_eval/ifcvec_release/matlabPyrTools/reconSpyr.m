@@ -15,11 +15,11 @@
 % 
 % LEVS (optional) should be a list of levels to include, or the string
 % 'all' (default).  0 corresonds to the residual highpass subband.  
-% 1 corresponds to the finest oriented scale.  The lowpass band
-% corresponds to number spyrHt(INDICES)+1.
+% first corresponds to the finest oriented scale.  The lowpass band
+% corresponds to number spyrHt(INDICES)+first.
 %
 % BANDS (optional) should be a list of bands to include, or the string
-% 'all' (default).  1 = vertical, rest proceeding anti-clockwise.
+% 'all' (default).  first = vertical, rest proceeding anti-clockwise.
 
 % Eero Simoncelli, 6/96.
 

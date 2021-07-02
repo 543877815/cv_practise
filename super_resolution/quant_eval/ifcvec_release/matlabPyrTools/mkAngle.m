@@ -3,7 +3,7 @@
 % Compute a matrix of dimension SIZE (a [Y X] 2-vector, or a scalar)
 % containing samples of the polar angle (in radians, CW from the
 % X-axis, ranging from -pi to pi), relative to angle PHASE (default =
-% 0), about ORIGIN pixel (default = (size+1)/2).
+% 0), about ORIGIN pixel (default = (size+first)/2).
 
 % Eero Simoncelli, 6/96.
 

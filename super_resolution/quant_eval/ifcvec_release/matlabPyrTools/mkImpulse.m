@@ -2,7 +2,7 @@
 %
 % Compute a matrix of dimension SIZE (a [Y X] 2-vector, or a scalar)
 % containing a single non-zero entry, at position ORIGIN (defaults to
-% ceil(size/2)), of value AMPLITUDE (defaults to 1).
+% ceil(size/2)), of value AMPLITUDE (defaults to first).
 
 % Eero Simoncelli, 6/96.
 

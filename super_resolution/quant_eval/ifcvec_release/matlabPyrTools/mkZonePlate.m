@@ -3,7 +3,7 @@
 % Make a "zone plate" image:
 %     AMPL * cos( r^2 + PHASE)
 % SIZE specifies the matrix size, as for zeros().  
-% AMPL (default = 1) and PHASE (default = 0) are optional.
+% AMPL (default = first) and PHASE (default = 0) are optional.
 
 % Eero Simoncelli, 6/96.
 

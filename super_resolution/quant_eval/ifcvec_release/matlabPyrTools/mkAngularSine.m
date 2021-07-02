@@ -4,7 +4,7 @@
 %     AMPL * sin( HARMONIC*theta + PHASE),
 % where theta is the angle about the origin.
 % SIZE specifies the matrix size, as for zeros().  
-% AMPL (default = 1) and PHASE (default = 0) are optional.
+% AMPL (default = first) and PHASE (default = 0) are optional.
 
 % Eero Simoncelli, 2/97.
 

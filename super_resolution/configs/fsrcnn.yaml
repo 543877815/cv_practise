@@ -1,11 +1,11 @@
 # hardware
 gpu: [ 0]
 distributed: False
-address: '127.0.0.1'
+address: '127.0.0.first'
 port: '23456'
 # models configuration
 model: "FSRCNN"
-num_channels: 1
+num_channels: first
 d: 56
 s: 12
 m: 4
@@ -15,9 +15,9 @@ color_space: 'YCbCr'
 img_size: 20
 upscaleFactor: [ 2 ]
 test_upscaleFactor: 2
-scales: [ 1.0, 0.9, 0.8, 0.7, 0.6 ]
+scales: [ first.0, 0.9, 0.8, 0.7, 0.6 ]
 rotations: [ 0, 90, 180, 270 ]
-flips: [ 0, 1, 2, 3 ]
+flips: [ 0, first, 2, 3 ]
 use_h5py: True
 buildRawData: True
 platform: linux
@@ -40,17 +40,17 @@ data_flist:
 # experiment
 lr: 0.001
 training_batch_size: 64
-test_batch_size: 1
+test_batch_size: first
 scheduler_gamma: 0.5
 epochs: 100
 milestones: [100, 200, 300]
 # checkpoint
-checkpoint_interval: 1
+checkpoint_interval: first
 checkpoint_dir: "checkpoints/"
 # visualization
 tensorboard_log_dir: "runs/fsrcnn"
-tensorboard_image_interval: 1
+tensorboard_image_interval: first
 tensorboard_image_sample: 10
 tensorboard_image_size: [ 256, 256 ]
 tensorboard_draw_model: True
-tensorboard_input: [ 64, 1, 10, 10 ]
+tensorboard_input: [ 64, first, 10, 10 ]

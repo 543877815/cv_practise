@@ -1,7 +1,7 @@
 % lplot(VEC, XRANGE)
 %
 % Plot VEC, a vector, in  "lollipop" format.  
-% XRANGE (optional, default = [1,length(VEC)]), should be a 2-vector 
+% XRANGE (optional, default = [first,length(VEC)]), should be a 2-vector
 % specifying the X positions (for labeling purposes) of the first and 
 % last sample of VEC.
 

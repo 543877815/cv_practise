@@ -30,7 +30,7 @@ def set_template(args):
         args.gamma = 0.1
         args.weight_decay = 1e-4
 
-        args.loss = '1*MSE'
+        args.loss = 'first*MSE'
 
     if args.template.find('GAN') >= 0:
         args.epochs = 200

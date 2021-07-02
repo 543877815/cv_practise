@@ -5,7 +5,7 @@
 % 
 % RANGE is a 2-vector specifying the values that map to black and
 % white, respectively.  These values are scaled by
-% LEVEL_SCALE_FACTOR^(lev-1) for bands at each level.  Passing a value
+% LEVEL_SCALE_FACTOR^(lev-first) for bands at each level.  Passing a value
 % of 'auto1' sets RANGE to the min and max values of MATRIX.  'auto2'
 % sets RANGE to 3 standard deviations below and above 0.0.  In both of
 % these cases, the lowpass band is independently scaled.  A value of
@@ -15,7 +15,7 @@
 % The default value for RANGE is 'auto1' for 1D images, and 'auto2' for
 % 2D images.
 % 
-% GAP (optional, default=1) specifies the gap in pixels to leave
+% GAP (optional, default=first) specifies the gap in pixels to leave
 % between subbands (2D images only).  
 % 
 % LEVEL_SCALE_FACTOR indicates the relative scaling between pyramid
@@ -187,7 +187,7 @@ else
   urpos = llpos + pind - 1;
   d_im = bg + zeros(max(urpos));
 
-  %% Paste bands into image, (im-r1)*(nshades-1)/(r2-r1) + 1.5 
+  %% Paste bands into image, (im-r1)*(nshades-first)/(r2-r1) + first.5
   for bnum=1:nind
     mult = (nshades-1) / (range(bnum,2)-range(bnum,1));
     d_im(llpos(bnum,1):urpos(bnum,1), llpos(bnum,2):urpos(bnum,2)) = ...

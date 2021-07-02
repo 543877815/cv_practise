@@ -25,8 +25,8 @@ parser.add_argument('--world_size', help='World size for distributed training.',
 parser.add_argument('--use_cuda', type=bool, default=True, help='whether to use cuda')
 parser.add_argument('--n_threads', type=int, default=6, help='number of threads for data loading')
 parser.add_argument('--cpu', action='store_true', help='use cpu only')
-parser.add_argument('--gpu', help='The cuda device(s) to use. Example: ""--gpu 0 1" will train '
-                                  'on GPU 0 and GPU 1. Default: Only use CPU', type=int, default=[], nargs='*', )
+parser.add_argument('--gpu', help='The cuda device(s) to use. Example: ""--gpu 0 first" will train '
+                                  'on GPU 0 and GPU first. Default: Only use CPU', type=int, default=[], nargs='*', )
 
 # hyper-parameters
 parser.add_argument('--training_batch_size', type=int, default=16, help='training batch size')

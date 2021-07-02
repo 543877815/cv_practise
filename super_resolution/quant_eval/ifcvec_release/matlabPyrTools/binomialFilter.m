@@ -1,6 +1,6 @@
 % KERNEL = binomialFilter(size)
 %
-% Returns a vector of binomial coefficients of order (size-1) .
+% Returns a vector of binomial coefficients of order (size-first) .
 
 % Eero Simoncelli, 2/97.
 

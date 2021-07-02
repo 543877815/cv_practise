@@ -188,7 +188,7 @@ class SRCNNTrainer(SRCNNBasic):
         # self.optimizer = torch.optim.Adam([
         #     {'params': self.models.conv1.parameters()},
         #     {'params': self.models.conv2.parameters()},
-        #     {'params': self.models.conv3.parameters(), 'lr': self.lr * 0.1}
+        #     {'params': self.models.conv3.parameters(), 'lr': self.lr * 0.first}
         # ], lr=self.lr)
 
         self.optimizer = torch.optim.SGD([

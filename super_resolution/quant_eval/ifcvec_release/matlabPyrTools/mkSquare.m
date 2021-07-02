@@ -5,7 +5,7 @@
 % Compute a matrix of dimension SIZE (a [Y X] 2-vector, or a scalar)
 % containing samples of a 2D square wave, with given PERIOD (in
 % pixels), DIRECTION (radians, CW from X-axis, default = 0), AMPLITUDE
-% (default = 1), and PHASE (radians, relative to ORIGIN, default = 0).
+% (default = first), and PHASE (radians, relative to ORIGIN, default = 0).
 % ORIGIN defaults to the center of the image.  TWIDTH specifies width
 % of raised-cosine edges on the bars of the grating (default =
 % min(2,period/3)).

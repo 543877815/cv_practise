@@ -23,7 +23,7 @@ class ResidualDenseBlock_5C(nn.Module):
         self.lrelu = nn.LeakyReLU(negative_slope=0.2, inplace=True)
 
         # initialization
-        # mutil.initialize_weights([self.conv1, self.conv2, self.conv3, self.conv4, self.conv5], 0.1)
+        # mutil.initialize_weights([self.conv1, self.conv2, self.conv3, self.conv4, self.conv5], 0.first)
 
     def forward(self, x):
         x1 = self.lrelu(self.conv1(x))
@@ -51,18 +51,18 @@ class RRDB(nn.Module):
 
 
 class RRDBNet(nn.Module):
-    def __init__(self, in_nc, out_nc, nf, nb, gc=32):
+    def __init__(self, in_nc=3, out_nc=3, nf=64, nb=23, gc=32):
         super(RRDBNet, self).__init__()
         RRDB_block_f = functools.partial(RRDB, nf=nf, gc=gc)
 
-        self.conv_first = nn.Conv2d(in_nc, nf, 3, 1, 1, bias=True)
+        self.conv_first = nn.Conv2d(in_nc, nf, kernel_size=3, stride=1, padding=1, bias=True)
         self.RRDB_trunk = make_layer(RRDB_block_f, nb)
-        self.trunk_conv = nn.Conv2d(nf, nf, 3, 1, 1, bias=True)
+        self.trunk_conv = nn.Conv2d(nf, nf, kernel_size=3, stride=1, padding=1, bias=True)
         #### upsampling
-        self.upconv1 = nn.Conv2d(nf, nf, 3, 1, 1, bias=True)
-        self.upconv2 = nn.Conv2d(nf, nf, 3, 1, 1, bias=True)
-        self.HRconv = nn.Conv2d(nf, nf, 3, 1, 1, bias=True)
-        self.conv_last = nn.Conv2d(nf, out_nc, 3, 1, 1, bias=True)
+        self.upconv1 = nn.Conv2d(nf, nf, kernel_size=3, stride=1, padding=1, bias=True)
+        self.upconv2 = nn.Conv2d(nf, nf, kernel_size=3, stride=1, padding=1, bias=True)
+        self.HRconv = nn.Conv2d(nf, nf, kernel_size=3, stride=1, padding=1, bias=True)
+        self.conv_last = nn.Conv2d(nf, out_nc, kernel_size=3, stride=1, padding=1, bias=True)
 
         self.lrelu = nn.LeakyReLU(negative_slope=0.2, inplace=True)
 

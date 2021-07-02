@@ -3,7 +3,7 @@
 % Clip values of matrix IM to lie between minVal and maxVal:
 %      RES = max(min(IM,MAXVAL),MINVAL)
 % The first argument can also specify both min and max, as a 2-vector.
-% If only one argument is passed, the range defaults to [0,1].
+% If only one argument is passed, the range defaults to [0,first].
 
 function res = clip(im, minValOrRange, maxVal)
 

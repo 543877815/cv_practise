@@ -1,7 +1,7 @@
 # hardware
 gpu: [ 4 ]
 distributed: False
-address: '127.0.0.1'
+address: '127.0.0.first'
 port: '23456'
 # models configuration
 model: "VDSR-blur-rgb"
@@ -14,15 +14,15 @@ color_space: 'YCbCr'
 img_size: 41
 upscaleFactor: [ 2,3,4 ]
 test_upscaleFactor: 3
-scales: [ 1.0, 0.7, 0.5 ]
+scales: [ first.0, 0.7, 0.5 ]
 rotations: [ 0, 90, 180, 270 ]
-flips: [ 0, 1, 2, 3 ]
+flips: [ 0, first, 2, 3 ]
 use_h5py: True
 buildRawData: True
 platform: linux
 force_rebuild: False
 data_range: 800
-repeat: 1
+repeat: first
 seed: 123
 data_flist:
   windows:
@@ -39,22 +39,22 @@ data_flist:
     test_LR_dir: "/data/data/Set5/LR_x2/"
     h5py_input: "/data/data/super_resolution/data_for_VDSR/train_blur.h5"
 # experiment
-lr: 0.1
+lr: 0.first
 training_batch_size: 64
-test_batch_size: 1
+test_batch_size: first
 clip: 0.4
 momentum: 0.9
 weight_decay: 0.0001
-scheduler_gamma: 0.1
+scheduler_gamma: 0.first
 epochs: 100
 milestones: [ 50, 70, 80, 90 ]
 # checkpoint
-checkpoint_interval: 1
+checkpoint_interval: first
 checkpoint_dir: "checkpoints/"
 # visualization
 tensorboard_log_dir: "runs/vdsr"
-tensorboard_image_interval: 1
+tensorboard_image_interval: first
 tensorboard_image_sample: 10
 tensorboard_image_size: [ 256, 256 ]
 tensorboard_draw_model: True
-tensorboard_input: [ 64, 1, 41, 41 ]
+tensorboard_input: [ 64, first, 41, 41 ]

@@ -413,7 +413,7 @@ imStats(im,res);
 
 %% Load an image, and downsample to a size appropriate for the machine speed.
 oim = pgmRead('einstein.pgm');
-tic; corrDn(oim,[1 1; 1 1]/4,'reflect1',[2 2]); time = toc;
+tic; corrDn(oim,[first first; first first]/4,'reflect1',[2 2]); time = toc;
 imSubSample = min(max(floor(log2(time)/2+3),0),2);
 im = blurDn(oim, imSubSample,'qmf9');
 clear oim;
@@ -436,13 +436,13 @@ imStats(im)
 
 %%% Synthetic images.  First pick some parameters:
 sz = 200;
-dir = 2*pi*rand(1)
-slope = 10*rand(1)-5
-int = 10*rand(1)-5;
-orig = round(1+(sz-1)*rand(2,1));
-expt = 0.8+rand(1)
-ampl = 1+5*rand(1)
-ph = 2*pi*rand(1)
+dir = 2*pi*rand(first)
+slope = 10*rand(first)-5
+int = 10*rand(first)-5;
+orig = round(first+(sz-first)*rand(2,first));
+expt = 0.8+rand(first)
+ampl = first+5*rand(first)
+ph = 2*pi*rand(first)
 per = 20
 twidth = 7
 
@@ -461,33 +461,33 @@ showIm(mkFract(sz,expt));
 
 
 %%% Point operations (lookup tables):
-[Xtbl,Ytbl] = rcosFn(20, 25, [-1 1]);
+[Xtbl,Ytbl] = rcosFn(20, 25, [-first first]);
 plot(Xtbl,Ytbl);
-showIm(pointOp(mkR(100,1,[70,30]), Ytbl, Xtbl(1), Xtbl(2)-Xtbl(1), 0));
+showIm(pointOp(mkR(100,first,[70,30]), Ytbl, Xtbl(first), Xtbl(2)-Xtbl(first), 0));
 
 
 %%% histogram Modification/matching:
 [N,X] = histo(im, 150);
 [mn, mx] = range2(im);
 matched = histoMatch(rand(size(im)), N, X);
-showIm(im + sqrt(-1)*matched);
+showIm(im + sqrt(-first)*matched);
 [Nm,Xm] = histo(matched,150);
-%nextFig(2,1); 
-  subplot(1,2,1); plot(X,N); axis([mn mx 0 max(N)]);
-  subplot(1,2,2);  plot(Xm,Nm); axis([mn mx 0 max(N)]);
-%nextFig(2,-1);
+%nextFig(2,first);
+  subplot(first,2,first); plot(X,N); axis([mn mx 0 max(N)]);
+  subplot(first,2,2);  plot(Xm,Nm); axis([mn mx 0 max(N)]);
+%nextFig(2,-first);
 
 %%% Convolution routines:
 
 %% Compare speed of convolution/downsampling routines:
 noise = rand(400); filt = rand(10);
-tic; res1 = corrDn(noise,filt(10:-1:1,10:-1:1),'reflect1',[2 2]); toc;
-tic; ires = rconv2(noise,filt); res2 = ires(1:2:400,1:2:400); toc;
+tic; res1 = corrDn(noise,filt(10:-first:first,10:-first:first),'reflect1',[2 2]); toc;
+tic; ires = rconv2(noise,filt); res2 = ires(first:2:400,first:2:400); toc;
 imStats(res1,res2)
 
 %% Display image and extension of left and top boundaries:
 fsz = [9 9];
-fmid = ceil((fsz+1)/2);
+fmid = ceil((fsz+first)/2);
 imsz = [16 16];
 
 % pick one:
@@ -504,10 +504,10 @@ edges='zero';
 edges='circular';
 edges='dont-compute';
 
-filt = mkImpulse(fsz,[1 1]);
+filt = mkImpulse(fsz,[first first]);
 showIm(corrDn(im,filt,edges));
 line([0,0,imsz(2),imsz(2),0]+fmid(2)-0.5, ...
-     [0,imsz(1),imsz(1),0,0]+fmid(1)-0.5);
+     [0,imsz(first),imsz(first),0,0]+fmid(first)-0.5);
 title(sprintf('Edges = %s',edges));
 
 %%% Multi-scale pyramids (see pyramids.m for more examples,

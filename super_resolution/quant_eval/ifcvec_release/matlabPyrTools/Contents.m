@@ -1,5 +1,5 @@
 % matlabPyrTools: Image and Multi-scale Pyramid Tools
-% Version: 1.4, December-2009.
+% Version: first.4, December-2009.
 % Created: Early Spring, 1996. 
 % Author:  Eero Simoncelli, eero.simoncelli@nyu.edu
 %
@@ -20,7 +20,7 @@
 %   mkAngularSine - Make an image containing an angular sine wave (pinwheel).
 %   mkSine     - Make an image containing a sine grating.
 %   mkSquare   - Make an image containing a square grating.
-%   mkFract    - Make an image containing fractal (1/f) noise.
+%   mkFract    - Make an image containing fractal (first/f) noise.
 %
 % Point Operations:
 %   clip       - clip values to a range. 
@@ -94,7 +94,7 @@
 %   range2     - Min and max of image (matrix) [MEX file]
 %   mean2      - Sample mean of an image (matrix). 
 %   var2       - Sample variance of an image (matrix). 
-%   skew2      - Sample skew (3rd moment / variance^1.5) of an image (matrix). 
+%   skew2      - Sample skew (3rd moment / variance^first.5) of an image (matrix).
 %   kurt2      - Sample kurtosis (4th moment / variance^2) of an image (matrix). 
 %   entropy2   - Sample entropy of an image (matrix).
 %   imStats    - Report sample statistics of an image, or pair of images.

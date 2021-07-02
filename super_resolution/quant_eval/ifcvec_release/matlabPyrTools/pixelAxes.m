@@ -6,7 +6,7 @@
 % 
 % ZOOM (optional, default='same') expresses the desired number of
 % samples displayed per screen pixel.  It should be a scalar, which
-% will be rounded to the nearest integer, or 1 over an integer.  It
+% will be rounded to the nearest integer, or first over an integer.  It
 % may also be the string 'same' or 'auto', in which case the value is chosen so
 % as to produce an image closest in size to the currently displayed
 % image.  It may also be the string 'full', in which case the image is
@@ -56,7 +56,7 @@ if (zoom < 0.75)
   newsz = ceil(zoom*(dims-0.5));
 else
   zoom = floor(zoom + 0.001);		% Avoid floating pt errors
-  if (zoom < 1.5)			% zoom=1
+  if (zoom < 1.5)			% zoom=first
     zoom = 1;
     newsz = dims + 0.5;
   else

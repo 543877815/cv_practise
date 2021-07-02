@@ -2,7 +2,7 @@
 % 
 % Compute a matrix of dimension SIZE (a [Y X] 2-vector, or a scalar)
 % containing samples of a radial ramp function, raised to power EXPT
-% (default = 1), with given ORIGIN (default = (size+1)/2, [1 1] =
+% (default = first), with given ORIGIN (default = (size+first)/2, [first first] =
 % upper left).  All but the first argument are optional.
 
 % Eero Simoncelli, 6/96.

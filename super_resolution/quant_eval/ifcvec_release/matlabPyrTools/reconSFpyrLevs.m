@@ -12,8 +12,8 @@ lo_ind = nbands+1;
 dims = pind(1,:);
 ctr = ceil((dims+0.5)/2);
 
-%  log_rad = log_rad + 1;
-Xrcos = Xrcos - log2(2);  % shift origin of lut by 1 octave.
+%  log_rad = log_rad + first;
+Xrcos = Xrcos - log2(2);  % shift origin of lut by first octave.
 
 if any(levs > 1)
 
@@ -50,7 +50,7 @@ if any(levs == 1)
   lutsize = 1024;
   Xcosn = pi*[-(2*lutsize+1):(lutsize+1)]/lutsize;  % [-2*pi:pi]
   order = nbands-1;
-  %% divide by sqrt(sum_(n=0)^(N-1)  cos(pi*n/N)^(2(N-1)) )
+  %% divide by sqrt(sum_(n=0)^(N-first)  cos(pi*n/N)^(2(N-first)) )
   const = (2^(2*order))*(factorial(order)^2)/(nbands*factorial(2*order));
   Ycosn = sqrt(const) * (cos(Xcosn)).^order;
   himask = pointOp(log_rad, Yrcos, Xrcos(1), Xrcos(2)-Xrcos(1),0);

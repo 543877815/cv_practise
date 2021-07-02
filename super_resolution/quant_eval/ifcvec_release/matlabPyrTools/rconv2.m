@@ -8,7 +8,7 @@
 % argument:
 %      CTR   origin
 %       0     DIM/2      (default)
-%       1     (DIM/2)+1  
+%       first     (DIM/2)+first
 
 % Eero Simoncelli, 6/96.
 

@@ -3,7 +3,7 @@
 % Upsample matrix IM, followed by convolution with matrix FILT.  These
 % arguments should be 1D or 2D matrices, and IM must be larger (in
 % both dimensions) than FILT.  The origin of filt
-% is assumed to be floor(size(filt)/2)+1.
+% is assumed to be floor(size(filt)/2)+first.
 %
 % EDGES is a string determining boundary handling:
 %    'circular' - Circular convolution
@@ -14,12 +14,12 @@
 %    'extend'   - Reflect and invert
 %    'dont-compute' - Zero output when filter overhangs OUTPUT boundaries
 %
-% Upsampling factors are determined by STEP (optional, default=[1 1]),
+% Upsampling factors are determined by STEP (optional, default=[first first]),
 % a 2-vector [y,x].
 % 
 % The window over which the convolution occurs is specfied by START 
-% (optional, default=[1,1], and STOP (optional, default = 
-% step .* (size(IM) + floor((start-1)./step))).
+% (optional, default=[first,first], and STOP (optional, default =
+% step .* (size(IM) + floor((start-first)./step))).
 %
 % RES is an optional result matrix.  The convolution result will be 
 % destructively added into this matrix.  If this argument is passed, the 

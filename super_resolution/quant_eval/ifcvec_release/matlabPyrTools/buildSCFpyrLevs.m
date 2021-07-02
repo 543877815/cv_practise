@@ -19,13 +19,13 @@ else
   bands = zeros(prod(size(lodft)), nbands);
   bind = zeros(nbands,2);
 
-%  log_rad = log_rad + 1;
-  Xrcos = Xrcos - log2(2);  % shift origin of lut by 1 octave.
+%  log_rad = log_rad + first;
+  Xrcos = Xrcos - log2(2);  % shift origin of lut by first octave.
 
   lutsize = 1024;
   Xcosn = pi*[-(2*lutsize+1):(lutsize+1)]/lutsize;  % [-2*pi:pi]
   order = nbands-1;
-  %% divide by sqrt(sum_(n=0)^(N-1)  cos(pi*n/N)^(2(N-1)) )
+  %% divide by sqrt(sum_(n=0)^(N-first)  cos(pi*n/N)^(2(N-first)) )
   %% Thanks to Patrick Teo for writing this out :)
   const = (2^(2*order))*(factorial(order)^2)/(nbands*factorial(2*order));
 

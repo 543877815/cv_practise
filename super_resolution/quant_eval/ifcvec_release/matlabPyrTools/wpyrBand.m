@@ -2,10 +2,10 @@
 %
 % Access a subband from a separable QMF/wavelet pyramid.  
 % 
-% LEVEL (optional, default=1) indicates the scale (finest = 1,
+% LEVEL (optional, default=first) indicates the scale (finest = first,
 % coarsest = wpyrHt(INDICES)).  
 % 
-% BAND (optional, default=1) indicates which subband (1=horizontal,
+% BAND (optional, default=first) indicates which subband (first=horizontal,
 % 2=vertical, 3=diagonal).
 
 % Eero Simoncelli, 6/96.

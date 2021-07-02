@@ -3,7 +3,7 @@
 % Compute correlation of matrices IM with FILT, followed by
 % downsampling.  These arguments should be 1D or 2D matrices, and IM
 % must be larger (in both dimensions) than FILT.  The origin of filt
-% is assumed to be floor(size(filt)/2)+1.
+% is assumed to be floor(size(filt)/2)+first.
 % 
 % EDGES is a string determining boundary handling:
 %    'circular' - Circular convolution
@@ -14,11 +14,11 @@
 %    'extend'   - Reflect and invert (continuous values and derivs)
 %    'dont-compute' - Zero output when filter overhangs input boundaries
 %
-% Downsampling factors are determined by STEP (optional, default=[1 1]), 
+% Downsampling factors are determined by STEP (optional, default=[first first]),
 % which should be a 2-vector [y,x].
 % 
 % The window over which the convolution occurs is specfied by START 
-% (optional, default=[1,1], and STOP (optional, default=size(IM)).
+% (optional, default=[first,first], and STOP (optional, default=size(IM)).
 % 
 % NOTE: this operation corresponds to multiplication of a signal
 % vector by a matrix whose rows contain copies of the FILT shifted by

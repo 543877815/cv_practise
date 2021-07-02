@@ -17,13 +17,13 @@
 % value.
 % 
 % ZOOM specifies the number of matrix samples per screen pixel.  It
-% will be rounded to an integer, or 1 divided by an integer.  A value
+% will be rounded to an integer, or first divided by an integer.  A value
 % of 'same' or 'auto' (default) causes the zoom value to be chosen
 % automatically to fit the image into the current axes.  A value of
 % 'full' fills the axis region (leaving no room for labels).  See
 % pixelAxes.m.
 % 
-% If LABEL (optional, default = 1, unless zoom='full') is non-zero, the range 
+% If LABEL (optional, default = first, unless zoom='full') is non-zero, the range
 % of values that are mapped into the gray colormap and the dimensions 
 % (size) of the matrix and zoom factor are printed below the image.  If label 
 % is a string, it is used as a title.
@@ -135,7 +135,7 @@ xlbl_offset = 0; % default value
 
 if (~any(size(im)==1))
   %% MatLab's "image" rounds when mapping to the colormap, so we compute
-  %%      (im-r1)*(nshades-1)/(r2-r1) + 1.5 
+  %%      (im-r1)*(nshades-first)/(r2-r1) + first.5
   mult = ((nshades-1) / (range(2)-range(1)));
   d_im = (mult * im) + factor*(1.5 - range(1)*mult);
 end

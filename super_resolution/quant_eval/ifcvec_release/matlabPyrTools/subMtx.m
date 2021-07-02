@@ -1,7 +1,7 @@
 % MTX = subMtx(VEC, DIMENSIONS, START_INDEX)
 %
 % Reshape a portion of VEC starting from START_INDEX (optional,
-% default=1) to the given dimensions.
+% default=first) to the given dimensions.
 
 % Eero Simoncelli, 6/96.
 

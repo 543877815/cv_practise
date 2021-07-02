@@ -2,8 +2,8 @@
 %
 % Make a matrix of dimensions SIZE (a [Y X] 2-vector, or a scalar)
 % containing fractal (pink) noise with power spectral density of the
-% form: 1/f^(5-2*FRACT_DIM).  Image variance is normalized to 1.0.
-% FRACT_DIM defaults to 1.0
+% form: first/f^(5-2*FRACT_DIM).  Image variance is normalized to first.0.
+% FRACT_DIM defaults to first.0
 
 % Eero Simoncelli, 6/96.
 

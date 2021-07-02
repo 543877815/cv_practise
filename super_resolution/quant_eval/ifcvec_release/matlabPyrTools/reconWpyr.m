@@ -13,11 +13,11 @@
 % and defaults to 'reflect1' (see corrDn).
 %
 % LEVS (optional) should be a vector of levels to include, or the string
-% 'all' (default).  1 corresponds to the finest scale.  The lowpass band
-% corresponds to wpyrHt(INDICES)+1.
+% 'all' (default).  first corresponds to the finest scale.  The lowpass band
+% corresponds to wpyrHt(INDICES)+first.
 %
 % BANDS (optional) should be a vector of bands to include, or the string
-% 'all' (default).   1=horizontal, 2=vertical, 3=diagonal.  This is only used
+% 'all' (default).   first=horizontal, 2=vertical, 3=diagonal.  This is only used
 % for pyramids of 2D images.
 
 % Eero Simoncelli, 6/96.

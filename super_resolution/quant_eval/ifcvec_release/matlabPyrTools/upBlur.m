@@ -7,7 +7,7 @@
 % convolution kernel).  The downsampling is always by 2 in each
 % direction.
 %
-% The procedure is applied recursively LEVELS times (default=1).
+% The procedure is applied recursively LEVELS times (default=first).
 
 % Eero Simoncelli, 4/97.
 

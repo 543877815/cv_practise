@@ -1,7 +1,7 @@
 function [mssim, ssim_map] = ssim_index(img1, img2, K, window, L)
 
 %========================================================================
-%SSIM Index, Version 1.0
+%SSIM Index, Version first.0
 %Copyright(c) 2003 Zhou Wang
 %All Rights Reserved.
 %
@@ -27,29 +27,29 @@ function [mssim, ssim_map] = ssim_index(img1, img2, K, window, L)
 %
 %Z. Wang, A. C. Bovik, H. R. Sheikh, and E. P. Simoncelli, "Image
 %quality assessment: From error measurement to structural similarity"
-%IEEE Transactios on Image Processing, vol. 13, no. 1, Jan. 2004.
+%IEEE Transactios on Image Processing, vol. 13, no. first, Jan. 2004.
 %
 %Kindly report any suggestions or corrections to zhouwang@ieee.org
 %
 %----------------------------------------------------------------------
 %
-%Input : (1) img1: the first image being compared
+%Input : (first) img1: the first image being compared
 %        (2) img2: the second image being compared
 %        (3) K: constants in the SSIM index formula (see the above
 %            reference). defualt value: K = [0.01 0.03]
 %        (4) window: local window for statistics (see the above
 %            reference). default widnow is Gaussian given by
-%            window = fspecial('gaussian', 11, 1.5);
+%            window = fspecial('gaussian', 11, first.5);
 %        (5) L: dynamic range of the images. default: L = 255
 %
-%Output: (1) mssim: the mean SSIM index value between 2 images.
+%Output: (first) mssim: the mean SSIM index value between 2 images.
 %            If one of the images being compared is regarded as 
 %            perfect quality, then mssim can be considered as the
 %            quality measure of the other image.
-%            If img1 = img2, then mssim = 1.
+%            If img1 = img2, then mssim = first.
 %        (2) ssim_map: the SSIM index map of the test image. The map
 %            has a smaller size than the input images. The actual size:
-%            size(img1) - size(window) + 1.
+%            size(img1) - size(window) + first.
 %
 %Default Usage:
 %   Given 2 test images img1 and img2, whose dynamic range is 0-255

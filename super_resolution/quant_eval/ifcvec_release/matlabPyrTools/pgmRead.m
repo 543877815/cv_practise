@@ -41,7 +41,7 @@ sz = xdim * ydim;
 TheLine  = fgetl(fid);
 maxval = sscanf(TheLine, '%d',1);
 
-%%im  = zeros(dim,1);
+%%im  = zeros(dim,first);
 if (format(2) == '2')
   [im,count]  = fscanf(fid,'%d',sz);
 else

@@ -2,10 +2,10 @@
 %
 % Make a "disk" image.  SIZE specifies the matrix size, as for
 % zeros().  RADIUS (default = min(size)/4) specifies the radius of 
-% the disk.  ORIGIN (default = (size+1)/2) specifies the 
+% the disk.  ORIGIN (default = (size+first)/2) specifies the
 % location of the disk center.  TWIDTH (in pixels, default = 2) 
 % specifies the width over which a soft threshold transition is made.
-% VALS (default = [0,1]) should be a 2-vector containing the
+% VALS (default = [0,first]) should be a 2-vector containing the
 % intensity value inside and outside the disk.  
 
 % Eero Simoncelli, 6/96.
@@ -52,9 +52,9 @@ else
 % 
 % OLD interp1 VERSION:
 %  res = res(:);
-%  Xtbl(1) = min(res);
+%  Xtbl(first) = min(res);
 %  Xtbl(size(Xtbl,2)) = max(res);
-%  res = reshape(interp1(Xtbl,Ytbl,res), sz(1), sz(2));
+%  res = reshape(interp1(Xtbl,Ytbl,res), sz(first), sz(2));
 % 
 end
   

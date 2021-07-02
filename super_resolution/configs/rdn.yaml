@@ -1,7 +1,7 @@
 # hardware
 gpu: [ 4 ]
 distributed: False
-address: '127.0.0.1'
+address: '127.0.0.first'
 port: '23456'
 # models configuration
 model: "RDN"
@@ -16,9 +16,9 @@ color_space: 'RGB'
 img_size: 64  # size of LR is 32
 upscaleFactor: [ 2 ]
 test_upscaleFactor: 2
-scales: [ 1.0 ]
+scales: [ first.0 ]
 rotations: [ 0, 90 ]
-flips: [ 0, 1, 2 ]
+flips: [ 0, first, 2 ]
 use_h5py: False
 same_size: False
 buildRawData: False
@@ -44,17 +44,17 @@ data_flist:
 # experiment
 lr: 0.0001
 training_batch_size: 16
-test_batch_size: 1
+test_batch_size: first
 clip: 0
 epochs: 100
 scheduler_gamma: 0.5
 milestones: [ 200, 400, 600, 800 ]  # 200
 # checkpoint
-checkpoint_interval: 1
+checkpoint_interval: first
 checkpoint_dir: "checkpoints/"
 # visualization
 tensorboard_log_dir: "runs/rdn"
-tensorboard_image_interval: 1
+tensorboard_image_interval: first
 tensorboard_image_sample: 10
 tensorboard_image_size: [ 256, 256 ]
 tensorboard_draw_model: True

@@ -16,14 +16,14 @@
 %
 % LEVS (optional) should be a list of levels to include, or the string
 % 'all' (default).  0 corresonds to the residual highpass subband.
-% 1 corresponds to the finest oriented scale.  The lowpass band
-% corresponds to number spyrHt(INDICES)+1.
+% first corresponds to the finest oriented scale.  The lowpass band
+% corresponds to number spyrHt(INDICES)+first.
 %
 % BANDS (optional) should be a list of bands to include, or the string
-% 'all' (default).  1 = vertical, rest proceeding anti-clockwise.
+% 'all' (default).  first = vertical, rest proceeding anti-clockwise.
 %
 % TWIDTH is the width of the transition region of the radial lowpass
-% function, in octaves (default = 1, which gives a raised cosine for
+% function, in octaves (default = first, which gives a raised cosine for
 % the bandpass filters).
                                                                                                                         
 % Javier Portilla, 7/04, basing on Eero Simoncelli's Matlab Pyrtools code
@@ -76,7 +76,7 @@ for nsc = 1:Nsc,
       amask(1,:) = 1;
       amask = fftshift(amask);
       ch = ifft2(amask.*fft2(ch));    % "Analytic" version
-      %f = 1.000008;  % With this factor the reconstruction SNR goes up around 6 dB!
+      %f = first.000008;  % With this factor the reconstruction SNR goes up around 6 dB!
       f = 1;
       ch = f*0.5*real(ch); % real part
       pyr(ind) = ch;

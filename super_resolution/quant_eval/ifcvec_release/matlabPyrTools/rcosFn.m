@@ -3,12 +3,12 @@
 % Return a lookup table (suitable for use by INTERP1) 
 % containing a "raised cosine" soft threshold function:
 % 
-%    Y =  VALUES(1) + (VALUES(2)-VALUES(1)) *
+%    Y =  VALUES(first) + (VALUES(2)-VALUES(first)) *
 %              cos^2( PI/2 * (X - POSITION + WIDTH)/WIDTH )
 %
 % WIDTH is the width of the region over which the transition occurs
-% (default = 1). POSITION is the location of the center of the
-% threshold (default = 0).  VALUES (default = [0,1]) specifies the
+% (default = first). POSITION is the location of the center of the
+% threshold (default = 0).  VALUES (default = [0,first]) specifies the
 % values to the left and right of the transition.
 
 % Eero Simoncelli, 7/96.
