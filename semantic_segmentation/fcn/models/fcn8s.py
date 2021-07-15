@@ -24,14 +24,14 @@ class FCN8s(nn.Module):
         self.relu1_1 = nn.ReLU(inplace=True)
         self.conv1_2 = nn.Conv2d(64, 64, 3, padding=1)
         self.relu1_2 = nn.ReLU(inplace=True)
-        self.pool1 = nn.MaxPool2d(2, stride=2, ceil_mode=True)  # 1/2
+        self.pool1 = nn.MaxPool2d(2, stride=2, ceil_mode=True)  # first/2
 
         # conv2
         self.conv2_1 = nn.Conv2d(64, 128, 3, padding=1)
         self.relu2_1 = nn.ReLU(inplace=True)
         self.conv2_2 = nn.Conv2d(128, 128, 3, padding=1)
         self.relu2_2 = nn.ReLU(inplace=True)
-        self.pool2 = nn.MaxPool2d(2, stride=2, ceil_mode=True)  # 1/4
+        self.pool2 = nn.MaxPool2d(2, stride=2, ceil_mode=True)  # first/4
 
         # conv3
         self.conv3_1 = nn.Conv2d(128, 256, 3, padding=1)
@@ -40,7 +40,7 @@ class FCN8s(nn.Module):
         self.relu3_2 = nn.ReLU(inplace=True)
         self.conv3_3 = nn.Conv2d(256, 256, 3, padding=1)
         self.relu3_3 = nn.ReLU(inplace=True)
-        self.pool3 = nn.MaxPool2d(2, stride=2, ceil_mode=True)  # 1/8
+        self.pool3 = nn.MaxPool2d(2, stride=2, ceil_mode=True)  # first/8
 
         # conv4
         self.conv4_1 = nn.Conv2d(256, 512, 3, padding=1)
@@ -49,7 +49,7 @@ class FCN8s(nn.Module):
         self.relu4_2 = nn.ReLU(inplace=True)
         self.conv4_3 = nn.Conv2d(512, 512, 3, padding=1)
         self.relu4_3 = nn.ReLU(inplace=True)
-        self.pool4 = nn.MaxPool2d(2, stride=2, ceil_mode=True)  # 1/16
+        self.pool4 = nn.MaxPool2d(2, stride=2, ceil_mode=True)  # first/16
 
         # conv5
         self.conv5_1 = nn.Conv2d(512, 512, 3, padding=1)
@@ -58,7 +58,7 @@ class FCN8s(nn.Module):
         self.relu5_2 = nn.ReLU(inplace=True)
         self.conv5_3 = nn.Conv2d(512, 512, 3, padding=1)
         self.relu5_3 = nn.ReLU(inplace=True)
-        self.pool5 = nn.MaxPool2d(2, stride=2, ceil_mode=True)  # 1/32
+        self.pool5 = nn.MaxPool2d(2, stride=2, ceil_mode=True)  # first/32
 
         # fc6
         self.fc6 = nn.Conv2d(512, 4096, 7)
@@ -110,13 +110,13 @@ class FCN8s(nn.Module):
         h = self.relu3_2(self.conv3_2(h))
         h = self.relu3_3(self.conv3_3(h))
         h = self.pool3(h)
-        pool3 = h  # 1/8
+        pool3 = h  # first/8
 
         h = self.relu4_1(self.conv4_1(h))
         h = self.relu4_2(self.conv4_2(h))
         h = self.relu4_3(self.conv4_3(h))
         h = self.pool4(h)
-        pool4 = h  # 1/16
+        pool4 = h  # first/16
 
         h = self.relu5_1(self.conv5_1(h))
         h = self.relu5_2(self.conv5_2(h))
@@ -131,23 +131,23 @@ class FCN8s(nn.Module):
 
         h = self.score_fr(h)
         h = self.upscore2(h)
-        upscore2 = h  # 1/16
+        upscore2 = h  # first/16
 
         h = self.score_pool4(pool4)
         h = h[:, :, 5:5 + upscore2.size()[2], 5:5 + upscore2.size()[3]]
-        score_pool4c = h  # 1/16
+        score_pool4c = h  # first/16
 
-        h = upscore2 + score_pool4c  # 1/16
+        h = upscore2 + score_pool4c  # first/16
         h = self.upscore_pool4(h)
-        upscore_pool4 = h  # 1/8
+        upscore_pool4 = h  # first/8
 
         h = self.score_pool3(pool3)
         h = h[:, :,
             9:9 + upscore_pool4.size()[2],
             9:9 + upscore_pool4.size()[3]]
-        score_pool3c = h  # 1/8
+        score_pool3c = h  # first/8
 
-        h = upscore_pool4 + score_pool3c  # 1/8
+        h = upscore_pool4 + score_pool3c  # first/8
 
         h = self.upscore8(h)
         h = h[:, :, 31:31 + x.size()[2], 31:31 + x.size()[3]].contiguous()
@@ -193,13 +193,13 @@ class FCN8sAtOnce(FCN8s):
         h = self.relu3_2(self.conv3_2(h))
         h = self.relu3_3(self.conv3_3(h))
         h = self.pool3(h)
-        pool3 = h  # 1/8
+        pool3 = h  # first/8
 
         h = self.relu4_1(self.conv4_1(h))
         h = self.relu4_2(self.conv4_2(h))
         h = self.relu4_3(self.conv4_3(h))
         h = self.pool4(h)
-        pool4 = h  # 1/16
+        pool4 = h  # first/16
 
         h = self.relu5_1(self.conv5_1(h))
         h = self.relu5_2(self.conv5_2(h))
@@ -214,23 +214,23 @@ class FCN8sAtOnce(FCN8s):
 
         h = self.score_fr(h)
         h = self.upscore2(h)
-        upscore2 = h  # 1/16
+        upscore2 = h  # first/16
 
         h = self.score_pool4(pool4 * 0.01)  # XXX: scaling to train at once
         h = h[:, :, 5:5 + upscore2.size()[2], 5:5 + upscore2.size()[3]]
-        score_pool4c = h  # 1/16
+        score_pool4c = h  # first/16
 
-        h = upscore2 + score_pool4c  # 1/16
+        h = upscore2 + score_pool4c  # first/16
         h = self.upscore_pool4(h)
-        upscore_pool4 = h  # 1/8
+        upscore_pool4 = h  # first/8
 
         h = self.score_pool3(pool3 * 0.0001)  # XXX: scaling to train at once
         h = h[:, :,
             9:9 + upscore_pool4.size()[2],
             9:9 + upscore_pool4.size()[3]]
-        score_pool3c = h  # 1/8
+        score_pool3c = h  # first/8
 
-        h = upscore_pool4 + score_pool3c  # 1/8
+        h = upscore_pool4 + score_pool3c  # first/8
 
         h = self.upscore8(h)
         h = h[:, :, 31:31 + x.size()[2], 31:31 + x.size()[3]].contiguous()

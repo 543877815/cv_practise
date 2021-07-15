@@ -15,9 +15,9 @@ class Conv_ReLU_Block(nn.Module):
 
 
 class VDSR(nn.Module):
-    def __init__(self, num_channels, num_residuals=18, num_filter=64):
+    def __init__(self, img_channels, num_residuals=18, num_filter=64):
         super(VDSR, self).__init__()
-        self.input = nn.Conv2d(in_channels=num_channels, out_channels=num_filter, kernel_size=3, stride=1, padding=1,
+        self.input = nn.Conv2d(in_channels=img_channels, out_channels=num_filter, kernel_size=3, stride=1, padding=1,
                                bias=False)
         self.residual_layer = self.make_layer(Conv_ReLU_Block, num_residuals)
         self.output = nn.Conv2d(in_channels=num_filter, out_channels=1, kernel_size=3, stride=1, padding=1,

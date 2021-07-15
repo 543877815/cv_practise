@@ -47,12 +47,12 @@ def get_dataset(config):
     else:
         dataset = config.dataset
         if dataset.lower() == 'customize':
-            if config.buildRawData:
+            if config.buildAugData:
                 print("===> build raw data..")
                 assert (data_flist.origin_HR_dir and data_flist.train_HR_dir and data_flist.train_LR_dir) is not None, \
                     'origin_HR_dir, train_HR_dir and train_HR_dir should exist when using dataset="customize".'
                 if not config.distributed or config.local_rank == 0:
-                    buildRawData(origin_HR_dir=data_flist.origin_HR_dir, train_HR_dir=data_flist.train_HR_dir,
+                    buildAugData(origin_HR_dir=data_flist.origin_HR_dir, train_HR_dir=data_flist.train_HR_dir,
                                  train_LR_dir=data_flist.train_LR_dir, config=config)
             train_LR_dir = train_LR_dir
             train_HR_dir = train_HR_dir
@@ -145,9 +145,9 @@ def main():
         configs.device = torch.device("cuda", local_rank)
         sampler = DistributedSampler(dataset=train_set, shuffle=True)
 
-    train_loader = DataLoader(dataset=train_set, batch_size=configs.training_batch_size, shuffle=sampler is None,
+    train_loader = DataLoader(dataset=train_set, batch_size=configs.batch_size, shuffle=sampler is None,
                               pin_memory=True, num_workers=configs.num_workers, drop_last=False, sampler=sampler)
-    test_loader = DataLoader(dataset=test_set, batch_size=configs.test_batch_size, shuffle=False, drop_last=True)
+    test_loader = DataLoader(dataset=test_set, batch_size=1, shuffle=False, drop_last=True)
 
     # get models
     trainer = get_trainer(configs, train_loader, test_loader, device)

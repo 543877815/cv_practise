@@ -1,7 +1,7 @@
 # hardware
 gpu: [ 0 ]
 distributed: False
-address: '127.0.0.1'
+address: '127.0.0.first'
 port: '23456'
 # models configuration
 model: "srgan"
@@ -31,7 +31,7 @@ beta1: 0.5
 beta2: 0.999
 # checkpoint
 sample_interval: 100
-checkpoint_interval: 1
+checkpoint_interval: first
 resume: False
 generator_checkpoint: 'F:\cache\checkpoint\srgan\generator_8.pth'
 discriminator_checkpoint: 'F:\cache\checkpoint\srgan\discriminator_8.pth'

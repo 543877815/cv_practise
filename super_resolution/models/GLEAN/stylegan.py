@@ -339,7 +339,7 @@ class G_synthesis(nn.Module):
     def __init__(self,
                  # Disentangled latent (W) dimensionality.
                  dlatent_size=512,
-                 num_channels=3,  # Number of output color channels.
+                 img_channels=3,  # Number of output color channels.
                  resolution=1024,  # Output resolution.
                  # Overall multiplier for the number of feature maps.
                  fmap_base=8192,
@@ -391,7 +391,7 @@ class G_synthesis(nn.Module):
                                GSynthesisBlock(last_channels, channels, blur_filter, dlatent_size, gain, use_wscale,
                                                use_noise, use_pixel_norm, use_instance_norm, use_styles, act)))
             last_channels = channels
-        self.torgb = MyConv2d(channels, num_channels, 1,
+        self.torgb = MyConv2d(channels, img_channels, 1,
                               gain=1, use_wscale=use_wscale)
         self.blocks = nn.ModuleDict(OrderedDict(blocks))
 
@@ -408,22 +408,16 @@ class G_synthesis(nn.Module):
         return rgb
 
 
+
 """
+shape of x:
     Out[1]: torch.Size([2, 512, 4, 4])
-    x.shape
     Out[2]: torch.Size([2, 512, 8, 8])
-    x.shape
     Out[3]: torch.Size([2, 512, 16, 16])
-    x.shape
     Out[4]: torch.Size([2, 512, 32, 32])
-    x.shape
     Out[5]: torch.Size([2, 256, 64, 64])
-    x.shape
     Out[6]: torch.Size([2, 128, 128, 128])
-    x.shape
     Out[7]: torch.Size([2, 64, 256, 256])
-    x.shape
     Out[8]: torch.Size([2, 32, 512, 512])
-    x.shape
     Out[9]: torch.Size([2, 16, 1024, 1024])
 """

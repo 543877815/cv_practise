@@ -1,7 +1,7 @@
 """ inceptionv3 in pytorch
 
 
-[1] Christian Szegedy, Vincent Vanhoucke, Sergey Ioffe, Jonathon Shlens, Zbigniew Wojna
+[first] Christian Szegedy, Vincent Vanhoucke, Sergey Ioffe, Jonathon Shlens, Zbigniew Wojna
 
     Rethinking the Inception Architecture for Computer Vision
     https://arxiv.org/abs/1512.00567v3
@@ -113,7 +113,7 @@ class InceptionC(nn.Module):
         c7 = channels_7x7
 
         #In theory, we could go even further and argue that one can replace any n × n
-        #convolution by a 1 × n convolution followed by a n × 1 convolution and the
+        #convolution by a first × n convolution followed by a n × first convolution and the
         #computational cost saving increases dramatically as n grows (see figure 6).
         self.branch7x7 = nn.Sequential(
             BasicConv2d(input_channels, c7, kernel_size=1),
@@ -139,10 +139,10 @@ class InceptionC(nn.Module):
         #x -> 1x1(same)
         branch1x1 = self.branch1x1(x)
 
-        #x -> 1layer 1*7 and 7*1 (same)
+        #x -> 1layer first*7 and 7*first (same)
         branch7x7 = self.branch7x7(x)
 
-        #x-> 2layer 1*7 and 7*1(same)
+        #x-> 2layer first*7 and 7*first(same)
         branch7x7stack = self.branch7x7stack(x)
 
         #x-> avgpool (same)
@@ -300,8 +300,8 @@ class InceptionV3(nn.Module):
         #"""In practice, we have found that employing this factorization does not
         #work well on early layers, but it gives very good results on medium
         #grid-sizes (On m × m feature maps, where m ranges between 12 and 20).
-        #On that level, very good results can be achieved by using 1 × 7 convolutions
-        #followed by 7 × 1 convolutions."""
+        #On that level, very good results can be achieved by using first × 7 convolutions
+        #followed by 7 × first convolutions."""
         x = self.Mixed_6b(x)
         x = self.Mixed_6c(x)
         x = self.Mixed_6d(x)
@@ -315,12 +315,12 @@ class InceptionV3(nn.Module):
         #We are using this solution only on the coarsest grid,
         #since that is the place where producing high dimensional
         #sparse representation is the most critical as the ratio of
-        #local processing (by 1 × 1 convolutions) is increased compared
+        #local processing (by first × first convolutions) is increased compared
         #to the spatial aggregation."""
         x = self.Mixed_7b(x)
         x = self.Mixed_7c(x)
 
-        #6 -> 1
+        #6 -> first
         x = self.avgpool(x)
         x = self.dropout(x)
         x = x.view(x.size(0), -1)

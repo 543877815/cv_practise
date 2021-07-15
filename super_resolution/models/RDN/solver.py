@@ -7,7 +7,7 @@ import torch
 import torch.backends.cudnn as cudnn
 import os
 from .model import RDN
-from utils import progress_bar, get_platform_path, get_logger, shave
+from utils import progress_bar, get_platform_path, get_logger, shave, print_options
 from torchvision.transforms import transforms
 from PIL import Image
 from torchvision import utils as vutils
@@ -28,7 +28,7 @@ class RDNBasic(object):
         self.color_space = config.color_space
         self.num_features = config.num_features
         self.growth_rate = config.growth_rate
-        self.num_channels = config.num_channels
+        self.img_channels = config.img_channels
         self.num_blocks = config.num_blocks
         self.num_layers = config.num_layers
         self.upscale_factor = config.upscaleFactor
@@ -46,7 +46,7 @@ class RDNBasic(object):
         # logger configuration
         _, _, _, log_dir = get_platform_path()
         self.logger = get_logger("{}/{}.log".format(log_dir, self.model_name))
-        self.logger.info(config)
+        self.logger.info(print_options(config))
 
         # tensorboard writer
         self.writer = SummaryWriter(config.tensorboard_log_dir)
@@ -106,9 +106,10 @@ class RDNTester(RDNBasic):
         self.build_model()
 
     def build_model(self):
-        self.model = RDN(num_channels=self.num_channels, scale_factor=self.upscale_factor[0],
-                         num_features=self.num_features, growth_rate=self.growth_rate, num_blocks=self.num_blocks,
-                         num_layers=self.num_layers).to(self.device)
+        # self.model = RDN(img_channels=self.img_channels, scale_factor=self.upscale_factor[0],
+        #                  num_features=self.num_features, growth_rate=self.growth_rate, num_blocks=self.num_blocks,
+        #                  num_layers=self.num_layers).to(self.device)
+        self.model = RDN(img_channels=self.img_channels, r=self.test_upscaleFactor)
         self.criterion = torch.nn.MSELoss(reduction='sum')
         self.load_model()
         if self.CUDA:
@@ -121,10 +122,10 @@ class RDNTester(RDNBasic):
             for index, (img, filename) in enumerate(self.test_loader):
                 img = img.to(self.device)
                 # full RGB/YCrCb
-                if self.num_channels == 3:
+                if self.img_channels == 3:
                     output = self.model(img).clamp(0.0, 1.0).cpu()
                 # y
-                elif self.num_channels == 1:
+                elif self.img_channels == 1:
                     output = self.model(img[:, 0, :, :].unsqueeze(1))
                     img[:, 0, :, :].data = output
                     output = img.clamp(0.0, 1.0).cpu()
@@ -145,9 +146,12 @@ class RDNTrainer(RDNBasic):
         # parameters configuration
         self.criterion = None
         self.optimizer = None
+        self.scheduler = None
         self.lr = config.lr
         self.seed = config.seed
         self.clip = config.clip
+        self.milestones = config.milestones
+        self.scheduler_gamma = config.scheduler_gamma
 
         # data loader
         self.train_loader = train_loader
@@ -157,12 +161,12 @@ class RDNTrainer(RDNBasic):
         self.build_model()
 
     def build_model(self):
-        self.model = RDN(num_channels=self.num_channels, scale_factor=self.upscale_factor[0],
-                         num_features=self.num_features, growth_rate=self.growth_rate, num_blocks=self.num_blocks,
-                         num_layers=self.num_layers).to(self.device)
+        # self.model = RDN(img_channels=self.img_channels, scale_factor=self.upscale_factor[0],
+        #                  num_features=self.num_features, growth_rate=self.growth_rate, num_blocks=self.num_blocks,
+        #                  num_layers=self.num_layers).to(self.device)
+        self.model = RDN(img_channels=self.img_channels, r=self.test_upscaleFactor).to(self.device)
         if self.resume:
             self.load_model()
-
         self.criterion = torch.nn.L1Loss()
         torch.manual_seed(self.seed)
 
@@ -172,6 +176,9 @@ class RDNTrainer(RDNBasic):
             self.criterion.cuda()
 
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.lr)
+        self.scheduler = torch.optim.lr_scheduler.MultiStepLR(self.optimizer,
+                                                              milestones=self.milestones,
+                                                              gamma=self.scheduler_gamma)
 
     def save_model(self, epoch, avg_psnr, name):
         _, _, checkpoint_dir, _ = get_platform_path()
@@ -235,14 +242,16 @@ class RDNTrainer(RDNBasic):
             print('\n===> Epoch {} starts:'.format(epoch))
             avg_train_loss = self.train(epoch)
             avg_psnr, save_input, save_output, save_target = self.test()
-
+            self.scheduler.step(epoch)
             if not self.distributed or self.local_rank == 0:
 
                 # save to logger
                 self.logger.info(
-                    "Epoch [{}/{}]: lr={:.6f} loss={:.6f} PSNR={:.6f}".format(epoch, self.epochs + self.start_epoch,
-                                                                              self.optimizer.param_groups[0]['lr'],
-                                                                              avg_train_loss, avg_psnr))
+                    "Epoch [{}/{}]: lr={:.6f} loss={:.6f} PSNR={:.6f}".format(epoch,
+                                                                              self.epochs + self.start_epoch,
+                                                                              self.scheduler.get_lr()[0],
+                                                                              avg_train_loss,
+                                                                              avg_psnr))
 
                 # save best models
                 if avg_psnr > self.best_quality:

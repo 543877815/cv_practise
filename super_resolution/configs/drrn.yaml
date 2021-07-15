@@ -1,11 +1,11 @@
 # hardware
-gpu: [ 0, first ]
+gpu: [ 0 ]
 distributed: True
-address: '127.0.0.first'
+address: '127.0.0.1'
 port: '23456'
 # models configuration
 model: "DRRN"
-num_channels: first
+img_channels: 1
 num_recursions: 25
 num_filter: 64
 # dataset
@@ -14,13 +14,12 @@ color_space: 'YCbCr'
 img_size: 31
 upscaleFactor: [ 2,3,4 ]
 test_upscaleFactor: 2
-scales: [ first.0, 0.7, 0.5 ]
+scales: [ 1.0, 0.7, 0.5 ]
 rotations: [ 0, 90, 180, 270 ]
-flips: [ 0, first, 2]
+flips: [ 0, 1, 2]
 use_h5py: True
-buildRawData: True
+buildAugData: True
 platform: linux
-force_rebuild: False
 seed: 123
 data_flist:
   windows:
@@ -37,22 +36,21 @@ data_flist:
     test_LR_dir: "/data/data/Set5/LR_x2/"
     h5py_input: "/data/data/super_resolution/data_for_VDSR/train.h5"
 # experiment
-lr: 0.first
-training_batch_size: 64
-test_batch_size: first
+lr: 0.1
+batch_size: 64
 clip: 0.01
 momentum: 0.9
 weight_decay: 0.0001
-scheduler_gamma: 0.first
+scheduler_gamma: 0.1
 epochs: 100
 milestones: [10, 20, 30, 40, 50, 60]
 # checkpoint
-checkpoint_interval: first
+checkpoint_interval: 1
 checkpoint_dir: "checkpoints/"
 # visualization
 tensorboard_log_dir: "runs/drrn"
-tensorboard_image_interval: first
+tensorboard_image_interval: 1
 tensorboard_image_sample: 10
 tensorboard_image_size: [ 256, 256 ]
 tensorboard_draw_model: True
-tensorboard_input: [ 64, first, 31, 31 ]
+tensorboard_input: [ 64, 1, 31, 31 ]

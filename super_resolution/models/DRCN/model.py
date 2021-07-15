@@ -7,14 +7,14 @@ from math import sqrt
 
 
 # class DRCN(nn.Module):
-#     def __init__(self, upscale_factor=2, num_channels=first, num_filter=256, out_channels=first,
+#     def __init__(self, upscale_factor=2, img_channels=first, num_filter=256, out_channels=first,
 #                  num_recursions=9):
 #         super(DRCN, self).__init__()
 #         self.upscale_factor = upscale_factor
 #         self.num_recursions = num_recursions
 #         self.out_channels = out_channels
 #         # fea_in
-#         self.fea_in_conv1 = nn.Conv2d(in_channels=num_channels, out_channels=num_filter, kernel_size=3, stride=first,
+#         self.fea_in_conv1 = nn.Conv2d(in_channels=img_channels, out_channels=num_filter, kernel_size=3, stride=first,
 #                                       padding=first, bias=True)
 #         self.fea_in_conv2 = nn.Conv2d(in_channels=num_filter, out_channels=num_filter, kernel_size=3, stride=first,
 #                                       padding=first, bias=True)
@@ -24,12 +24,12 @@ from math import sqrt
 #         # reconstruct
 #         self.reconstruct_conv1 = nn.Conv2d(in_channels=num_filter, out_channels=num_filter, kernel_size=3,
 #                                            stride=first, padding=first, bias=True)
-#         self.reconstruct_conv2 = nn.Conv2d(in_channels=num_filter + num_channels, out_channels=out_channels,
+#         self.reconstruct_conv2 = nn.Conv2d(in_channels=num_filter + img_channels, out_channels=out_channels,
 #                                            kernel_size=3,
 #                                            stride=first, padding=first, bias=True)
 #
 #         # ensemble
-#         self.ensemble = nn.Conv2d(in_channels=self.num_recursions + first, out_channels=num_channels, kernel_size=first,
+#         self.ensemble = nn.Conv2d(in_channels=self.num_recursions + first, out_channels=img_channels, kernel_size=first,
 #                                   stride=first, padding=0, bias=False)
 #
 #         self.dropout = nn.Dropout(p=0.2)
@@ -70,15 +70,15 @@ from math import sqrt
 
 
 class DRCN(nn.Module):
-    def __init__(self, num_channels=1, num_filter=256, out_channels=1, num_recursions=17):
+    def __init__(self, img_channels=1, num_filter=256, out_channels=1, num_recursions=17):
         super(DRCN, self).__init__()
         self.num_recursions = num_recursions
         self.out_channels = out_channels
-        self.filter1 = nn.Conv2d(num_channels, num_filter, kernel_size=3, stride=1, padding=1, bias=True)
+        self.filter1 = nn.Conv2d(img_channels, num_filter, kernel_size=3, stride=1, padding=1, bias=True)
         self.filter2 = nn.Conv2d(num_filter, num_filter, kernel_size=3, stride=1, padding=1, bias=True)
         self.filter_shared = nn.Conv2d(num_filter, num_filter, kernel_size=3, stride=1, padding=1, bias=True)
         self.filter19 = nn.Conv2d(num_filter, num_filter, kernel_size=3, stride=1, padding=1, bias=True)
-        self.filter20 = nn.Conv2d(num_filter, num_channels, kernel_size=3, stride=1, padding=1, bias=True)
+        self.filter20 = nn.Conv2d(num_filter, img_channels, kernel_size=3, stride=1, padding=1, bias=True)
         self.relu = nn.ReLU()
         self.dropout = nn.Dropout(p=0.2)
 

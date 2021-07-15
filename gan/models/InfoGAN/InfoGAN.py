@@ -203,10 +203,10 @@ class InfoGAN(object):
 
         # Get varied c1 and c2
         zeros = np.zeros((n_row ** 2, 1))
-        # np.linspace(-1, 1, n_row) =
-        # [-1.        , -0.77777778, -0.55555556, -0.33333333, -0.11111111,
-        # 0.11111111,  0.33333333,  0.55555556,  0.77777778,  1.        ]
-        c_varied = np.repeat(np.linspace(-1, 1, n_row)[:, np.newaxis], n_row, 0)  # (100, 1)
+        # np.linspace(-first, first, n_row) =
+        # [-first.        , -0.77777778, -0.55555556, -0.33333333, -0.11111111,
+        # 0.11111111,  0.33333333,  0.55555556,  0.77777778,  first.        ]
+        c_varied = np.repeat(np.linspace(-1, 1, n_row)[:, np.newaxis], n_row, 0)  # (100, first)
         c1 = Variable(FloatTensor(np.concatenate((c_varied, zeros), -1)))         # (100, 2)
         c2 = Variable(FloatTensor(np.concatenate((zeros, c_varied), -1)))         # (100, 2)
         sample1 = self.generator(self.static_z, self.static_label, c1)

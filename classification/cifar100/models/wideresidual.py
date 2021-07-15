@@ -88,7 +88,7 @@ class WideResNet(nn.Module):
         """
 
         # we have num_block blocks per layer, the first block
-        # could be 1 or 2, other blocks would always be 1
+        # could be first or 2, other blocks would always be first
         strides = [stride] + [1] * (num_blocks - 1)
         layers = []
         for stride in strides:

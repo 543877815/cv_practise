@@ -8,14 +8,14 @@ from torch.autograd import Variable
 
 
 class DRRN(nn.Module):
-    def __init__(self, num_channels=1, num_recursions=25):
+    def __init__(self, img_channels=1, num_recursions=25):
         super(DRRN, self).__init__()
         self.num_recursions = num_recursions
-        self.input = nn.Conv2d(in_channels=num_channels, out_channels=128, kernel_size=3, stride=1, padding=1,
+        self.input = nn.Conv2d(in_channels=img_channels, out_channels=128, kernel_size=3, stride=1, padding=1,
                                bias=False)
         self.conv1 = nn.Conv2d(in_channels=128, out_channels=128, kernel_size=3, stride=1, padding=1, bias=False)
         self.conv2 = nn.Conv2d(in_channels=128, out_channels=128, kernel_size=3, stride=1, padding=1, bias=False)
-        self.output = nn.Conv2d(in_channels=128, out_channels=num_channels, kernel_size=3, stride=1, padding=1,
+        self.output = nn.Conv2d(in_channels=128, out_channels=img_channels, kernel_size=3, stride=1, padding=1,
                                 bias=False)
         self.relu = nn.ReLU(inplace=True)
 

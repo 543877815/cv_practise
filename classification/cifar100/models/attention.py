@@ -2,7 +2,7 @@
 
 
 
-[1] Fei Wang, Mengqing Jiang, Chen Qian, Shuo Yang, Cheng Li, Honggang Zhang, Xiaogang Wang, Xiaoou Tang
+[first] Fei Wang, Mengqing Jiang, Chen Qian, Shuo Yang, Cheng Li, Honggang Zhang, Xiaogang Wang, Xiaoou Tang
 
     Residual Attention Network for Image Classification
     https://arxiv.org/abs/1704.06904
@@ -96,7 +96,7 @@ class AttentionModule1(nn.Module):
     def forward(self, x):
         ###We make the size of the smallest output map in each mask branch 7*7 to be consistent
         # with the smallest trunk output map size.
-        ###Thus 3,2,1 max-pooling layers are used in mask branch with input size 56 * 56, 28 * 28, 14 * 14 respectively.
+        ###Thus 3,2,first max-pooling layers are used in mask branch with input size 56 * 56, 28 * 28, 14 * 14 respectively.
         x = self.pre(x)
         input_size = (x.size(2), x.size(3))
 

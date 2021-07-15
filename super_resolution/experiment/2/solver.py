@@ -36,7 +36,7 @@ class VSDRBasic(object):
         self.num_filter = config.num_filter
         self.num_classes = config.num_classes
         self.num_residuals = config.num_residuals
-        self.num_channels = config.num_channels
+        self.img_channels = config.img_channels
         self.add_channels = config.add_channels
         self.upscale_factor = config.upscaleFactor
         self.test_upscaleFactor = config.test_upscaleFactor
@@ -113,7 +113,7 @@ class VDSRTester(VSDRBasic):
         self.build_model()
 
     def build_model(self):
-        self.model = VDSR(num_channels=self.num_channels, num_filter=self.num_filter,
+        self.model = VDSR(img_channels=self.img_channels, num_filter=self.num_filter,
                           num_residuals=self.num_residuals).to(self.device)
         self.criterion = torch.nn.MSELoss(reduction='sum')
         self.load_model()
@@ -127,10 +127,10 @@ class VDSRTester(VSDRBasic):
             for index, (img, filename) in enumerate(self.test_loader):
                 img = img.to(self.device)
                 # full RGB/YCrCb
-                if self.num_channels == 3:
+                if self.img_channels == 3:
                     output = self.model(img).clamp(0.0, 1.0).cpu()
                 # y
-                elif self.num_channels == 1:
+                elif self.img_channels == 1:
                     output = self.model(img[:, 0, :, :].unsqueeze(1))
                     img[:, 0, :, :].data = output
                     output = img.clamp(0.0, 1.0).cpu()
@@ -169,7 +169,7 @@ class VDSRTrainer(VSDRBasic):
         self.build_model()
 
     def build_model(self):
-        self.model = VDSR(num_channels=self.num_channels + self.add_channels, num_filter=self.num_filter,
+        self.model = VDSR(img_channels=self.img_channels + self.add_channels, num_filter=self.num_filter,
                           num_residuals=self.num_residuals).to(self.device)
         self.classifier = ResNet(BasicBlock, [1, 1, 1, 1], num_classes=self.num_classes).to(self.device)
         self.mapping = mapping(add_channels=self.add_channels, num_classes=self.num_classes).to(self.device)
@@ -210,7 +210,7 @@ class VDSRTrainer(VSDRBasic):
         return Variable(torch.FloatTensor(y_cat))
 
     def train(self):
-        self.model.train()
+        self.model.isTrain()
         train_loss = 0
         for index, (label, img, target) in enumerate(self.train_loader):
             label_onehot = self.to_categorical(y=label.numpy(), num_columns=self.num_classes).to(self.device)
@@ -223,11 +223,7 @@ class VDSRTrainer(VSDRBasic):
             img, target = img.to(self.device), target.to(self.device)
             output = self.model(img, add_feature)
             resume_code = self.classifier(output)
-<<<<<<< HEAD:super_resolution/experiment/2/solver.py
             loss1 = self.infoLoss(resume_code.float(), label.float())
-=======
-            loss1 = self.infoLoss(resume_code, label)
->>>>>>> 30243a181f8e9eb1653fe42ec6ab4e0046550a23:super_resolution/experiment/solver.py
             loss2 = self.criterion(output, target)
 
             # print(loss1, loss2)

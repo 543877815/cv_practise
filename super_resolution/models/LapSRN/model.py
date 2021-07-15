@@ -56,10 +56,10 @@ class _Conv_Block(nn.Module):
 
 
 class LapSRN(nn.Module):
-    def __init__(self, num_channels=1):
+    def __init__(self, img_channels=1):
         super(LapSRN, self).__init__()
 
-        self.conv_input = nn.Conv2d(in_channels=num_channels, out_channels=64, kernel_size=3, stride=1, padding=1, bias=False)
+        self.conv_input = nn.Conv2d(in_channels=img_channels, out_channels=64, kernel_size=3, stride=1, padding=1, bias=False)
         self.relu = nn.LeakyReLU(0.2, inplace=True)
 
         self.convt_I1 = nn.ConvTranspose2d(in_channels=1, out_channels=1, kernel_size=4, stride=2, padding=1,
@@ -69,7 +69,7 @@ class LapSRN(nn.Module):
 
         self.convt_I2 = nn.ConvTranspose2d(in_channels=1, out_channels=1, kernel_size=4, stride=2, padding=1,
                                            bias=False)
-        self.convt_R2 = nn.Conv2d(in_channels=64, out_channels=num_channels, kernel_size=3, stride=1, padding=1, bias=False)
+        self.convt_R2 = nn.Conv2d(in_channels=64, out_channels=img_channels, kernel_size=3, stride=1, padding=1, bias=False)
         self.convt_F2 = self.make_layer(_Conv_Block)
 
         for m in self.modules():

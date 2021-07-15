@@ -26,7 +26,7 @@
 #
 #
 # class RDN(nn.Module):
-#     def __init__(self, scale_factor=2, num_channels=43, num_features=64, growth_rate=64, num_blocks=16, num_layers=8):
+#     def __init__(self, scale_factor=2, img_channels=43, num_features=64, growth_rate=64, num_blocks=16, num_layers=8):
 #         super(RDN, self).__init__()
 #         self.G0 = num_features  # 64
 #         self.G = growth_rate  # 64
@@ -34,7 +34,7 @@
 #         self.C = num_layers  # 8
 #
 #         # shallow feature extraction
-#         self.sfe1 = nn.Conv2d(num_channels, num_features, kernel_size=3, padding=3 // 2)
+#         self.sfe1 = nn.Conv2d(img_channels, num_features, kernel_size=3, padding=3 // 2)
 #         self.sfe2 = nn.Conv2d(num_features, num_features, kernel_size=3, padding=3 // 2)
 #
 #         # residual dense blocks
@@ -62,7 +62,7 @@
 #                 nn.PixelShuffle(scale_factor)
 #             )
 #
-#         self.output = nn.Conv2d(self.G0, num_channels, kernel_size=3, padding=3 // 2)
+#         self.output = nn.Conv2d(self.G0, img_channels, kernel_size=3, padding=3 // 2)
 #
 #     def forward(self, x):
 #         sfe1 = self.sfe1(x)
@@ -81,9 +81,6 @@
 
 import torch
 import torch.nn as nn
-
-def make_model(args, parent=False):
-    return RDN(args)
 
 
 class RDB_Conv(nn.Module):
@@ -121,11 +118,11 @@ class RDB(nn.Module):
 
 
 class RDN(nn.Module):
-    def __init__(self, r, args):
+    def __init__(self, img_channels=3, r=2):
         super(RDN, self).__init__()
-        r = r
         G0 = 64
         kSize = 3
+        r = r
 
         # number of RDB blocks, conv layers, out channels
         self.D, C, G = {
@@ -134,7 +131,7 @@ class RDN(nn.Module):
         }['B']
 
         # Shallow feature extraction net
-        self.SFENet1 = nn.Conv2d(3, G0, kSize, padding=(kSize - 1) // 2, stride=1)
+        self.SFENet1 = nn.Conv2d(img_channels, G0, kSize, padding=(kSize - 1) // 2, stride=1)
         self.SFENet2 = nn.Conv2d(G0, G0, kSize, padding=(kSize - 1) // 2, stride=1)
 
         # Redidual dense blocks and dense feature fusion

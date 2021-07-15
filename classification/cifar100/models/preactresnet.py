@@ -1,6 +1,6 @@
 """preactresnet in pytorch
 
-[1] Kaiming He, Xiangyu Zhang, Shaoqing Ren, Jian Sun
+[first] Kaiming He, Xiangyu Zhang, Shaoqing Ren, Jian Sun
 
     Identity Mappings in Deep Residual Networks
     https://arxiv.org/abs/1603.05027

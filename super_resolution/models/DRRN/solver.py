@@ -28,7 +28,7 @@ class DRRNBasic(object):
         self.model = None
         self.color_space = config.color_space
         self.num_recursions = config.num_recursions
-        self.num_channels = config.num_channels
+        self.img_channels = config.img_channels
         self.upscale_factor = config.upscaleFactor
         self.test_upscaleFactor = config.test_upscaleFactor
         self.model_name = "{}-{}x".format(config.model, self.upscale_factor)
@@ -117,7 +117,7 @@ class DRRNTester(DRRNBasic):
         self.build_model()
 
     def build_model(self):
-        self.model = DRRN(num_channels=self.num_channels,
+        self.model = DRRN(img_channels=self.img_channels,
                           num_recursions=self.num_recursions).to(self.device)
         self.load_model()
         self.criterion = torch.nn.MSELoss(reduction='sum')
@@ -131,10 +131,10 @@ class DRRNTester(DRRNBasic):
             for index, (img, filename) in enumerate(self.test_loader):
                 img = img.to(self.device)
                 # full RGB/YCrCb
-                if self.num_channels == 3:
+                if self.img_channels == 3:
                     output = self.model(img).clamp(0.0, 1.0).cpu()
                 # y
-                elif self.num_channels == 1:
+                elif self.img_channels == 1:
                     output = self.model(img[:, 0, :, :].unsqueeze(1))
                     img[:, 0, :, :].data = output
                     output = img.clamp(0.0, 1.0).cpu()
@@ -171,7 +171,7 @@ class DRRNTrainer(DRRNBasic):
         self.build_model()
 
     def build_model(self):
-        self.model = DRRN(num_channels=self.num_channels,
+        self.model = DRRN(img_channels=self.img_channels,
                           num_recursions=self.num_recursions).to(self.device)
 
         if self.resume:

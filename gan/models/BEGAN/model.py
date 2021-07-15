@@ -64,5 +64,5 @@ class Discriminator(nn.Module):
         out = self.down(img)  # [batch_size, 64, 16, 16]
         out = self.fc(out.view(out.size(0), -1))  # [batch_size, 64 * 16 * 16]
         out = self.up(out.view(out.size(0), 64, self.down_size,
-                               self.down_size))  # [batch_size, 64, 16, 16] -> [batch_size, 1, 32, 32]
+                               self.down_size))  # [batch_size, 64, 16, 16] -> [batch_size, first, 32, 32]
         return out

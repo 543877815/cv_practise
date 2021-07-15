@@ -22,7 +22,7 @@ from gan.models.ACGAN import ACGAN
 from options import args
 from utils import get_config
 from attrdict import AttrDict
-from common import ImageDataset
+from dataset.common import ImageDataset
 
 
 def get_dataset(config):

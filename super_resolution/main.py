@@ -24,8 +24,9 @@ from utils import get_config
 def get_dataset(config):
     data_flist = AttrDict(config.data_flist[config.platform])
     # data/models/checkpoint in different platform
-    train_LR_dir, train_HR_dir, test_LR_dir, test_HR_dir = data_flist.train_LR_dir, data_flist.train_HR_dir, \
-                                                           data_flist.test_LR_dir, data_flist.test_HR_dir
+    train_LR_dir, train_HR_dir = data_flist.train_LR_dir, data_flist.train_HR_dir
+    test_LR_dir, test_HR_dir = data_flist.test_LR_dir, data_flist.test_HR_dir
+    h5py_dir, pt_dir = data_flist.h5py_input, data_flist.pt_dir
 
     # data transform
     img_transform = transforms.Compose([
@@ -40,21 +41,20 @@ def get_dataset(config):
     print("===> Preparing data..")
     if config.use_h5py:
         print("===> Use h5py as input..")
-        train_set = DatasetFromH5py(h5_file=data_flist.h5py_input, transform=img_transform,
+        train_set = DatasetFromH5py(h5_file=h5py_dir,
+                                    transform=img_transform,
                                     target_transform=target_transform)
-        assert len(train_set), 'No file found at {}'.format(data_flist.h5py_input)
+        assert len(train_set), '{} file does not exists'.format(h5py_dir)
     else:
         dataset = config.dataset
         if dataset.lower() == 'customize':
-            if config.buildRawData:
-                print("===> build raw data..")
-                assert (data_flist.origin_HR_dir and data_flist.train_HR_dir and data_flist.train_LR_dir) is not None, \
-                    'origin_HR_dir, train_HR_dir and train_HR_dir should exist when using dataset="customize".'
+            if config.buildAugData:
+                print("===> build augmentation data..")
                 if not config.distributed or config.local_rank == 0:
-                    buildRawData(origin_HR_dir=data_flist.origin_HR_dir, train_HR_dir=data_flist.train_HR_dir,
-                                 train_LR_dir=data_flist.train_LR_dir, config=config)
-            train_LR_dir = train_LR_dir
-            train_HR_dir = train_HR_dir
+                    buildAugData(origin_HR_dir=data_flist.origin_HR_dir,
+                                 train_HR_dir=data_flist.train_HR_dir,
+                                 train_LR_dir=data_flist.train_LR_dir,
+                                 config=config)
         else:
             print("===> Use unprocessed dataset..")
             if dataset.lower() == 'bsd300' or dataset.lower() == 'bsds300':
@@ -75,17 +75,24 @@ def get_dataset(config):
                 train_LR_dir, train_HR_dir = Manga109(config)
             elif dataset.lower() == 'div2k':
                 train_LR_dir, train_HR_dir = DIV2K(config)
-            elif dataset.lower() == 'celeb':
-                pass
             else:
                 raise Exception("the dataset does not support, dataset only support [bsd300, bsd500, "
-                                "91-images, urban100, set5, set14, b100, manga109, div2k, celebA].")
-        train_set = DatasetFromTwoFolder(LR_dir=train_LR_dir, HR_dir=train_HR_dir, train=True, transform=img_transform,
-                                         target_transform=target_transform, config=config)
+                                "91-images, urban100, set5, set14, b100, manga109, div2k].")
+        train_set = DatasetFromTwoFolder(LR_dir=train_LR_dir,
+                                         HR_dir=train_HR_dir,
+                                         pt_dir=pt_dir,
+                                         isTrain=True,
+                                         transform=img_transform,
+                                         target_transform=target_transform,
+                                         config=config)
         assert len(train_set), 'No images found at {} or {}'.format(train_LR_dir, train_HR_dir)
 
-    test_set = DatasetFromTwoFolder(LR_dir=test_LR_dir, HR_dir=test_HR_dir, transform=img_transform,
-                                    target_transform=target_transform, config=config)
+    test_set = DatasetFromTwoFolder(LR_dir=test_LR_dir,
+                                    HR_dir=test_HR_dir,
+                                    transform=img_transform,
+                                    target_transform=target_transform,
+                                    config=config)
+
     assert len(test_set), 'No images found at {} or {}'.format(test_LR_dir, test_HR_dir)
     return train_set, test_set
 
@@ -132,6 +139,7 @@ def main():
             "cuda:{}".format(configs.gpu[0]) if (args.use_cuda and torch.cuda.is_available()) else "cpu")
     else:
         device = torch.device("cuda", args.local_rank)
+
     # get dataset
     train_set, test_set = get_dataset(configs)
 
@@ -144,9 +152,17 @@ def main():
         configs.device = torch.device("cuda", local_rank)
         sampler = DistributedSampler(dataset=train_set, shuffle=True)
 
-    train_loader = DataLoader(dataset=train_set, batch_size=configs.training_batch_size, shuffle=sampler is None,
-                              pin_memory=True, num_workers=configs.num_workers, drop_last=False, sampler=sampler)
-    test_loader = DataLoader(dataset=test_set, batch_size=configs.test_batch_size, shuffle=False)
+    train_loader = DataLoader(dataset=train_set,
+                              batch_size=configs.batch_size,
+                              shuffle=sampler is None,
+                              pin_memory=True,
+                              num_workers=configs.num_workers,
+                              drop_last=False,
+                              sampler=sampler)
+    test_loader = DataLoader(dataset=test_set,
+                             batch_size=1,
+                             shuffle=False,
+                             num_workers=configs.num_workers)
 
     # get models
     trainer = get_trainer(configs, train_loader, test_loader, device)

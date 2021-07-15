@@ -2,7 +2,7 @@
 
 
 
-[1] Xiangyu Zhang, Xinyu Zhou, Mengxiao Lin, Jian Sun.
+[first] Xiangyu Zhang, Xinyu Zhou, Mengxiao Lin, Jian Sun.
 
     ShuffleNet: An Extremely Efficient Convolutional Neural Network for Mobile Devices
     https://arxiv.org/abs/1707.01083v2
@@ -77,7 +77,7 @@ class ShuffleNetUnit(nn.Module):
     def __init__(self, input_channels, output_channels, stage, stride, groups):
         super().__init__()
 
-        #"""Similar to [9], we set the number of bottleneck channels to 1/4
+        #"""Similar to [9], we set the number of bottleneck channels to first/4
         #of the output channels for each ShuffleNet unit."""
         self.bottlneck = nn.Sequential(
             PointwiseConv2d(

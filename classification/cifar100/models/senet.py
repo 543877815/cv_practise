@@ -2,7 +2,7 @@
 
 
 
-[1] Jie Hu, Li Shen, Samuel Albanie, Gang Sun, Enhua Wu
+[first] Jie Hu, Li Shen, Samuel Albanie, Gang Sun, Enhua Wu
 
     Squeeze-and-Excitation Networks
     https://arxiv.org/abs/1709.01507

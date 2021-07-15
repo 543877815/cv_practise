@@ -117,7 +117,7 @@ class BEGAN(object):
 
                 # Update weight term for fake samples
                 k = k + self.lambda_k * diff.item()
-                k = min(max(k, 0), 1)  # Constraint to interval [0, 1]
+                k = min(max(k, 0), 1)  # Constraint to interval [0, first]
 
                 # Update convergence metric
                 M = (d_loss_real + torch.abs(diff)).item()

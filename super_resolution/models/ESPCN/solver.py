@@ -25,7 +25,7 @@ class ESPCNBasic(object):
         # models configuration
         self.model = None
         self.color_space = config.color_space
-        self.num_channels = config.num_channels
+        self.img_channels = config.img_channels
         self.num_filter = config.num_features
         self.upscale_factor = config.upscaleFactor
         self.test_upscaleFactor = config.test_upscaleFactor
@@ -100,7 +100,7 @@ class ESPCNTester(ESPCNBasic):
         self.criterion = None
 
     def build_model(self):
-        self.model = ESPCN(num_channels=self.num_channels,
+        self.model = ESPCN(img_channels=self.img_channels,
                            upscale_factor=self.upscale_factor[0],
                            num_filter=self.num_filter).to(self.device)
         self.criterion = torch.nn.MSELoss()
@@ -115,10 +115,10 @@ class ESPCNTester(ESPCNBasic):
             for index, (img, filename) in enumerate(self.test_loader):
                 img = img.to(self.device)
                 # full RGB/YCrCb
-                if self.num_channels == 3:
+                if self.img_channels == 3:
                     output = self.model(img).clamp(0.0, 1.0).cpu()
                 # y
-                elif self.num_channels == 1:
+                elif self.img_channels == 1:
                     output = self.model(img[:, 0, :, :].unsqueeze(1))
                     img[:, 0, :, :].data = output
                     output = img.clamp(0.0, 1.0).cpu()
@@ -159,7 +159,7 @@ class ESPCNTrainer(ESPCNBasic):
         self.build_model()
 
     def build_model(self):
-        self.model = ESPCN(num_channels=self.num_channels,
+        self.model = ESPCN(img_channels=self.img_channels,
                            num_filter=self.num_filter,
                            upscale_factor=self.upscale_factor[0]).to(self.device)
         if self.resume:

@@ -22,7 +22,7 @@ def default_conv(in_channels, out_channels, kernel_size, bias=True):
 
 
 class EDSR(nn.Module):
-    def __init__(self, upscaleFactor=2, n_resblocks=16, n_feats=64, rgb_range=255, num_channels=3, res_scale=1,
+    def __init__(self, upscaleFactor=2, n_resblocks=16, n_feats=64, rgb_range=255, img_channels=3, res_scale=1,
                  conv=common.default_conv):
         super(EDSR, self).__init__()
         n_resblocks = n_resblocks
@@ -39,7 +39,7 @@ class EDSR(nn.Module):
         self.add_mean = common.MeanShift(rgb_range, sign=1)
 
         # define head module
-        m_head = [conv(num_channels, n_feats, kernel_size)]
+        m_head = [conv(img_channels, n_feats, kernel_size)]
 
         # define body module
         m_body = [
@@ -52,7 +52,7 @@ class EDSR(nn.Module):
         # define tail module
         m_tail = [
             common.Upsampler(conv, scale, n_feats, act=False),
-            conv(n_feats, num_channels, kernel_size)
+            conv(n_feats, img_channels, kernel_size)
         ]
 
         self.head = nn.Sequential(*m_head)

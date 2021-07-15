@@ -1,11 +1,11 @@
 # hardware
-gpu: [ 0, first ]
+gpu: [ 0, 1 ]
 distributed: True
-address: '127.0.0.first'
+address: '127.0.0.1'
 port: '23456'
 # models configuration
 model: "DRCN"
-num_channels: first
+img_channels: 1
 num_recursions: 17
 num_filter: 256
 # dataset
@@ -14,16 +14,15 @@ color_space: 'YCbCr'
 img_size: 41
 upscaleFactor: [ 2 ]
 test_upscaleFactor: 2
-scales: [ first.0, 0.7, 0.5 ]
+scales: [ 1.0, 0.7, 0.5 ]
 rotations: [ 0, 90, 180, 270 ]
-flips: [ 0, first, 2, 3 ]
+flips: [ 0, 1, 2, 3 ]
 use_h5py: True
-buildRawData: True
+buildAugData: True
 platform: linux
-force_rebuild: False
 seed: 123
-#python data_aug.py --number first --width 41 --height 41 --stride 21 -uf 2 \
-#				   --rotations 0 90 180 270 --scales first.0 0.7 0.5 --use_bicubic \
+#python data_aug.py --number 1 --width 41 --height 41 --stride 21 -uf 2 \
+#				   --rotations 0 90 180 270 --scales 1.0 0.7 0.5 --use_bicubic \
 #				   --input /data/lifengjun/data/91-image/HR  --single_y --use_h5py \
 #				   --output /data/lifengjun/data/super_resolution/data_for_DRCN/test.h5
 data_flist:
@@ -42,28 +41,27 @@ data_flist:
     h5py_input: "/data/data/super_resolution/data_for_DRCN/train_x2.h5"
 # experiment
 lr: 0.005
-training_batch_size: 64
-test_batch_size: first
+batch_size: 64
 clip: 0.01
-loss_alpha: 0.0   # first.0 init
+loss_alpha: 0.0   # 1.0 init
 loss_beta: 0.000001  #  0.0001 init
 loss_alpha_zero_epoch: 25
 momentum: 0.9
 weight_decay: 0.0001
-scheduler_gamma: 0.first
+scheduler_gamma: 0.1
 scheduler_patience: 5
-scheduler_factor: 0.first
+scheduler_factor: 0.1
 scheduler_min_lr: 0.000001
 scheduler_threshold: 0.0001
 epochs: 100
 milestones: [ 50, 70, 80, 90 ]
 # checkpoint
-checkpoint_interval: first
+checkpoint_interval: 1
 checkpoint_dir: "checkpoints/"
 # visualization
 tensorboard_log_dir: "runs/drcn"
-tensorboard_image_interval: first
+tensorboard_image_interval: 1
 tensorboard_image_sample: 10
 tensorboard_image_size: [ 256, 256 ]
 tensorboard_draw_model: True
-tensorboard_input: [ 64, first, 41, 41 ]
+tensorboard_input: [ 64, 1, 41, 41 ]

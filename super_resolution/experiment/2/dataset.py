@@ -108,7 +108,7 @@ class DatasetFromTwoFolder(data.Dataset):
             return img
         elif self.config.color_space == 'YCbCr':
             img_ycrcb = rgb2ycbcr(np.array(img, dtype=np.uint8))
-            if self.config.num_channels == 1:
+            if self.config.img_channels == 1:
                 return Image.fromarray(img_ycrcb[:, :, 0])
             else:
                 return Image.fromarray(img_ycrcb)
@@ -188,7 +188,7 @@ class DatasetForSRFromFolder(data.Dataset):
             return img
         elif self.config.color == 'YCbCr':
             img_ycrcb = rgb2ycbcr(np.array(img, dtype=np.uint8))
-            if self.config.num_channels == 1:
+            if self.config.img_channels == 1:
                 return img_ycrcb[:, :, 0]
             else:
                 return img_ycrcb
@@ -197,10 +197,9 @@ class DatasetForSRFromFolder(data.Dataset):
 
 
 
-def buildRawData(origin_HR_dir, train_HR_dir, train_LR_dir, config):
-    if config.force_rebuild:
-        shutil.rmtree(train_HR_dir)
-        shutil.rmtree(train_LR_dir)
+def buildAugData(origin_HR_dir, train_HR_dir, train_LR_dir, config):
+    shutil.rmtree(train_HR_dir, ignore_errors=True)
+    shutil.rmtree(train_LR_dir, ignore_errors=True)
     if os.path.exists(train_HR_dir) and len(os.listdir(train_HR_dir)) > 0 and \
             os.path.exists(train_LR_dir) and len(os.listdir(train_LR_dir)) > 0:
         assert len(os.listdir(train_HR_dir)) == len(os.listdir(train_LR_dir)), \
@@ -285,7 +284,7 @@ def BSD300(config):
     train_HR_dir = data_dir + '/HR_x{}'.format(config.upscaleFactor)
 
     print("===> Generate low resolution images:")
-    buildRawData(train_LR_dir=train_LR_dir, train_HR_dir=train_HR_dir, origin_HR_dir=origin_HR_dir, config=config)
+    buildAugData(train_LR_dir=train_LR_dir, train_HR_dir=train_HR_dir, origin_HR_dir=origin_HR_dir, config=config)
     return train_LR_dir, train_HR_dir
 
 
@@ -314,7 +313,7 @@ def BSDS500(config):
     train_HR_dir = data_dir + '/HR_x{}'.format(config.upscaleFactor)
 
     print("===> Generate low resolution images:")
-    buildRawData(train_LR_dir=train_LR_dir, train_HR_dir=train_HR_dir, origin_HR_dir=origin_HR_dir, config=config)
+    buildAugData(train_LR_dir=train_LR_dir, train_HR_dir=train_HR_dir, origin_HR_dir=origin_HR_dir, config=config)
     return train_LR_dir, train_HR_dir
 
 
@@ -333,7 +332,7 @@ def images91(config):
     train_HR_dir = data_dir + '/HR_x{}'.format(config.upscaleFactor)
 
     print("===> Generate low resolution images:")
-    buildRawData(train_LR_dir=train_LR_dir, train_HR_dir=train_HR_dir, origin_HR_dir=origin_HR_dir, config=config)
+    buildAugData(train_LR_dir=train_LR_dir, train_HR_dir=train_HR_dir, origin_HR_dir=origin_HR_dir, config=config)
     return train_LR_dir, train_HR_dir
 
 
@@ -352,7 +351,7 @@ def Set5(config):
     train_HR_dir = data_dir + '/HR_x{}'.format(config.upscaleFactor)
 
     print("===> Generate low resolution images:")
-    buildRawData(train_LR_dir=train_LR_dir, train_HR_dir=train_HR_dir, origin_HR_dir=origin_HR_dir, config=config)
+    buildAugData(train_LR_dir=train_LR_dir, train_HR_dir=train_HR_dir, origin_HR_dir=origin_HR_dir, config=config)
     return train_LR_dir, train_HR_dir
 
 
@@ -371,7 +370,7 @@ def Set14(config):
     train_HR_dir = data_dir + '/HR_x{}'.format(config.upscaleFactor)
 
     print("===> Generate low resolution images:")
-    buildRawData(train_LR_dir=train_LR_dir, train_HR_dir=train_HR_dir, origin_HR_dir=origin_HR_dir, config=config)
+    buildAugData(train_LR_dir=train_LR_dir, train_HR_dir=train_HR_dir, origin_HR_dir=origin_HR_dir, config=config)
     return train_LR_dir, train_HR_dir
 
 
@@ -390,7 +389,7 @@ def B100(config):
     train_HR_dir = data_dir + '/HR_x{}'.format(config.upscaleFactor)
 
     print("===> Generate low resolution images:")
-    buildRawData(train_LR_dir=train_LR_dir, train_HR_dir=train_HR_dir, origin_HR_dir=origin_HR_dir, config=config)
+    buildAugData(train_LR_dir=train_LR_dir, train_HR_dir=train_HR_dir, origin_HR_dir=origin_HR_dir, config=config)
     return train_LR_dir, train_HR_dir
 
 
@@ -409,7 +408,7 @@ def Urban100(config):
     train_HR_dir = data_dir + '/HR_x{}'.format(config.upscaleFactor)
 
     print("===> Generate low resolution images:")
-    buildRawData(train_LR_dir=train_LR_dir, train_HR_dir=train_HR_dir, origin_HR_dir=origin_HR_dir, config=config)
+    buildAugData(train_LR_dir=train_LR_dir, train_HR_dir=train_HR_dir, origin_HR_dir=origin_HR_dir, config=config)
     return train_LR_dir, train_HR_dir
 
 
@@ -428,7 +427,7 @@ def Manga109(config):
     train_HR_dir = data_dir + '/HR_x{}'.format(config.upscaleFactor)
 
     print("===> Generate low resolution images:")
-    buildRawData(train_LR_dir=train_LR_dir, train_HR_dir=train_HR_dir, origin_HR_dir=origin_HR_dir, config=config)
+    buildAugData(train_LR_dir=train_LR_dir, train_HR_dir=train_HR_dir, origin_HR_dir=origin_HR_dir, config=config)
     return train_LR_dir, train_HR_dir
 
 

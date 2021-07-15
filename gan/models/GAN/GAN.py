@@ -67,8 +67,8 @@ class GAN(object):
             for i, (imgs, _) in enumerate(self.dataloader):
 
                 # Adversarial ground truths
-                valid = Variable(Tensor(imgs.size(0), 1).fill_(1.0), requires_grad=False)  # [batch_size, 1]
-                fake = Variable(Tensor(imgs.size(0), 1).fill_(0.0), requires_grad=False)  # [batch_size, 1]
+                valid = Variable(Tensor(imgs.size(0), 1).fill_(1.0), requires_grad=False)  # [batch_size, first]
+                fake = Variable(Tensor(imgs.size(0), 1).fill_(0.0), requires_grad=False)  # [batch_size, first]
 
                 # Configure input
                 real_imgs = Variable(imgs.type(Tensor))

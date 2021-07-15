@@ -2,7 +2,7 @@
 
 
 
-[1] Andrew G. Howard, Menglong Zhu, Bo Chen, Dmitry Kalenichenko, Weijun Wang, Tobias Weyand, Marco Andreetto, Hartwig Adam
+[first] Andrew G. Howard, Menglong Zhu, Bo Chen, Dmitry Kalenichenko, Weijun Wang, Tobias Weyand, Marco Andreetto, Hartwig Adam
 
     MobileNets: Efficient Convolutional Neural Networks for Mobile Vision Applications
     https://arxiv.org/abs/1704.04861

@@ -77,7 +77,7 @@ class Discriminator(nn.Module):
         self.input_shape = input_shape
         in_channels, in_height, in_width = self.input_shape
         patch_h, patch_w = int(in_height / 2 ** 4), int(in_width / 2 ** 4)  # [16, 16]
-        self.output_shape = (1, patch_h, patch_w)  # [1, 16, 16]
+        self.output_shape = (1, patch_h, patch_w)  # [first, 16, 16]
 
         def discriminator_block(in_filters, out_filters, first_block=False):
             layers = []

@@ -26,7 +26,7 @@ class EDSRBasic(object):
         # models configuration
         self.model = None
         self.color_space = config.color_space
-        self.num_channels = config.num_channels
+        self.img_channels = config.img_channels
         self.num_layers = config.num_layers
         self.n_feats = config.n_feats
         self.n_resblocks = config.n_resblocks
@@ -107,7 +107,7 @@ class EDSRTester(EDSRBasic):
 
     def build_model(self):
         self.model = EDSR(upscaleFactor=self.upscale_factor, n_resblocks=self.n_resblocks, n_feats=self.n_feats,
-                          num_channels=self.num_channels, res_scale=self.res_scale).to(self.device)
+                          img_channels=self.img_channels, res_scale=self.res_scale).to(self.device)
         self.criterion = torch.nn.MSELoss(reduction='sum')
         self.load_model()
         if self.CUDA:
@@ -120,10 +120,10 @@ class EDSRTester(EDSRBasic):
             for index, (img, filename) in enumerate(self.test_loader):
                 img = img.to(self.device)
                 # full RGB/YCrCb
-                if self.num_channels == 3:
+                if self.img_channels == 3:
                     output = self.model(img).clamp(0.0, 1.0).cpu()
                 # y
-                elif self.num_channels == 1:
+                elif self.img_channels == 1:
                     output = self.model(img[:, 0, :, :].unsqueeze(1))
                     img[:, 0, :, :].data = output
                     output = img.clamp(0.0, 1.0).cpu()
@@ -162,7 +162,7 @@ class EDSRTrainer(EDSRBasic):
 
     def build_model(self):
         self.model = EDSR(upscaleFactor=self.upscale_factor, n_resblocks=self.n_resblocks, n_feats=self.n_feats,
-                          num_channels=self.num_channels, res_scale=self.res_scale).to(self.device)
+                          img_channels=self.img_channels, res_scale=self.res_scale).to(self.device)
         if self.resume:
             self.load_model()
 

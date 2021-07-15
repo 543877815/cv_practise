@@ -11,6 +11,8 @@ from PIL.PngImagePlugin import PngImageFile
 import numpy as np
 from tqdm import tqdm
 import torch
+import imageio
+import pickle
 
 
 class DatasetFromTwoFolder(data.Dataset):
@@ -18,11 +20,22 @@ class DatasetFromTwoFolder(data.Dataset):
         Using this function, we must assure the size of HR are divide even by the size of LR, respectively.
     """
 
-    def __init__(self, LR_dir: str, HR_dir: str, train=False, config=None, transform=None, target_transform=None):
+    def __init__(self,
+                 LR_dir: str,
+                 HR_dir: str,
+                 pt_dir: str = None,
+                 isTrain=False,
+                 config=None,
+                 transform=None,
+                 target_transform=None):
         super(DatasetFromTwoFolder, self).__init__()
 
         LR_filenames = os.listdir(LR_dir)
         HR_filenames = os.listdir(HR_dir)
+
+        assert len(LR_filenames) == len(HR_filenames), \
+            'The number of LR images is not equal to the number of the HR images.'
+
         LR_filenames.sort(key=lambda x: x[:-4])
         HR_filenames.sort(key=lambda x: x[:-4])
 
@@ -31,8 +44,9 @@ class DatasetFromTwoFolder(data.Dataset):
 
         self.LR_image_filenames = [os.path.join(LR_dir, x) for x in LR_filenames if is_image_file(x)]
         self.HR_image_filenames = [os.path.join(HR_dir, x) for x in HR_filenames if is_image_file(x)]
+
         self.config = config
-        self.train = train
+        self.isTrain = isTrain
         self.repeat = config.repeat or 1
         self.transform = transform
         self.target_transform = target_transform
@@ -40,20 +54,55 @@ class DatasetFromTwoFolder(data.Dataset):
     def __getitem__(self, item):
         img = self.load_img(self.LR_image_filenames[item // self.repeat])
         target = self.load_img(self.HR_image_filenames[item // self.repeat])
-        img, target = self.augment(LR_img=img, HR_img=target)
+        img, target = self.augment(img, target)
         if self.transform:
             img = self.transform(img)
         if self.target_transform:
             target = self.target_transform(target)
-        if self.train:
+        if self.isTrain:
             img, target = self.get_patch(LR_img=img, HR_img=target)
         return img, target
 
     def __len__(self):
-        if self.train:
+        if self.isTrain:
             return len(self.LR_image_filenames) * self.repeat
         else:
             return len(self.LR_image_filenames)
+
+    def generate_pt(self, pt_dir, dir='bin'):
+        common_path = os.path.join(pt_dir, dir)
+        HR_path = os.path.join(common_path, "HR")
+        LR_path = os.path.join(common_path, "LR")
+        os.makedirs(common_path, exist_ok=True)
+        os.makedirs(HR_path, exist_ok=True)
+        os.makedirs(LR_path, exist_ok=True)
+        if len(os.listdir(HR_path)) > 0 and len(os.listdir(LR_path)) > 0:
+            suffix = os.path.splitext(self.LR_image_filenames[0])[-1]
+            for i in range(len(self.LR_image_filenames)):
+                LR_basename = os.path.basename(self.LR_image_filenames[i]).replace(suffix, '.pt')
+                HR_basename = os.path.basename(self.HR_image_filenames[i]).replace(suffix, '.pt')
+                self.LR_image_filenames[i] = os.path.join(LR_path, LR_basename)
+                self.HR_image_filenames[i] = os.path.join(HR_path, HR_basename)
+        else:
+            self.LR_image_filenames = self._save_and_load(pt_dir=LR_path, img_dir=self.LR_image_filenames)
+            self.HR_image_filenames = self._save_and_load(pt_dir=HR_path, img_dir=self.HR_image_filenames)
+            assert len(self.LR_image_filenames) == len(self.HR_image_filenames), \
+                'The number of LR images is not equal to the number of the HR images.'
+
+    def _save_and_load(self, pt_dir, img_dir, verbose=True):
+        new_image_filenames = []
+        for i in range(len(img_dir)):
+            img_path = img_dir[i]
+            image_name = os.path.basename(img_path)
+            suffix = os.path.splitext(image_name)[-1]
+            image_name = image_name.replace(suffix, '.pt')
+            save_path = os.path.join(pt_dir, image_name)
+            if verbose:
+                print("Making a binary: {}".format(save_path))
+            with open(save_path, 'wb') as f:
+                pickle.dump(imageio.imread(img_path), f)
+            new_image_filenames.append(save_path)
+        return new_image_filenames
 
     # TODO test this function
     def augment(self, LR_img: PngImageFile, HR_img: PngImageFile) -> [PngImageFile, PngImageFile]:
@@ -100,10 +149,16 @@ class DatasetFromTwoFolder(data.Dataset):
         return LR_img[:, ix:ix + ip, iy:iy + ip], HR_img[:, tx:tx + tp, ty: ty + tp]
 
     def load_img(self, filepath):
-        img = Image.open(filepath)
-        if len(img.split()) == 1:
-            return img
-        img = img.convert('RGB')
+        if filepath.endswith('.pt'):
+            with open(filepath, 'rb') as f:
+                img = pickle.load(f)
+            if img.shape[-1] == 1:
+                return img
+        else:
+            img = Image.open(filepath)
+            if len(img.split()) == 1:
+                return img
+            img = img.convert('RGB')
         if self.config.color_space == 'RGB':
             return img
         elif self.config.color_space == 'YCbCr':
@@ -278,7 +333,7 @@ def BSD300(config):
 
         os.remove(file_path)
 
-    origin_HR_dir = data_dir + '/train'
+    origin_HR_dir = data_dir + '/HR'
     train_LR_dir = data_dir + '/LR_x{}'.format(config.upscaleFactor)
     train_HR_dir = data_dir + '/HR_x{}'.format(config.upscaleFactor)
 
@@ -307,7 +362,7 @@ def BSDS500(config):
 
         os.remove(file_path)
 
-    origin_HR_dir = data_dir + '/train'
+    origin_HR_dir = data_dir + '/HR'
     train_LR_dir = data_dir + '/LR_x{}'.format(config.upscaleFactor)
     train_HR_dir = data_dir + '/HR_x{}'.format(config.upscaleFactor)
 

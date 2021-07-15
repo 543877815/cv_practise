@@ -2,8 +2,16 @@ import functools
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from .RRDB import RRDBNet
-from .stylegan import G_synthesis
+from super_resolution.models.GLEAN.RRDB import RRDBNet
+from super_resolution.models.GLEAN.stylegan import G_synthesis
+
+
+class memoryBank(G_synthesis):
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, dlatents_in, noise_in):
+        pass
 
 
 class GLEAN(nn.Module):
@@ -64,5 +72,15 @@ class GLEAN(nn.Module):
             nn.Conv2d(channels, channels, kernel_size=3, stride=1, padding=1)
         )
 
-    def forward(self, x):
-        out = self.RRDB(x)
+    def forward(self, x, styleGAN, dlatents_in, noise_in):
+        feat0 = self.RRDB(x)
+        feat1 = self.conv1(feat0)
+        feat2 = self.conv2(feat1)
+        feat3 = self.conv3(feat2)
+        feat4 = self.conv4(feat3)
+        feat5 = self.conv5(feat4)
+        feat6 = self.conv6(feat5)
+        feat7 = self.conv7(feat6)
+        feat8 = self.conv8(feat7)
+        with torch.no_grad():
+            _ = styleGAN(dlatents_in, noise_in)

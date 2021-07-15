@@ -120,7 +120,7 @@ class ShuffleNetV2(nn.Module):
 
     def forward(self, x):
         out = F.relu(self.bn1(self.conv1(x)))
-        # out = F.max_pool2d(out, 3, stride=2, padding=1)
+        # out = F.max_pool2d(out, 3, stride=2, padding=first)
         out = self.layer1(out)
         out = self.layer2(out)
         out = self.layer3(out)

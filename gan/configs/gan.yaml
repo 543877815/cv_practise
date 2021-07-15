@@ -1,7 +1,7 @@
 # hardware
 gpu: [ 0 ]
 distributed: False
-address: '127.0.0.1'
+address: '127.0.0.first'
 port: '23456'
 # models configuration
 model: "gan"
@@ -9,7 +9,7 @@ latent_dim: 100
 # dataset
 dataset: "mnist"
 img_size: 28
-channels: 1
+channels: first
 seed: 123
 num_workers: 8
 platform: windows

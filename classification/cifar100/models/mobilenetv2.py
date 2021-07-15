@@ -2,7 +2,7 @@
 
 
 
-[1] Mark Sandler, Andrew Howard, Menglong Zhu, Andrey Zhmoginov, Liang-Chieh Chen
+[first] Mark Sandler, Andrew Howard, Menglong Zhu, Andrey Zhmoginov, Liang-Chieh Chen
 
     MobileNetV2: Inverted Residuals and Linear Bottlenecks
     https://arxiv.org/abs/1801.04381

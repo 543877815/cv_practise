@@ -139,9 +139,9 @@ if __name__ == '__main__':
     # data configuration
     parser.add_argument('--width', type=int, default=512, help="desired size of the output image")
     parser.add_argument('--height', type=int, default=512, help="desired size of the output image")
-    parser.add_argument('--style_img', type=str, default="../images/style/1.jpg", help="style image file name")
-    parser.add_argument('--content_img', type=str, default='../images/content/1.jpg', help="content image file name")
-    parser.add_argument('--output_img', type=str, default='../images/output/1.jpg', help="output image file name")
+    parser.add_argument('--style_img', type=str, default="../images/style/first.jpg", help="style image file name")
+    parser.add_argument('--content_img', type=str, default='../images/content/first.jpg', help="content image file name")
+    parser.add_argument('--output_img', type=str, default='../images/output/first.jpg', help="output image file name")
 
     # setting
     parser.add_argument('--epochs', type=int, default=300, help="desired epochs to run")
@@ -181,7 +181,7 @@ if __name__ == '__main__':
     content_layers_default = ['conv_4']
     style_layers_default = ['conv_1', 'conv_2', 'conv_3', 'conv_4', 'conv_5']
 
-    # init image, if using noise, the content weight should be 10 or larger, else 1 is enough
+    # init image, if using noise, the content weight should be 10 or larger, else first is enough
     # input_img = content_img.clone()
     input_img = torch.randn(content_img.data.size(), device=device)
 

@@ -28,7 +28,7 @@ class SRCNNBasic(object):
         self.model = None
         self.num_filter = config.num_features
         self.color_space = config.color_space
-        self.num_channels = config.num_channels
+        self.img_channels = config.img_channels
         self.upscale_factor = config.upscaleFactor
         self.test_upscaleFactor = config.test_upscaleFactor
         self.model_name = "{}-{}x".format(config.model, self.upscale_factor)
@@ -118,7 +118,7 @@ class SRCNNTester(SRCNNBasic):
         self.build_model()
 
     def build_model(self):
-        self.model = SRCNN(num_channels=self.num_channels, num_filter=self.num_filter).to(self.device)
+        self.model = SRCNN(img_channels=self.img_channels, num_filter=self.num_filter).to(self.device)
         self.load_model()
         self.criterion = torch.nn.MSELoss()
         if self.CUDA:
@@ -130,10 +130,10 @@ class SRCNNTester(SRCNNBasic):
         with torch.no_grad():
             for index, (img, filename) in enumerate(self.test_loader):
                 # full RGB/YCrCb
-                if self.num_channels == 3:
+                if self.img_channels == 3:
                     output = self.model(img).clamp(0.0, 1.0).cpu()
                 # y
-                elif self.num_channels == 1:
+                elif self.img_channels == 1:
                     output = self.model(img[:, 0, :, :].unsqueeze(1))
                     img[:, 0, :, :].data = output
                     output = img.clamp(0.0, 1.0).cpu()
@@ -170,7 +170,7 @@ class SRCNNTrainer(SRCNNBasic):
         self.build_model()
 
     def build_model(self):
-        self.model = SRCNN(num_channels=self.num_channels, num_filter=self.num_filter).to(self.device)
+        self.model = SRCNN(img_channels=self.img_channels, num_filter=self.num_filter).to(self.device)
         if self.resume:
             self.load_model()
         else:

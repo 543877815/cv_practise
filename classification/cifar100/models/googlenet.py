@@ -2,7 +2,7 @@
 
 
 
-[1] Christian Szegedy, Wei Liu, Yangqing Jia, Pierre Sermanet, Scott Reed,
+[first] Christian Szegedy, Wei Liu, Yangqing Jia, Pierre Sermanet, Scott Reed,
     Dragomir Anguelov, Dumitru Erhan, Vincent Vanhoucke, Andrew Rabinovich.
 
     Going Deeper with Convolutions
@@ -35,7 +35,7 @@ class Inception(nn.Module):
 
         #1x1conv -> 5x5conv branch
         #we use 2 3x3 conv filters stacked instead
-        #of 1 5x5 filters to obtain the same receptive
+        #of first 5x5 filters to obtain the same receptive
         #field with fewer parameters
         self.b3 = nn.Sequential(
             nn.Conv2d(input_channels, n5x5_reduce, kernel_size=1),
@@ -72,7 +72,7 @@ class GoogleNet(nn.Module):
             nn.ReLU(inplace=True)
         )
 
-        #although we only use 1 conv layer as prelayer,
+        #although we only use first conv layer as prelayer,
         #we still use name a3, b3.......
         self.a3 = Inception(192, 64, 96, 128, 16, 32, 32)
         self.b3 = Inception(256, 128, 128, 192, 32, 96, 64)
@@ -116,7 +116,7 @@ class GoogleNet(nn.Module):
         output = self.b5(output)
 
         #"""It was found that a move from fully connected layers to
-        #average pooling improved the top-1 accuracy by about 0.6%,
+        #average pooling improved the top-first accuracy by about 0.6%,
         #however the use of dropout remained essential even after
         #removing the fully connected layers."""
         output = self.avgpool(output)

@@ -2,7 +2,7 @@
 
 
 
-[1] Saining Xie, Ross Girshick, Piotr Dollár, Zhuowen Tu, Kaiming He.
+[first] Saining Xie, Ross Girshick, Piotr Dollár, Zhuowen Tu, Kaiming He.
 
     Aggregated Residual Transformations for Deep Neural Networks
     https://arxiv.org/abs/1611.05431
@@ -38,7 +38,7 @@ class ResNextBottleNeckC(nn.Module):
         #"""We note that the input/output width of the template is fixed as
         #256-d (Fig. 3), We note that the input/output width of the template
         #is fixed as 256-d (Fig. 3), and all widths are dou- bled each time
-        #when the feature map is subsampled (see Table 1)."""
+        #when the feature map is subsampled (see Table first)."""
         D = int(DEPTH * out_channels / BASEWIDTH) #number of channels per group
         self.split_transforms = nn.Sequential(
             nn.Conv2d(in_channels, C * D, kernel_size=1, groups=C, bias=False),

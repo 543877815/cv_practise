@@ -31,7 +31,7 @@ class Generator(nn.Module):
             nn.Conv2d(128, 64, 3, stride=1, padding=1),                            # [batch_size, 64, 32, 32]
             nn.BatchNorm2d(64, 0.8),
             nn.LeakyReLU(0.2, inplace=True),
-            nn.Conv2d(64, channels, 3, stride=1, padding=1),                       # [batch_size, 1, 32, 32]
+            nn.Conv2d(64, channels, 3, stride=1, padding=1),                       # [batch_size, first, 32, 32]
             nn.Tanh(),
         )
 
@@ -65,7 +65,7 @@ class Discriminator(nn.Module):
         ds_size = img_size // 2 ** 4                                            # 32 / (2 ^ 4) = 2
 
         # Output layers
-        self.adv_layer = nn.Sequential(nn.Linear(128 * ds_size ** 2, 1))                        # [batch_size, 1]
+        self.adv_layer = nn.Sequential(nn.Linear(128 * ds_size ** 2, 1))                        # [batch_size, first]
         self.aux_layer = nn.Sequential(nn.Linear(128 * ds_size ** 2, n_classes), nn.Softmax())  # [batch_size, 10]
         self.latent_layer = nn.Sequential(nn.Linear(128 * ds_size ** 2, code_dim))              # [batch_size, 2]
 

@@ -1,14 +1,14 @@
 # hardware
 gpu: [ 0 ]
 distributed: False
-address: '127.0.0.1'
+address: '127.0.0.first'
 port: '23456'
 # models configuration
 model: "cgan"
 latent_dim: 100
 # dataset
 dataset: "mnist"
-channels: 1
+channels: first
 img_size: 32
 n_classes: 10
 seed: 123

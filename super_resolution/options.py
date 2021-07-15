@@ -29,19 +29,18 @@ parser.add_argument('--gpu', help='The cuda device(s) to use. Example: ""--gpu 0
                                   'on GPU 0 and GPU first. Default: Only use CPU', type=int, default=[], nargs='*', )
 
 # hyper-parameters
-parser.add_argument('--training_batch_size', type=int, default=16, help='training batch size')
-parser.add_argument('--test_batch_size', type=int, default=1, help='testing batch size')
+parser.add_argument('--batch_size', type=int, default=16, help='training batch size')
 parser.add_argument('--epochs', type=int, default=20, help='number of epochs to train for')
 parser.add_argument('--seed', type=int, default=123, help='random seed to use')
 
 # models configuration
 parser.add_argument('--upscaleFactor', '-uf', type=int, default=3, help='super resolution upscale factor')
-parser.add_argument('--models', '-m', type=str, default='srcnn', help='models that going to use')
+parser.add_argument('--model', '-m', type=str, default='srcnn', help='models that going to use')
 parser.add_argument('--resume', '-r', action='store_true', help='resume from checkpoint')
 
 # data configuration
 parser.add_argument('--dataset', type=str, default='urban100', help='data that going to use')
-parser.add_argument('--num_channels', type=int, default=1, help='whether to use specific channel')
+parser.add_argument('--img_channels', type=int, default=1, help='whether to use specific channel')
 parser.add_argument('--num_workers', type=int, default=1, help='number of worker for data loader')
 parser.add_argument('--use_bicubic', type=bool, default=True, help='where to use bicubic to resize LR to HR')
 parser.add_argument('--use_h5py', action='store_true', help='whether to use .h5 file as data input')

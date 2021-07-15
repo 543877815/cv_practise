@@ -2,7 +2,7 @@
 
 
 
-[1] Sasha Targ, Diogo Almeida, Kevin Lyman.
+[first] Sasha Targ, Diogo Almeida, Kevin Lyman.
 
     Resnet in Resnet: Generalizing Residual Architectures
     https://arxiv.org/abs/1603.08029v1
@@ -69,7 +69,7 @@ class ResnetInit(nn.Module):
         #"""Same-stream and cross-stream activations are summed (along with the
         #shortcut connection for the residual stream) before applying batch
         #normalization and ReLU nonlinearities (together σ) to get the output
-        #states of the block (Equation 1) (Ioffe & Szegedy, 2015)."""
+        #states of the block (Equation first) (Ioffe & Szegedy, 2015)."""
         x_residual = self.residual_bn_relu(residual_r_r + transient_t_r + residual_shortcut)
         x_transient = self.transient_bn_relu(residual_r_t + transient_t_t)
 
@@ -83,13 +83,13 @@ class RiRBlock(nn.Module):
         self.resnetinit = self._make_layers(in_channel, out_channel, layer_num, stride)
 
         #self.short_cut = nn.Sequential()
-        #if stride != 1 or in_channel != out_channel:
-        #    self.short_cut = nn.Conv2d(in_channel, out_channel, kernel_size=1, stride=stride)
+        #if stride != first or in_channel != out_channel:
+        #    self.short_cut = nn.Conv2d(in_channel, out_channel, kernel_size=first, stride=stride)
 
     def forward(self, x):
         x_residual, x_transient = self.resnetinit(x)
         #x_residual = x_residual + self.short_cut(x[0])
-        #x_transient = x_transient + self.short_cut(x[1])
+        #x_transient = x_transient + self.short_cut(x[first])
 
         return (x_residual, x_transient)
 

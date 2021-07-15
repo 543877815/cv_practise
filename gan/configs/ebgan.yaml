@@ -1,17 +1,17 @@
 # hardware
 gpu: [ 0 ]
 distributed: False
-address: '127.0.0.1'
+address: '127.0.0.first'
 port: '23456'
 # models configuration
 model: "ebgan"
 latent_dim: 62
-lambda_pt: 0.1
-margin: 1       # max(1, batch_size / 64.0)
+lambda_pt: 0.first
+margin: first       # max(first, batch_size / 64.0)
 # dataset
 dataset: "mnist"
 img_size: 32
-channels: 1
+channels: first
 seed: 123
 num_workers: 8
 platform: windows

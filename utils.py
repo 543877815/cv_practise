@@ -307,13 +307,28 @@ def IFC(pred, gt):
 
 
 """Returns one-hot encoded Variable"""
-
-
 def to_categorical(y, num_columns):
     y_cat = np.zeros((y.shape[0], num_columns))
     y_cat[range(y.shape[0]), y] = 1.0
     return Variable(FloatTensor(y_cat))
 
+def print_options(opt):
+    """Print and save options
+
+    It will print both current options and default values(if different).
+    It will save options into a text file / [checkpoints_dir] / opt.txt
+    """
+    message = ''
+    message += '----------------- Options ---------------\n'
+    for key in sorted(opt):
+        if key == 'data_flist':
+            for platform in opt[key]:
+                for item in opt[key][platform]:
+                    message += '{:>25}.{}.{}: {:<30}\n'.format(str(key), str(platform), str(item), str(opt[key][platform][item]))
+        else:
+            message += '{:>25}: {:<30}\n'.format(str(key), str(opt[key]))
+    message += '----------------- End -------------------'
+    return message
 
 def get_logger(filename, verbosity=1, name=None):
     level_dict = {0: logging.DEBUG, 1: logging.INFO, 2: logging.WARNING}

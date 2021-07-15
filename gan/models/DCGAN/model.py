@@ -28,7 +28,7 @@ class Generator(nn.Module):
             nn.Conv2d(128, 64, 3, stride=1, padding=1),                     # [batch_size, 64, 32, 32]
             nn.BatchNorm2d(64, 0.8),                                        # 0.8 is momentum
             nn.LeakyReLU(0.2, inplace=True),
-            nn.Conv2d(64, channels, 3, stride=1, padding=1),                # [batch_size, 1, 32, 32]
+            nn.Conv2d(64, channels, 3, stride=1, padding=1),                # [batch_size, first, 32, 32]
             nn.Tanh(),
         )
 

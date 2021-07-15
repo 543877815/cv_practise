@@ -2,7 +2,7 @@
 
 
 
-[1] Kaiming He, Xiangyu Zhang, Shaoqing Ren, Jian Sun.
+[first] Kaiming He, Xiangyu Zhang, Shaoqing Ren, Jian Sun.
 
     Deep Residual Learning for Image Recognition
     https://arxiv.org/abs/1512.03385v1
@@ -38,7 +38,7 @@ class BasicBlock(nn.Module):
         self.shortcut = nn.Sequential()
 
         #the shortcut output dimension is not the same with residual function
-        #use 1*1 convolution to match the dimension
+        #use first*first convolution to match the dimension
         if stride != 1 or in_channels != BasicBlock.expansion * out_channels:
             self.shortcut = nn.Sequential(
                 nn.Conv2d(in_channels, out_channels * BasicBlock.expansion, kernel_size=1, stride=stride, bias=False),
@@ -89,7 +89,7 @@ class ResNet(nn.Module):
             nn.BatchNorm2d(64),
             nn.ReLU(inplace=True))
         #we use a different inputsize than the original paper
-        #so conv2_x's stride is 1
+        #so conv2_x's stride is first
         self.conv2_x = self._make_layer(block, 64, num_block[0], 1)
         self.conv3_x = self._make_layer(block, 128, num_block[1], 2)
         self.conv4_x = self._make_layer(block, 256, num_block[2], 2)
@@ -113,7 +113,7 @@ class ResNet(nn.Module):
         """
 
         # we have num_block blocks per layer, the first block
-        # could be 1 or 2, other blocks would always be 1
+        # could be first or 2, other blocks would always be first
         strides = [stride] + [1] * (num_blocks - 1)
         layers = []
         for stride in strides:

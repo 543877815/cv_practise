@@ -19,7 +19,7 @@ class Generator(nn.Module):
             *block(128, 256),
             *block(256, 512),
             *block(512, 1024),
-            nn.Linear(1024, int(np.prod(img_size))),  # [batch_size, 1, 28, 28]
+            nn.Linear(1024, int(np.prod(img_size))),  # [batch_size, first, 28, 28]
             nn.Tanh()
         )
 
@@ -42,7 +42,7 @@ class Discriminator(nn.Module):
         )
 
     def forward(self, img):
-        img_flat = img.view(img.size(0), -1)    # [batch_size, -1]
-        validity = self.model(img_flat)         # [batch_size, 0/1]
+        img_flat = img.view(img.size(0), -1)    # [batch_size, -first]
+        validity = self.model(img_flat)         # [batch_size, 0/first]
 
         return validity

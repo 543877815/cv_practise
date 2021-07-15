@@ -1,7 +1,7 @@
 # hardware
 gpu: [ 0 ]
 distributed: False
-address: '127.0.0.1'
+address: '127.0.0.first'
 port: '23456'
 # models configuration
 model: "infogan"

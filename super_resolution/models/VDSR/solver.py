@@ -28,7 +28,7 @@ class VSDRBasic(object):
         self.color_space = config.color_space
         self.num_filter = config.num_filter
         self.num_residuals = config.num_residuals
-        self.num_channels = config.num_channels
+        self.img_channels = config.img_channels
         self.upscale_factor = config.upscaleFactor
         self.test_upscaleFactor = config.test_upscaleFactor
         self.model_name = "{}-{}x".format(config.model, self.upscale_factor)
@@ -104,7 +104,7 @@ class VDSRTester(VSDRBasic):
         self.build_model()
 
     def build_model(self):
-        self.model = VDSR(num_channels=self.num_channels, num_filter=self.num_filter,
+        self.model = VDSR(img_channels=self.img_channels, num_filter=self.num_filter,
                           num_residuals=self.num_residuals).to(self.device)
         self.criterion = torch.nn.MSELoss(reduction='sum')
         self.load_model()
@@ -118,10 +118,10 @@ class VDSRTester(VSDRBasic):
             for index, (img, filename) in enumerate(self.test_loader):
                 img = img.to(self.device)
                 # full RGB/YCrCb
-                if self.num_channels == 3:
+                if self.img_channels == 3:
                     output = self.model(img).clamp(0.0, 1.0).cpu()
                 # y
-                elif self.num_channels == 1:
+                elif self.img_channels == 1:
                     output = self.model(img[:, 0, :, :].unsqueeze(1))
                     img[:, 0, :, :].data = output
                     output = img.clamp(0.0, 1.0).cpu()
@@ -159,7 +159,7 @@ class VDSRTrainer(VSDRBasic):
         self.build_model()
 
     def build_model(self):
-        self.model = VDSR(num_channels=self.num_channels, num_filter=self.num_filter,
+        self.model = VDSR(img_channels=self.img_channels, num_filter=self.num_filter,
                           num_residuals=self.num_residuals).to(self.device)
         if self.resume:
             self.load_model()

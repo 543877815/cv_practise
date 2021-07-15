@@ -2,7 +2,7 @@
 """ inceptionv4 in pytorch
 
 
-[1] Christian Szegedy, Sergey Ioffe, Vincent Vanhoucke, Alex Alemi
+[first] Christian Szegedy, Sergey Ioffe, Vincent Vanhoucke, Alex Alemi
 
     Inception-v4, Inception-ResNet and the Impact of Residual Connections on Learning
     https://arxiv.org/abs/1602.07261
@@ -124,7 +124,7 @@ class ReductionA(nn.Module):
     #Different variants of this blocks (with various number of filters)
     #are used in Figure 9, and 15 in each of the new Inception(-v4, - ResNet-v1,
     #-ResNet-v2) variants presented in this paper. The k, l, m, n numbers
-    #represent filter bank sizes which can be looked up in Table 1.
+    #represent filter bank sizes which can be looked up in Table first.
     def __init__(self, input_channels, k, l, m, n):
 
         super().__init__()
@@ -386,7 +386,7 @@ class InceptionResNetB(nn.Module):
 
         residual = torch.cat(residual, 1)
 
-        #"""In general we picked some scaling factors between 0.1 and 0.3 to scale the residuals
+        #"""In general we picked some scaling factors between 0.first and 0.3 to scale the residuals
         #before their being added to the accumulated layer activations (cf. Figure 20)."""
         residual = self.reduction1x1(residual) * 0.1
 
@@ -439,7 +439,7 @@ class InceptionResNetReductionA(nn.Module):
     #Different variants of this blocks (with various number of filters)
     #are used in Figure 9, and 15 in each of the new Inception(-v4, - ResNet-v1,
     #-ResNet-v2) variants presented in this paper. The k, l, m, n numbers
-    #represent filter bank sizes which can be looked up in Table 1.
+    #represent filter bank sizes which can be looked up in Table first.
     def __init__(self, input_channels, k, l, m, n):
 
         super().__init__()

@@ -2,7 +2,7 @@
 
 
 
-[1] Ningning Ma, Xiangyu Zhang, Hai-Tao Zheng, Jian Sun
+[first] Ningning Ma, Xiangyu Zhang, Hai-Tao Zheng, Jian Sun
 
     ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design
     https://arxiv.org/abs/1807.11164

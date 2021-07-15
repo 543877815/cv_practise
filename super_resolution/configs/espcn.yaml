@@ -1,11 +1,11 @@
 # hardware
-gpu: [ first ]
+gpu: [ 1 ]
 distributed: False
-address: '127.0.0.first'
+address: '127.0.0.1'
 port: '23456'
 # models configuration
 model: "ESPCN"
-num_channels: first
+img_channels: 1
 num_filter: 64
 # dataset
 dataset: "customize"
@@ -13,13 +13,12 @@ color_space: 'YCbCr'
 img_size: 17
 upscaleFactor: [ 2 ]
 test_upscaleFactor: 2
-scales: [ first.0 ]
+scales: [ 1.0 ]
 rotations: [ 0 ]
 flips: [ 0 ]
 use_h5py: True
-buildRawData: True
+buildAugData: True
 platform: linux
-force_rebuild: False
 seed: 123
 data_flist:
   windows:
@@ -37,22 +36,21 @@ data_flist:
     h5py_input: "/data/data/super_resolution/data_for_ESPCN/train_x2.h5"
 # experiment
 lr: 0.001
-training_batch_size: 64
-test_batch_size: first
-scheduler_gamma: 0.first
+batch_size: 64
+scheduler_gamma: 0.1
 scheduler_patience: 10
-scheduler_factor: 0.first
+scheduler_factor: 0.1
 scheduler_min_lr: 0.0001
 scheduler_threshold: 0.00001
 epochs: 3000
 milestones: [ 100, 500, 1000 ]
 # checkpoint
-checkpoint_interval: first
+checkpoint_interval: 1
 checkpoint_dir: "checkpoints/"
 # visualization
 tensorboard_log_dir: "runs/espcn"
-tensorboard_image_interval: first
+tensorboard_image_interval: 1
 tensorboard_image_sample: 10
 tensorboard_image_size: [ 256, 256 ]
 tensorboard_draw_model: True
-tensorboard_input: [ 64, first, 17, 17 ]
+tensorboard_input: [ 64, 1, 17, 17 ]
