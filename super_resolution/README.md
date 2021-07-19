@@ -340,16 +340,22 @@ python main.py --configs configs/drrn.yaml -r
 
 ### RDN(2017)
 
-**Dataset prepare**.
+**Training**
 
-```
-python data_aug.py --number 800 --width 32 --height 32 --stride 32 -uf 2 \
-				   --rotations 0 90 --flip 0 1 2 --upsampling bicubic \
-				   --input /data/data/DIV2K/DIV2K/DIV2K_train_HR  --single_y --use_h5py \
-				   --output /data/data/super_resolution/data_for_RDN/train.h5
+```bash
+python -m torch.distributed.launch --nproc_per_node=2 main.py --configs configs/rdn.yaml
+python main.py --configs configs/rdn.yaml
 ```
 
+**Result**.
 
+| Dataset  | Scale                      | PSNR(291-images/paper)                          | SSIM(91-images/paper)                                 |
+| -------- | -------------------------- | ----------------------------------------------- | ----------------------------------------------------- |
+| Set5     | x2<br />x3<br />x4<br />x8 | /38.30<br />34.48/34.78<br />/32.61<br />/27.23 | /0.9617<br />0.9273/0.9299<br />/0.8999<br />/0.7854  |
+| Set14    | x2<br />x3<br />x4<br />x8 | /34.14<br />30.41/30.63<br />/28.93<br />/25.25 | /0.9235<br />0.8439/0.8477<br />/0.7894<br />/0.6505  |
+| BSD100   | x2<br />x3<br />x4<br />x8 | /32.41<br />29.15/29.33<br />/27.80<br />/24.91 | /0.9025<br />0.8068/0.8107<br />/0.7436<br />/0.6032  |
+| Urban100 | x2<br />x3<br />x4<br />x8 | /32.55<br />28.70/29.02<br />/26.85<br />/22.83 | /0.9324<br /> 0.8719/0.8695<br />/0.8089<br />/0.6374 |
+| Manga109 | x2<br />x3<br />x4<br />x8 | /39.60<br />34.00/34.58<br />/31.45<br />/25.14 | /0.9791<br />0.9483/0.9502<br />/0.9187<br />/0.7994  |
 
 ### EDSR/MDSR(NTIRE 2017)
 
@@ -362,10 +368,6 @@ python data_aug.py --number 800 --width 32 --height 32 --stride 32 -uf 2 \
 ### RCAN
 
 ### WDSR
-
-
-
-CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 python -m torch.distributed.launch --nproc_per_node=8 train.py --network=pretrained_gans/Gs.pth --model checkpoints/39_PL_netG.pth --dis_model checkpoints/39_PL_netD.pth --resume True --start_iter 40
 
 ## Source
 

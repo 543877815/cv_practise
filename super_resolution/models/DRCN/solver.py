@@ -40,7 +40,7 @@ class DRCNBasic(object):
         self.checkpoint_name = "{}.pth".format(self.model_name)
         self.best_quality = 0
         self.start_epoch = 1
-        self.epochs = config.epochs
+        self.epochs = config.n_epochs
         self.checkpoint_interval = config.checkpoint_interval
 
         # logger configuration

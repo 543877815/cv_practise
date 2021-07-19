@@ -1,5 +1,5 @@
 import torch
-from super_resolution.models.GLEAN.stylegan import G_synthesis, G_mapping
+from super_resolution.models.GLEAN.styleGAN import G_synthesis, G_mapping
 from torchvision import utils as vutils
 
 

@@ -133,7 +133,7 @@ class LapSRNTrainer(LapSRNBasic):
         self.lr = config.lr
 
         # checkpoint configuration
-        self.epochs = config.epochs
+        self.epochs = config.n_epochs
 
         # parameters configuration
         self.criterion = None

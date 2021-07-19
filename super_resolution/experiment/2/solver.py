@@ -40,14 +40,14 @@ class VSDRBasic(object):
         self.add_channels = config.add_channels
         self.upscale_factor = config.upscaleFactor
         self.test_upscaleFactor = config.test_upscaleFactor
-        self.model_name = "{}-{}x".format(config.model, self.upscale_factor)
+        self.model_name = "{}-{}x".format(config.generator, self.upscale_factor)
 
         # checkpoint configuration
         self.resume = config.resume
         self.checkpoint_name = "{}.pth".format(self.model_name)
         self.best_quality = 0
         self.start_epoch = 1
-        self.epochs = config.epochs
+        self.epochs = config.n_epochs
         self.checkpoint_interval = config.checkpoint_interval
 
         # logger configuration

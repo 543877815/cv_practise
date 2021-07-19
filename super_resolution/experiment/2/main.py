@@ -93,7 +93,7 @@ def get_dataset(config):
 
 def get_trainer(config, train_loader, test_loader, device=None):
     # load models
-    model_name = config.model
+    model_name = config.generator
     if model_name.lower().startswith('srcnn'):
         model = SRCNNTrainer(config, train_loader, test_loader, device)
     elif model_name.lower().startswith('fsrcnn'):

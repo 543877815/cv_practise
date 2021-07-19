@@ -16,6 +16,7 @@ from super_resolution.models.ESPCN.solver import ESPCNTrainer
 from super_resolution.models.DRRN.solver import DRRNTrainer
 from super_resolution.models.DRCN.solver import DRCNTrainer
 from super_resolution.models.RDN.solver import RDNTrainer
+from super_resolution.models.GLEAN.solver import GLEANTrainer
 from attrdict import AttrDict
 from options import args
 from utils import get_config
@@ -114,6 +115,8 @@ def get_trainer(config, train_loader, test_loader, device=None):
         model = DRRNTrainer(config, train_loader, test_loader, device)
     elif model_name.lower().startswith('rdn'):
         model = RDNTrainer(config, train_loader, test_loader, device)
+    elif model_name.lower().startswith('glean'):
+        model = GLEANTrainer(config, train_loader, test_loader, device)
     elif model_name.lower().startswith('lapsrn'):
         # models = LapSRNTrainer(config, train_loader, test_loader)
         model = None
@@ -172,8 +175,8 @@ def main():
         #     'When --distributed is enabled (default) the rank and ' + \
         #     'world size can not be given as this is set up automatically. ' + \
         #     'Use --distributed 0 to disable automatic setup of distributed training.'
-        trainer.model = torch.nn.parallel.DistributedDataParallel(trainer.model, output_device=args.local_rank,
-                                                                  device_ids=[args.local_rank])
+        trainer.generator = torch.nn.parallel.DistributedDataParallel(trainer.generator, output_device=args.local_rank,
+                                                                      device_ids=[args.local_rank])
     trainer.run()
 
 
