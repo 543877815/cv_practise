@@ -357,11 +357,12 @@ python main.py --configs configs/rdn.yaml
 | Urban100 | x2<br />x3<br />x4<br />x8 | /32.55<br />28.70/29.02<br />/26.85<br />/22.83 | /0.9324<br /> 0.8719/0.8695<br />/0.8089<br />/0.6374 |
 | Manga109 | x2<br />x3<br />x4<br />x8 | /39.60<br />34.00/34.58<br />/31.45<br />/25.14 | /0.9791<br />0.9483/0.9502<br />/0.9187<br />/0.7994  |
 
-### EDSR/MDSR(NTIRE 2017)
+### GLEAN(2021)
 
-
-
-### SRGAN/SRResNet(2016)
+```
+python -m torch.distributed.launch --nproc_per_node=2 main.py --configs configs/glean.yaml
+python main.py --configs configs/glean.yaml
+```
 
 
 

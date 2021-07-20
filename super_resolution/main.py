@@ -138,8 +138,7 @@ def main():
     # detect device
     print("CUDA Available: ", torch.cuda.is_available())
     if not configs.distributed:
-        device = torch.device(
-            "cuda:{}".format(configs.gpu[0]) if (args.use_cuda and torch.cuda.is_available()) else "cpu")
+        device = torch.device("cuda" if (args.use_cuda and torch.cuda.is_available()) else "cpu")
     else:
         device = torch.device("cuda", args.local_rank)
 
@@ -163,7 +162,7 @@ def main():
                               drop_last=False,
                               sampler=sampler)
     test_loader = DataLoader(dataset=test_set,
-                             batch_size=1,
+                             batch_size=configs.test_batch_size,
                              shuffle=False,
                              num_workers=configs.num_workers)
 
@@ -175,8 +174,14 @@ def main():
         #     'When --distributed is enabled (default) the rank and ' + \
         #     'world size can not be given as this is set up automatically. ' + \
         #     'Use --distributed 0 to disable automatic setup of distributed training.'
-        trainer.generator = torch.nn.parallel.DistributedDataParallel(trainer.generator, output_device=args.local_rank,
-                                                                      device_ids=[args.local_rank])
+        trainer.generator = torch.nn.parallel.DistributedDataParallel(trainer.generator,
+                                                                      output_device=args.local_rank,
+                                                                      device_ids=[args.local_rank],
+                                                                      find_unused_parameters=True)
+
+
+    else:
+        trainer.generator = torch.nn.DataParallel(trainer.generator)
     trainer.run()
 
 

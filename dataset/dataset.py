@@ -1,6 +1,8 @@
 import shutil
 import tarfile
 import random
+import warnings
+
 import h5py
 import os
 from utils import get_platform_path, is_image_file, rgb2ycbcr
@@ -39,8 +41,12 @@ class DatasetFromTwoFolder(data.Dataset):
         LR_filenames.sort(key=lambda x: x[:-4])
         HR_filenames.sort(key=lambda x: x[:-4])
 
-        LR_filenames = LR_filenames[:config.data_range]
-        HR_filenames = HR_filenames[:config.data_range]
+        if isTrain:
+            LR_filenames = LR_filenames[:config.data_range]
+            HR_filenames = HR_filenames[:config.data_range]
+        else:
+            LR_filenames = LR_filenames[config.data_range:]
+            HR_filenames = HR_filenames[config.data_range:]
 
         self.LR_image_filenames = [os.path.join(LR_dir, x) for x in LR_filenames if is_image_file(x)]
         self.HR_image_filenames = [os.path.join(HR_dir, x) for x in HR_filenames if is_image_file(x)]
@@ -54,7 +60,8 @@ class DatasetFromTwoFolder(data.Dataset):
     def __getitem__(self, item):
         img = self.load_img(self.LR_image_filenames[item // self.repeat])
         target = self.load_img(self.HR_image_filenames[item // self.repeat])
-        img, target = self.augment(img, target)
+        if self.isTrain:
+            img, target = self.augment(img, target)
         if self.transform:
             img = self.transform(img)
         if self.target_transform:
@@ -160,10 +167,12 @@ class DatasetFromTwoFolder(data.Dataset):
                 return img
             img = img.convert('RGB')
         if self.config.color_space == 'RGB':
+            if self.config.img_channels == 1:
+                warnings.warn("The color_space is RGB while img_channels is 1!")
             return img
         elif self.config.color_space == 'YCbCr':
             img_ycrcb = rgb2ycbcr(np.array(img, dtype=np.uint8))
-            if self.config.num_channels == 1:
+            if self.config.img_channels == 1:
                 return Image.fromarray(img_ycrcb[:, :, 0])
             else:
                 return Image.fromarray(img_ycrcb)

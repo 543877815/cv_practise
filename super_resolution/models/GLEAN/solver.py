@@ -38,6 +38,9 @@ class GLEANBasic(object):
         self.upscale_factor = config.upscaleFactor
         self.test_upscaleFactor = config.test_upscaleFactor
         self.model_name = "{}-{}x".format(config.model, self.upscale_factor)
+        self.nb = config.nb
+        self.nf = config.nf
+        self.gc = config.gc
 
         # checkpoint configuration
         self.resume = config.resume
@@ -150,7 +153,8 @@ class GLEANTrainer(GLEANBasic):
 
     def build_model(self):
         # initialize model
-        self.generator = GLEAN(img_channels=self.img_channels).to(self.device)
+        self.generator = GLEAN(img_channels=self.img_channels, device=self.device, nb=self.nb, nf=self.nf,
+                               gc=self.gc).to(self.device)
         self.discriminator = Discriminator(input_shape=(self.img_channels, self.img_size, self.img_size)).to(
             self.device)
         self.feature_extractor = FeatureExtractor().to(self.device)
@@ -202,6 +206,7 @@ class GLEANTrainer(GLEANBasic):
         self.generator.train()
         Tensor = torch.cuda.FloatTensor if torch.cuda.is_available() else torch.Tensor
         train_loss = 0
+        psnr = 0
         for index, (lr, hr) in enumerate(self.train_loader):
             lr, hr = lr.to(self.device), hr.to(self.device)
             batches_done = (epoch - 1) * len(self.train_loader) + index
@@ -220,10 +225,10 @@ class GLEANTrainer(GLEANBasic):
 
             # Measure pixel-wise loss against ground truth
             loss_pixel = self.criterion_pixel(gen_hr, hr)
-
             if batches_done < self.warmup_batches:
                 # Warm-up (pixel-wise loss only)
                 loss_pixel.backward()
+                train_loss += loss_pixel
                 self.optimizer_G.step()
                 print(
                     "[Epoch %d/%d] [Batch %d/%d] [G pixel: %f]"
@@ -266,6 +271,7 @@ class GLEANTrainer(GLEANBasic):
             self.optimizer_D.step()
 
             train_loss += loss_pixel.item()
+            psnr += self.psrn(loss_pixel.item())
             if not self.distributed or self.local_rank == 0:
                 progress_bar(index, len(self.train_loader),
                              "[Epoch %d/%d] [Batch %d/%d] [D loss: %f] [G loss: %f, content: %f, adv: %f, pixel: %f]"
@@ -279,11 +285,25 @@ class GLEANTrainer(GLEANBasic):
                                  loss_content.item(),
                                  loss_GAN.item(),
                                  loss_pixel.item(),
-                             ))
+                             ), TOTAL_BAR_LENGTH=40)
 
-        avg_train_loss = train_loss / len(self.train_loader)
-        print("    Average Loss: {:.4f}".format(avg_train_loss))
-        return avg_train_loss
+                # save interval models
+                if batches_done % self.checkpoint_interval == 0:
+                    self.save_model(epoch)
+
+                if batches_done % self.tensorboard_image_interval == 0:
+                    lr = F.interpolate(lr, size=self.tensorboard_image_size)
+                    gen_hr = F.interpolate(gen_hr, size=self.tensorboard_image_size)
+                    hr = F.interpolate(hr, size=self.tensorboard_image_size)
+                    images = torch.cat((lr.clamp(0.0, 1.0), gen_hr.clamp(0.0, 1.0), hr.clamp(0.0, 1.0)))
+                    grid = vutils.make_grid(images)
+                    self.writer.add_image('image', grid, batches_done)
+
+                avg_train_loss = train_loss / (batches_done + 1)
+                avg_psnr = psnr / (batches_done + 1)
+                # tensorboard scalars
+                self.writer.add_scalar('train_loss', avg_train_loss, batches_done)
+                self.writer.add_scalar('psnr', avg_psnr, batches_done)
 
     def test(self):
         self.generator.eval()
@@ -291,18 +311,17 @@ class GLEANTrainer(GLEANBasic):
         # random sample output to tensorboard
         save_inputs, save_outputs, save_targets = [], [], []
         with torch.no_grad():
-            for index, (img, target) in enumerate(self.test_loader):
-                img, target = img.to(self.device), target.to(self.device)
-                output = self.generator(img).clamp(0.0, 1.0)
-                output, target = shave(output, target, self.test_upscaleFactor)
-                loss = ((output - target) ** 2).mean()
+            for index, (lr, hr) in enumerate(self.test_loader):
+                lr, hr = lr.to(self.device), hr.to(self.device)
+                gen_hr = self.generator(lr, self.mapping, self.synthesis).clamp(0.0, 1.0)
+                loss = self.criterion_pixel(gen_hr, hr)
                 psnr += self.psrn(loss.item())
                 if not self.distributed or self.local_rank == 0:
                     progress_bar(index, len(self.test_loader), 'PSNR: %.4f' % (psnr / (index + 1)))
                     if index < self.tensorboard_image_sample:
-                        save_inputs.append(img)
-                        save_outputs.append(output)
-                        save_targets.append(target)
+                        save_inputs.append(lr)
+                        save_outputs.append(gen_hr)
+                        save_targets.append(hr)
 
         avg_psnr = psnr / len(self.test_loader)
         print("    Average PSNR: {:.4f} dB".format(avg_psnr))
@@ -311,44 +330,5 @@ class GLEANTrainer(GLEANBasic):
     def run(self):
         for epoch in range(self.start_epoch, self.n_epochs + self.start_epoch):
             print('\n===> Epoch {} starts:'.format(epoch))
-            avg_train_loss = self.train(epoch)
-            avg_psnr, save_input, save_output, save_target = self.test()
+            self.train(epoch)
             self.scheduler.step(epoch)
-            if not self.distributed or self.local_rank == 0:
-
-                # save to logger
-                self.logger.info(
-                    "Epoch [{}/{}]: lr={:.6f} loss={:.6f} PSNR={:.6f}".format(epoch,
-                                                                              self.n_epochs + self.start_epoch,
-                                                                              self.scheduler.get_lr()[0],
-                                                                              avg_train_loss,
-                                                                              avg_psnr))
-
-                # save interval models
-                if epoch % self.checkpoint_interval == 0:
-                    self.save_model(epoch)
-
-                # tensorboard scalars
-                self.writer.add_scalar('train_loss', avg_train_loss, epoch)
-                self.writer.add_scalar('psnr', avg_psnr, epoch)
-
-                # tensorboard graph
-                if epoch == 0 and self.tensorboard_draw_model and \
-                        len(save_input) > 0 and len(save_target) > 0:
-                    self.writer.add_graph(model=self.generator, input_to_model=[save_input[0]])
-
-                # tensorboard images
-                if epoch % self.tensorboard_image_interval == 0:
-
-                    assert len(save_input) == len(save_output) == len(save_target), \
-                        'the size of save_input and save_output and save_target is not equal.'
-                    for i in range(len(save_target)):
-                        save_input[i] = F.interpolate(save_input[i], size=self.tensorboard_image_size,
-                                                      mode='bicubic', align_corners=True)
-                        save_output[i] = F.interpolate(save_output[i], size=self.tensorboard_image_size,
-                                                       mode='bicubic', align_corners=True)
-                        save_target[i] = F.interpolate(save_target[i], size=self.tensorboard_image_size,
-                                                       mode='bicubic', align_corners=True)
-                        images = torch.cat((save_input[i], save_output[i], save_target[i]))
-                        grid = vutils.make_grid(images)
-                        self.writer.add_image('image-{}'.format(i), grid, epoch)

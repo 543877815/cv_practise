@@ -20,14 +20,11 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from multiprocessing import Process
 from multiprocessing import Queue
-import torch.optim as optim
-import torch.optim.lr_scheduler as lrs
 
 cuda = True if torch.cuda.is_available() else False
 FloatTensor = torch.cuda.FloatTensor if cuda else torch.FloatTensor
 LongTensor = torch.cuda.LongTensor if cuda else torch.LongTensor
 
-TOTAL_BAR_LENGTH = 80
 LAST_T = time.time()
 BEGIN_T = LAST_T
 
@@ -108,7 +105,7 @@ def cached_download(url, path, md5=None, quiet=False, postprocess=None):
     return path
 
 
-def progress_bar(current, total, msg=None):
+def progress_bar(current, total, msg=None, TOTAL_BAR_LENGTH=80):
     global LAST_T, BEGIN_T
     if current == 0:
         BEGIN_T = time.time()  # Reset for new bar.
@@ -307,10 +304,13 @@ def IFC(pred, gt):
 
 
 """Returns one-hot encoded Variable"""
+
+
 def to_categorical(y, num_columns):
     y_cat = np.zeros((y.shape[0], num_columns))
     y_cat[range(y.shape[0]), y] = 1.0
     return Variable(FloatTensor(y_cat))
+
 
 def print_options(opt):
     """Print and save options
@@ -324,11 +324,13 @@ def print_options(opt):
         if key == 'data_flist':
             for platform in opt[key]:
                 for item in opt[key][platform]:
-                    message += '{:>25}.{}.{}: {:<30}\n'.format(str(key), str(platform), str(item), str(opt[key][platform][item]))
+                    message += '{:>25}.{}.{}: {:<30}\n'.format(str(key), str(platform), str(item),
+                                                               str(opt[key][platform][item]))
         else:
             message += '{:>25}: {:<30}\n'.format(str(key), str(opt[key]))
     message += '----------------- End -------------------'
     return message
+
 
 def get_logger(filename, verbosity=1, name=None):
     level_dict = {0: logging.DEBUG, 1: logging.INFO, 2: logging.WARNING}
@@ -391,12 +393,12 @@ class checkpoint():
         return os.path.join(self.dir, *subdir)
 
     def save(self, trainer, epoch, is_best=False):
-        trainer.model.save(self.get_path('models'), epoch, is_best=is_best)
+        trainer.generator.save(self.get_path('models'), epoch, is_best=is_best)
         trainer.loss.save(self.dir)
         trainer.loss.plot_loss(self.dir, epoch)
 
         self.plot_psnr(epoch)
-        trainer.optimizer.save(self.dir)
+        trainer.optimizer_G.save(self.dir)
         torch.save(self.log, self.get_path('psnr_log.pt'))
 
     def add_log(self, log):

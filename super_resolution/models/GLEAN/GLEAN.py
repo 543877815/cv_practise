@@ -12,6 +12,9 @@ class GLEAN(nn.Module):
                  channels: int = 64,
                  img_channels=3,
                  in_nc: int = 3,
+                 nf: int = 64,
+                 gc: int = 32,
+                 nb: int = 23,
                  out_nc: int = 3):
         super().__init__()
         self.device = device
@@ -24,7 +27,7 @@ class GLEAN(nn.Module):
         # ||              Encoder              ||
         # =======================================
         # 32->32
-        self.E0 = RRDBNet(in_nc=in_nc, out_nc=out_nc, nf=64, nb=23, gc=32)
+        self.E0 = RRDBNet(in_nc=in_nc, out_nc=out_nc, nf=nf, nb=nb, gc=gc)
 
         # 32->16
         self.E1 = nn.Sequential(
@@ -102,8 +105,8 @@ class GLEAN(nn.Module):
         # mapping
         latent_out = torch.nn.LeakyReLU(5)(mapping(latent))
         gaussian_fit = {"mean": latent_out.mean(0), "std": latent_out.std(0)}
-        latent = torch.randn((batch_size, 18, 512), dtype=torch.float, requires_grad=False).to(self.device)
-        latent_in = latent.expand(-1, 18, -1)
+        latent = torch.randn((batch_size, 18, 512), dtype=torch.float, requires_grad=False)
+        latent_in = latent.expand(-1, 18, -1).to(self.device)
         dlatents_in = self.lrelu(latent_in * gaussian_fit["std"] + gaussian_fit["mean"])
 
         # noise

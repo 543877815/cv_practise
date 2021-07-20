@@ -1,11 +1,15 @@
 # hardware
-gpu: [ 0 ]
-distributed: False
+gpu: [ 0, 1 ]
+distributed: True
 address: '127.0.0.1'
 port: '23456'
 # models configuration
 model: "GLEAN"
 img_channels: 3
+# RRDBNet
+nb: 23
+nf: 64
+gc: 32
 # dataset
 dataset: "customize"
 color_space: 'RGB'
@@ -33,9 +37,9 @@ data_flist:
   linux:
     origin_HR_dir: "/data/data/291-images"
     train_HR_dir: "/data/data/CelebA/celeba-1024/"
-    train_LR_dir: "/data/data/CelebA/celeba-1024-BICUBIC/"
+    train_LR_dir: "/data/data/CelebA/celeba-1024-BICUBIC-32/"
     test_HR_dir: "/data/data/CelebA/celeba-1024/"
-    test_LR_dir: "/data/data/CelebA/celeba-1024-BICUBIC/"
+    test_LR_dir: "/data/data/CelebA/celeba-1024-BICUBIC-32/"
     pt_dir: ""
     h5py_input: ""
 model_flist:
@@ -47,23 +51,24 @@ model_flist:
       mapping_dir: "/data/models/mapping.pt"
 # experiment
 lr: 0.0001
-beta1: 0.9
+beta1: 0.5
 beta2: 0.999
-batch_size: 16
+batch_size: 2
+test_batch_size: 2
 lambda_adv: 5e-3
 lambda_pixel: 1e-2
 clip: 0
-warmup_batches: 500
+warmup_batches: 0
 n_epochs: 1000
 scheduler_gamma: 0.5
 milestones: [ 200, 400, 600, 800 ]  # 200
 # checkpoint
-checkpoint_interval: 1
+checkpoint_interval: 10000
 checkpoint_dir: "checkpoints/"
 # visualization
-tensorboard_log_dir: "runs/rdn"
-tensorboard_image_interval: 1
+tensorboard_log_dir: "runs/glean"
+tensorboard_image_interval: 1000
 tensorboard_image_sample: 10
-tensorboard_image_size: [ 256, 256 ]
+tensorboard_image_size: [ 512, 512 ]
 tensorboard_draw_model: True
 tensorboard_input: [ 64, 3, 32, 32 ]
