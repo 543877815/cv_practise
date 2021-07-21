@@ -13,9 +13,9 @@ num_layers: 8
 # dataset
 dataset: "customize"
 color_space: 'RGB'
-img_size: 144  # 96 for x2, 144 for x3, 192 for x4
-upscaleFactor: [ 3 ]
-test_upscaleFactor: 3
+img_size: 192  # 96 for x2, 144 for x3, 192 for x4
+upscaleFactor: [ 4 ]
+test_upscaleFactor: 4
 scales: [ 1.0 ]
 rotations: [ 0, 90 ]
 flips: [ 0, 1, 2 ]
@@ -37,9 +37,9 @@ data_flist:
   linux:
     origin_HR_dir: "/data/data/291-images"
     train_HR_dir: "/data/data/DIV2K/DIV2K/DIV2K_train_HR"
-    train_LR_dir: "/data/data/DIV2K/DIV2K/DIV2K_train_LR_bicubic/X3"
-    test_HR_dir: "/data/data/Set5,Set14/set5_HR/3/"
-    test_LR_dir: "/data/data/Set5,Set14/set5_LR/3/"
+    train_LR_dir: "/data/data/DIV2K/DIV2K/DIV2K_train_LR_bicubic/X4"
+    test_HR_dir: "/data/data/DIV2K/DIV2K/DIV2K_train_HR"
+    test_LR_dir: "/data/data/DIV2K/DIV2K/DIV2K_train_LR_bicubic/X4"
     pt_dir: ""
     h5py_input: ""
 # experiment

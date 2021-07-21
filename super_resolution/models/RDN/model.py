@@ -83,6 +83,26 @@ import torch
 import torch.nn as nn
 
 
+def weights_init_kaiming(m):
+    class_name = m.__class__.__name__
+    if class_name.find('Linear') != -1:
+        torch.nn.init.kaiming_normal_(m.weight)
+        if m.bias is not None:
+            m.bias.data.zero_()
+    elif class_name.find('Conv2d') != -1:
+        torch.nn.init.kaiming_normal_(m.weight)
+        if m.bias is not None:
+            m.bias.data.zero_()
+    elif class_name.find('ConvTranspose2d') != -1:
+        torch.nn.init.kaiming_normal_(m.weight)
+        if m.bias is not None:
+            m.bias.data.zero_()
+    elif class_name.find('Norm') != -1:
+        m.weight.data.normal_(1.0, 0.02)
+        if m.bias is not None:
+            m.bias.data.zero_()
+
+
 class RDB_Conv(nn.Module):
     def __init__(self, inChannels, growRate, kSize=3):
         super(RDB_Conv, self).__init__()

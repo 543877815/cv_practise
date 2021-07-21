@@ -6,7 +6,7 @@ import random
 import torch
 import torch.backends.cudnn as cudnn
 import os
-from .model import RDN
+from .model import RDN, weights_init_kaiming
 from utils import progress_bar, get_platform_path, get_logger, shave, print_options
 from torchvision.transforms import transforms
 from PIL import Image
@@ -161,12 +161,11 @@ class RDNTrainer(RDNBasic):
         self.build_model()
 
     def build_model(self):
-        # self.model = RDN(img_channels=self.img_channels, scale_factor=self.upscale_factor[0],
-        #                  num_features=self.num_features, growth_rate=self.growth_rate, num_blocks=self.num_blocks,
-        #                  num_layers=self.num_layers).to(self.device)
         self.model = RDN(img_channels=self.img_channels, r=self.test_upscaleFactor).to(self.device)
         if self.resume:
             self.load_model()
+        # else:
+        #     self.model.apply(weights_init_kaiming)
         self.criterion = torch.nn.L1Loss()
         torch.manual_seed(self.seed)
 
@@ -193,8 +192,8 @@ class RDNTrainer(RDNBasic):
 
     def train(self, epoch):
         self.model.train()
-        for param_group in self.optimizer.param_groups:
-            param_group['lr'] = self.lr * (0.1 ** (epoch // int(self.epochs * 0.8)))
+        # for param_group in self.optimizer.param_groups:
+        #     param_group['lr'] = self.lr * (0.1 ** (epoch // int(self.epochs * 0.8)))
         train_loss = 0
         for index, (img, target) in enumerate(self.train_loader):
             img, target = img.to(self.device), target.to(self.device)
